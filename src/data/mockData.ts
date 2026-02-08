@@ -1,4 +1,4 @@
-import { Order, OrderItem, ValidationTask, Good, Employee, AuditLogEntry } from '@/types/wms';
+import { Order, OrderItem, ValidationTask, Good, Employee, AuditLogEntry, Admission } from '@/types/wms';
 
 // Mock Orders
 export const mockOrders: Order[] = [
@@ -137,7 +137,6 @@ export const mockAuditLogs: AuditLogEntry[] = [
   { id: 'LOG-004', timestamp: '2025-02-08T08:00:00.012Z', actorId: 'EMP-003', actorName: 'Bobur Aliyev', actionType: 'status_change', module: 'order', documentId: '4', sapId: 'SAP-2025-001237', description: 'Order shipped', previousValue: 'collected', newValue: 'shipped' },
 ];
 
-// Dashboard Stats
 export const dashboardStats = {
   totalOrders: 156,
   pendingCollection: 23,
@@ -148,3 +147,80 @@ export const dashboardStats = {
   validationChange: 3,
   shippedChange: 18,
 };
+
+// Mock Admissions (Purchase Orders)
+export const mockAdmissions: Admission[] = [
+  {
+    id: 'ADM-001',
+    documentNumber: 'PO-2024-001234',
+    supplierId: 'SUP-001',
+    supplierName: 'ООО "Поставщик А"',
+    expectedDate: '2024-01-15',
+    status: 'pending',
+    items: [
+      { id: 'ADM-001-1', sku: 'MLK-001', name: 'Молоко 3.2% 1л', plannedQty: 100, actualQty: 0, barcode: '4820000100001', status: 'pending' },
+      { id: 'ADM-001-2', sku: 'BRD-002', name: 'Хлеб белый нарезной', plannedQty: 50, actualQty: 50, expiryDate: '2024-01-20', cellLocation: 'A-01-001', barcode: '4820000100002', status: 'received' },
+      { id: 'ADM-001-3', sku: 'SGR-003', name: 'Сахар песок 1кг', plannedQty: 200, actualQty: 0, barcode: '4820000100003', status: 'pending' },
+      { id: 'ADM-001-4', sku: 'OIL-004', name: 'Масло подсолнечное 1л', plannedQty: 75, actualQty: 75, expiryDate: '2025-06-15', cellLocation: 'B-02-003', barcode: '4820000100004', status: 'received' },
+    ],
+    createdAt: '2024-01-14T10:00:00Z',
+    updatedAt: '2024-01-15T14:00:00Z',
+  },
+  {
+    id: 'ADM-002',
+    documentNumber: 'PO-2024-001235',
+    supplierId: 'SUP-002',
+    supplierName: 'ИП Иванов',
+    expectedDate: '2024-01-15',
+    status: 'processing',
+    tsdId: 'TSD-003',
+    items: [
+      { id: 'ADM-002-1', sku: 'CHE-005', name: 'Сыр Российский 300г', plannedQty: 40, actualQty: 12, barcode: '4820000100005', status: 'mismatch' },
+      { id: 'ADM-002-2', sku: 'BUT-006', name: 'Масло сливочное 200г', plannedQty: 60, actualQty: 60, expiryDate: '2024-02-15', cellLocation: 'C-01-002', barcode: '4820000100006', status: 'received' },
+    ],
+    createdAt: '2024-01-14T11:30:00Z',
+    updatedAt: '2024-01-15T13:30:00Z',
+  },
+  {
+    id: 'ADM-003',
+    documentNumber: 'PO-2024-001236',
+    supplierId: 'SUP-003',
+    supplierName: 'АО "МегаОпт"',
+    expectedDate: '2024-01-16',
+    status: 'pending',
+    items: [
+      { id: 'ADM-003-1', sku: 'RCE-007', name: 'Рис длиннозерный 1кг', plannedQty: 150, actualQty: 0, barcode: '4820000100007', status: 'pending' },
+      { id: 'ADM-003-2', sku: 'PST-008', name: 'Макароны спагетти 500г', plannedQty: 200, actualQty: 56, barcode: '4820000100008', status: 'mismatch' },
+    ],
+    createdAt: '2024-01-15T08:00:00Z',
+    updatedAt: '2024-01-16T10:00:00Z',
+  },
+  {
+    id: 'ADM-004',
+    documentNumber: 'PO-2024-001237',
+    supplierId: 'SUP-004',
+    supplierName: 'ТОО "КазахПоставка"',
+    expectedDate: '2024-01-16',
+    status: 'blocked',
+    tsdId: 'TSD-001',
+    items: [
+      { id: 'ADM-004-1', sku: 'FLR-009', name: 'Мука пшеничная 2кг', plannedQty: 100, actualQty: 8, barcode: '4820000100009', status: 'mismatch' },
+    ],
+    createdAt: '2024-01-15T09:00:00Z',
+    updatedAt: '2024-01-16T11:00:00Z',
+  },
+  {
+    id: 'ADM-005',
+    documentNumber: 'PO-2024-001238',
+    supplierId: 'SUP-005',
+    supplierName: 'ООО "Глобал Трейд"',
+    expectedDate: '2024-01-17',
+    status: 'completed',
+    items: [
+      { id: 'ADM-005-1', sku: 'TEA-010', name: 'Чай черный 100 пак', plannedQty: 80, actualQty: 80, expiryDate: '2025-12-01', cellLocation: 'D-01-001', barcode: '4820000100010', status: 'received' },
+      { id: 'ADM-005-2', sku: 'COF-011', name: 'Кофе растворимый 200г', plannedQty: 50, actualQty: 31, expiryDate: '2025-08-15', cellLocation: 'D-01-002', barcode: '4820000100011', status: 'received' },
+    ],
+    createdAt: '2024-01-16T10:00:00Z',
+    updatedAt: '2024-01-17T15:30:00Z',
+  },
+];

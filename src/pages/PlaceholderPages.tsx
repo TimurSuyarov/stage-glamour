@@ -33,11 +33,6 @@ export function PlaceholderPage({ titleKey, parentKey }: PlaceholderPageProps) {
   );
 }
 
-// Export individual placeholder pages
-export function AdmissionPage() {
-  return <PlaceholderPage titleKey="nav.admission" parentKey="nav.operational" />;
-}
-
 export function CollectPage() {
   return <PlaceholderPage titleKey="nav.collect" parentKey="nav.operational" />;
 }

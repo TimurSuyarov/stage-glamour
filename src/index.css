@@ -138,22 +138,55 @@
     font-family: 'Inter', system-ui, sans-serif;
   }
   
-  /* Custom scrollbar for data-dense interfaces */
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+  /* Smooth scrolling behavior */
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer utilities {
+  /* Custom scrollbar utility class */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.2) transparent;
   }
   
-  ::-webkit-scrollbar-track {
-    @apply bg-muted;
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
   }
   
-  ::-webkit-scrollbar-thumb {
-    @apply bg-muted-foreground/30 rounded-full;
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 10px;
+    margin: 4px 0;
   }
   
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-muted-foreground/50;
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.2);
+    border-radius: 10px;
+    transition: background 0.2s ease;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.4);
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:active {
+    background: hsl(var(--muted-foreground) / 0.5);
+  }
+  
+  /* Hide scrollbar until hover */
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: transparent;
+  }
+  
+  .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.2);
+  }
+  
+  .custom-scrollbar:hover::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.4);
   }
 }
 

@@ -22,6 +22,8 @@ const statusConfig: Record<string, { variant: StatusBadgeProps['variant']; icon:
   in_progress: { variant: 'warning', icon: Clock, labelKey: 'status.inProgress' },
   draft: { variant: 'neutral', icon: FileText, labelKey: 'status.draft' },
   pending: { variant: 'warning', icon: Clock, labelKey: 'status.pending' },
+  processing: { variant: 'info', icon: Clock, labelKey: 'status.processing' },
+  blocked: { variant: 'error', icon: AlertCircle, labelKey: 'status.blocked' },
   active: { variant: 'success', icon: Check, labelKey: 'status.approved' },
   completed: { variant: 'success', icon: Check, labelKey: 'status.shipped' },
   cancelled: { variant: 'error', icon: X, labelKey: 'status.rejected' },
@@ -29,11 +31,11 @@ const statusConfig: Record<string, { variant: StatusBadgeProps['variant']; icon:
 
 export function StatusBadge({ status, variant, size = 'md', showIcon = true, className }: StatusBadgeProps) {
   const { t } = useLanguage();
-  
+
   const config = statusConfig[status] || { variant: 'neutral', icon: AlertCircle, labelKey: status };
   const finalVariant = variant || config.variant;
   const Icon = config.icon;
-  
+
   const variantClasses = {
     success: 'status-badge-success',
     warning: 'status-badge-warning',
@@ -41,9 +43,9 @@ export function StatusBadge({ status, variant, size = 'md', showIcon = true, cla
     info: 'status-badge-info',
     neutral: 'status-badge-neutral',
   };
-  
+
   return (
-    <span 
+    <span
       className={cn(
         'status-badge',
         variantClasses[finalVariant || 'neutral'],
@@ -65,7 +67,7 @@ interface SAPSyncIndicatorProps {
 
 export function SAPSyncIndicator({ synced, lastSyncAt, className }: SAPSyncIndicatorProps) {
   const { t } = useLanguage();
-  
+
   return (
     <div className={cn('flex items-center gap-2 text-xs', className)}>
       <div className={cn(

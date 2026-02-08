@@ -29,7 +29,7 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.inventory': 'Inventarizatsiya',
     'nav.reports': 'Hisobotlar',
     'nav.bonuses': 'Bonuslar',
-    
+
     // Common
     'common.search': 'Qidirish...',
     'common.filter': 'Filtr',
@@ -51,7 +51,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.all': 'Hammasi',
     'common.syncedWithSAP': 'SAP bilan sinxronlangan',
     'common.lastUpdated': 'Oxirgi yangilanish',
-    
+
     // Statuses
     'status.created': 'Yaratilgan',
     'status.validated': 'Tekshirilgan',
@@ -62,7 +62,7 @@ const translations: Record<Language, Record<string, string>> = {
     'status.inProgress': 'Jarayonda',
     'status.draft': 'Qoralama',
     'status.pending': 'Kutilmoqda',
-    
+
     // Orders
     'order.title': 'Buyurtmalar',
     'order.sapId': 'SAP ID',
@@ -74,7 +74,7 @@ const translations: Record<Language, Record<string, string>> = {
     'order.pendingCollection': 'Yig\'ish kutilmoqda',
     'order.inValidation': 'Tekshiruvda',
     'order.shippedToday': 'Bugun yuborilgan',
-    
+
     // Validation
     'validation.title': 'Buyurtma tekshirish',
     'validation.sapQty': 'SAP miqdori',
@@ -84,7 +84,7 @@ const translations: Record<Language, Record<string, string>> = {
     'validation.reject': 'Rad etish',
     'validation.mismatchError': 'Nomuvofiqlik xatosi',
     'validation.allMatched': 'Barcha miqdorlar mos',
-    
+
     // Returns
     'return.title': 'Qaytarishlar',
     'return.originalOrder': 'Asl buyurtma',
@@ -94,40 +94,44 @@ const translations: Record<Language, Record<string, string>> = {
     'return.conditionQuarantine': 'Karantin',
     'return.addToStock': 'Omborga qo\'shish',
     'return.maxQtyError': 'Maksimal miqdordan oshib ketdi',
-    
+
     // Warehouse
     'warehouse.zones': 'Zonalar',
     'warehouse.cells': 'Yacheykalar',
     'warehouse.occupancy': 'Band',
-    
+
     // Employees
     'employee.name': 'Ism',
     'employee.role': 'Lavozim',
     'employee.uniqueId': 'ID',
     'employee.performance': 'Samaradorlik',
-    
+
     // Inventory
     'inventory.session': 'Sessiya',
     'inventory.systemStock': 'Tizim zaxirasi',
     'inventory.physicalStock': 'Jismoniy zaxira',
     'inventory.difference': 'Farq',
     'inventory.correction': 'Tuzatish hujjati',
-    
+
     // Errors
     'error.insufficientStock': 'Zaxira yetarli emas',
     'error.negativeBalance': 'Manfiy balans',
     'error.cannotDelete': 'O\'chirib bo\'lmaydi',
-    
+
     // Roles
     'role.executor': 'Ijrochi',
     'role.validator': 'Tekshiruvchi',
     'role.returner': 'Qaytaruvchi',
-    
+
     // Dialogs
     'dialog.confirmTitle': 'Tasdiqlash',
     'dialog.confirmDelete': 'Haqiqatan ham o\'chirmoqchimisiz?',
     'dialog.confirmApprove': 'Buyurtmani tasdiqlamoqchimisiz?',
     'dialog.confirmCancel': 'Bekor qilishni xohlaysizmi?',
+
+    // Admission
+    'admission.title': 'Kutilayotgan qabul',
+    'admission.description': 'Yetkazib beruvchilardan tovarlarni qabul qilish',
   },
   ru: {
     // Navigation
@@ -149,7 +153,7 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.inventory': 'Инвентаризация',
     'nav.reports': 'Отчёты',
     'nav.bonuses': 'Бонусы',
-    
+
     // Common
     'common.search': 'Поиск...',
     'common.filter': 'Фильтр',
@@ -171,7 +175,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.all': 'Все',
     'common.syncedWithSAP': 'Синхронизировано с SAP',
     'common.lastUpdated': 'Последнее обновление',
-    
+
     // Statuses
     'status.created': 'Создан',
     'status.validated': 'Проверено',
@@ -182,7 +186,7 @@ const translations: Record<Language, Record<string, string>> = {
     'status.inProgress': 'В процессе',
     'status.draft': 'Черновик',
     'status.pending': 'Ожидание',
-    
+
     // Orders
     'order.title': 'Заказы',
     'order.sapId': 'SAP ID',
@@ -194,7 +198,7 @@ const translations: Record<Language, Record<string, string>> = {
     'order.pendingCollection': 'Ожидают сбора',
     'order.inValidation': 'На проверке',
     'order.shippedToday': 'Отгружено сегодня',
-    
+
     // Validation
     'validation.title': 'Проверка заказа',
     'validation.sapQty': 'Количество SAP',
@@ -204,7 +208,7 @@ const translations: Record<Language, Record<string, string>> = {
     'validation.reject': 'Отклонить',
     'validation.mismatchError': 'Ошибка несоответствия',
     'validation.allMatched': 'Все количества совпадают',
-    
+
     // Returns
     'return.title': 'Возвраты',
     'return.originalOrder': 'Исходный заказ',
@@ -214,40 +218,44 @@ const translations: Record<Language, Record<string, string>> = {
     'return.conditionQuarantine': 'Карантин',
     'return.addToStock': 'Добавить на склад',
     'return.maxQtyError': 'Превышено максимальное количество',
-    
+
     // Warehouse
     'warehouse.zones': 'Зоны',
     'warehouse.cells': 'Ячейки',
     'warehouse.occupancy': 'Занятость',
-    
+
     // Employees
     'employee.name': 'Имя',
     'employee.role': 'Должность',
     'employee.uniqueId': 'ID',
     'employee.performance': 'Производительность',
-    
+
     // Inventory
     'inventory.session': 'Сессия',
     'inventory.systemStock': 'Системный остаток',
     'inventory.physicalStock': 'Физический остаток',
     'inventory.difference': 'Разница',
     'inventory.correction': 'Корректировочный документ',
-    
+
     // Errors
     'error.insufficientStock': 'Недостаточно запаса',
     'error.negativeBalance': 'Отрицательный баланс',
     'error.cannotDelete': 'Удаление невозможно',
-    
+
     // Roles
     'role.executor': 'Исполнитель',
     'role.validator': 'Проверяющий',
     'role.returner': 'Возвратчик',
-    
+
     // Dialogs
     'dialog.confirmTitle': 'Подтверждение',
     'dialog.confirmDelete': 'Вы уверены, что хотите удалить?',
     'dialog.confirmApprove': 'Подтвердить заказ?',
     'dialog.confirmCancel': 'Отменить действие?',
+
+    // Admission
+    'admission.title': 'Поступление в ожидании',
+    'admission.description': 'Приёмка товаров от поставщиков',
   },
 };
 

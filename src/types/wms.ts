@@ -3,6 +3,32 @@
 export type OrderStatus = 'created' | 'validated' | 'collected' | 'shipped';
 export type ReturnCondition = 'good' | 'damaged' | 'quarantine';
 export type DocumentType = 'order' | 'return' | 'transfer' | 'admission' | 'inventory';
+export type AdmissionStatus = 'pending' | 'processing' | 'blocked' | 'completed';
+
+export interface Admission {
+  id: string;
+  documentNumber: string;
+  supplierId: string;
+  supplierName: string;
+  expectedDate: string;
+  status: AdmissionStatus;
+  items: AdmissionItem[];
+  tsdId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdmissionItem {
+  id: string;
+  sku: string;
+  name: string;
+  plannedQty: number;
+  actualQty: number;
+  expiryDate?: string;
+  cellLocation?: string;
+  barcode: string;
+  status: 'pending' | 'received' | 'mismatch';
+}
 
 export interface SAPSyncInfo {
   synced: boolean;

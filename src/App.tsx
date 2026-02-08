@@ -15,8 +15,8 @@ import ReturnsPage from "./pages/ReturnsPage";
 import HistoryPage from "./pages/HistoryPage";
 import GoodsPage from "./pages/GoodsPage";
 import EmployeesPage from "./pages/EmployeesPage";
+import AdmissionPage from "./pages/AdmissionPage";
 import {
-  AdmissionPage,
   CollectPage,
   MoveToRegionPage,
   RelocationPage,
@@ -42,7 +42,7 @@ const App = () => (
               <Routes>
                 {/* Dashboard */}
                 <Route path="/" element={<Dashboard />} />
-                
+
                 {/* Operational Modules */}
                 <Route path="/admission" element={<AdmissionPage />} />
                 <Route path="/orders" element={<OrdersPage />} />
@@ -52,7 +52,7 @@ const App = () => (
                 <Route path="/move-to-region" element={<MoveToRegionPage />} />
                 <Route path="/relocation" element={<RelocationPage />} />
                 <Route path="/history" element={<HistoryPage />} />
-                
+
                 {/* Master Data */}
                 <Route path="/warehouse" element={<WarehousePage />} />
                 <Route path="/employees" element={<EmployeesPage />} />
@@ -61,7 +61,7 @@ const App = () => (
                 <Route path="/inventory" element={<InventoryPage />} />
                 <Route path="/reports" element={<ReportsPage />} />
                 <Route path="/bonuses" element={<BonusesPage />} />
-                
+
                 {/* Catch-all */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
