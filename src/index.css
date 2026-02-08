@@ -2,95 +2,129 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Glamour Cosmetics WMS Admin Panel - Enterprise Design System */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
+    /* Core Backgrounds */
+    --background: 210 20% 98%;
+    --foreground: 222 47% 11%;
+    
+    /* Cards & Surfaces */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
+    --card-foreground: 222 47% 11%;
+    
+    /* Popovers & Dropdowns */
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 222.2 47.4% 11.2%;
+    --popover-foreground: 222 47% 11%;
+    
+    /* Primary - Deep Slate Blue */
+    --primary: 222 47% 20%;
     --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
+    
+    /* Secondary - Soft Gray Blue */
+    --secondary: 214 32% 91%;
+    --secondary-foreground: 222 47% 20%;
+    
+    /* Muted surfaces */
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    
+    /* Accent - Coral for CTAs */
+    --accent: 12 76% 61%;
+    --accent-foreground: 0 0% 100%;
+    
+    /* Destructive */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    /* Borders & Inputs */
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 222 47% 20%;
+    
     --radius: 0.5rem;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* Status Colors - High Contrast */
+    --status-success: 142 71% 45%;
+    --status-success-bg: 142 76% 94%;
+    --status-warning: 38 92% 50%;
+    --status-warning-bg: 48 96% 89%;
+    --status-error: 0 84% 60%;
+    --status-error-bg: 0 93% 94%;
+    --status-info: 199 89% 48%;
+    --status-info-bg: 199 89% 94%;
+    --status-neutral: 215 16% 47%;
+    --status-neutral-bg: 210 40% 96%;
+    
+    /* Sidebar */
+    --sidebar-background: 222 47% 11%;
+    --sidebar-foreground: 210 40% 90%;
+    --sidebar-primary: 210 40% 98%;
+    --sidebar-primary-foreground: 222 47% 11%;
+    --sidebar-accent: 222 47% 18%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 222 47% 18%;
+    --sidebar-ring: 12 76% 61%;
+    --sidebar-muted: 215 16% 47%;
+    
+    /* Table */
+    --table-header: 214 32% 96%;
+    --table-row-hover: 210 40% 98%;
+    --table-row-selected: 199 89% 96%;
+    
+    /* TopBar */
+    --topbar: 0 0% 100%;
+    --topbar-border: 214 32% 91%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 222 47% 6%;
     --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
+    
+    --card: 222 47% 9%;
     --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
+    
+    --popover: 222 47% 9%;
     --popover-foreground: 210 40% 98%;
-
+    
     --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
+    --primary-foreground: 222 47% 11%;
+    
+    --secondary: 217 33% 17%;
     --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
+    
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    
+    --accent: 12 76% 61%;
+    --accent-foreground: 0 0% 100%;
+    
+    --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 212 27% 84%;
+    
+    --sidebar-background: 222 47% 6%;
+    --sidebar-foreground: 210 40% 90%;
+    --sidebar-primary: 210 40% 98%;
+    --sidebar-primary-foreground: 222 47% 11%;
+    --sidebar-accent: 222 47% 12%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 222 47% 12%;
+    --sidebar-ring: 12 76% 61%;
+    --sidebar-muted: 215 20% 65%;
+    
+    --table-header: 217 33% 12%;
+    --table-row-hover: 217 33% 14%;
+    --table-row-selected: 199 89% 12%;
+    
+    --topbar: 222 47% 9%;
+    --topbar-border: 217 33% 17%;
   }
 }
 
@@ -100,6 +134,124 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  
+  /* Custom scrollbar for data-dense interfaces */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-muted;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/30 rounded-full;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/50;
+  }
+}
+
+@layer components {
+  /* Status Badge Variants */
+  .status-badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium;
+  }
+  
+  .status-badge-success {
+    background-color: hsl(var(--status-success-bg));
+    color: hsl(var(--status-success));
+  }
+  
+  .status-badge-warning {
+    background-color: hsl(var(--status-warning-bg));
+    color: hsl(var(--status-warning));
+  }
+  
+  .status-badge-error {
+    background-color: hsl(var(--status-error-bg));
+    color: hsl(var(--status-error));
+  }
+  
+  .status-badge-info {
+    background-color: hsl(var(--status-info-bg));
+    color: hsl(var(--status-info));
+  }
+  
+  .status-badge-neutral {
+    background-color: hsl(var(--status-neutral-bg));
+    color: hsl(var(--status-neutral));
+  }
+  
+  /* Data Table Styles */
+  .data-table {
+    @apply w-full text-sm;
+  }
+  
+  .data-table th {
+    @apply px-4 py-3 text-left font-semibold text-muted-foreground uppercase text-xs tracking-wider;
+    background-color: hsl(var(--table-header));
+  }
+  
+  .data-table td {
+    @apply px-4 py-3 border-b border-border;
+  }
+  
+  .data-table tr:hover td {
+    background-color: hsl(var(--table-row-hover));
+  }
+  
+  .data-table tr.selected td {
+    background-color: hsl(var(--table-row-selected));
+  }
+  
+  /* Page Header */
+  .page-header {
+    @apply flex items-center justify-between mb-6 pb-4 border-b border-border;
+  }
+  
+  .page-title {
+    @apply text-2xl font-semibold text-foreground;
+  }
+  
+  /* Module Card */
+  .module-card {
+    @apply bg-card rounded-lg border border-border shadow-sm overflow-hidden;
+  }
+  
+  .module-card-header {
+    @apply px-5 py-4 border-b border-border bg-muted/30;
+  }
+  
+  .module-card-body {
+    @apply p-5;
+  }
+  
+  /* Stat Card */
+  .stat-card {
+    @apply bg-card rounded-lg border border-border p-5 flex flex-col gap-2;
+  }
+  
+  .stat-value {
+    @apply text-3xl font-bold text-foreground;
+  }
+  
+  .stat-label {
+    @apply text-sm text-muted-foreground;
+  }
+  
+  /* Action Bar */
+  .action-bar {
+    @apply flex items-center gap-3 mb-4;
+  }
+  
+  /* Filter Bar */
+  .filter-bar {
+    @apply flex flex-wrap items-center gap-3 p-4 bg-muted/30 rounded-lg mb-4;
   }
 }
