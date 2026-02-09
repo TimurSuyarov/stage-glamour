@@ -1,13 +1,16 @@
+// App.tsx
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { Provider } from "react-redux";
+import store from "./redux/store/store";
+
 import { AppShell } from "@/components/layout/AppShell";
 
-// Pages
 import Dashboard from "./pages/Dashboard";
 import OrdersPage from "./pages/OrdersPage";
 import ValidationPage from "./pages/ValidationPage";
@@ -28,48 +31,65 @@ import {
 } from "./pages/PlaceholderPages";
 import NotFound from "./pages/NotFound";
 
+import PublicRoute from "./components/layout/PublicRoute";
+import ProtectedRoute from "./components/layout/ProtectedRoute";
+import LoginPage from "./pages/Login";
+
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <LanguageProvider>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AppShell>
+    <Provider store={store}>
+      <LanguageProvider>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
               <Routes>
-                {/* Dashboard */}
-                <Route path="/" element={<Dashboard />} />
+                {/* Public */}
+                <Route
+                  path="/login"
+                  element={
+                    <PublicRoute>
+                      <LoginPage />
+                    </PublicRoute>
+                  }
+                />
 
-                {/* Operational Modules */}
-                <Route path="/admission" element={<AdmissionPage />} />
-                <Route path="/orders" element={<OrdersPage />} />
-                <Route path="/collect" element={<CollectPage />} />
-                <Route path="/validation" element={<ValidationPage />} />
-                <Route path="/returns" element={<ReturnsPage />} />
-                <Route path="/move-to-region" element={<MoveToRegionPage />} />
-                <Route path="/relocation" element={<RelocationPage />} />
-                <Route path="/history" element={<HistoryPage />} />
-
-                {/* Master Data */}
-                <Route path="/warehouse" element={<WarehousePage />} />
-                <Route path="/employees" element={<EmployeesPage />} />
-                <Route path="/cells" element={<CellsPage />} />
-                <Route path="/goods" element={<GoodsPage />} />
-                <Route path="/inventory" element={<InventoryPage />} />
-                <Route path="/reports" element={<ReportsPage />} />
-                <Route path="/bonuses" element={<BonusesPage />} />
+                {/* Protected area */}
+                <Route element={<ProtectedRoute />}>
+                  <Route element={<AppShell />}>
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/admission" element={<AdmissionPage />} />
+                    <Route path="/orders" element={<OrdersPage />} />
+                    <Route path="/collect" element={<CollectPage />} />
+                    <Route path="/validation" element={<ValidationPage />} />
+                    <Route path="/returns" element={<ReturnsPage />} />
+                    <Route
+                      path="/move-to-region"
+                      element={<MoveToRegionPage />}
+                    />
+                    <Route path="/relocation" element={<RelocationPage />} />
+                    <Route path="/history" element={<HistoryPage />} />
+                    <Route path="/warehouse" element={<WarehousePage />} />
+                    <Route path="/employees" element={<EmployeesPage />} />
+                    <Route path="/cells" element={<CellsPage />} />
+                    <Route path="/goods" element={<GoodsPage />} />
+                    <Route path="/inventory" element={<InventoryPage />} />
+                    <Route path="/reports" element={<ReportsPage />} />
+                    <Route path="/bonuses" element={<BonusesPage />} />
+                  </Route>
+                </Route>
 
                 {/* Catch-all */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
-            </AppShell>
-          </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
-    </LanguageProvider>
+            </BrowserRouter>
+          </TooltipProvider>
+        </AuthProvider>
+      </LanguageProvider>
+    </Provider>
   </QueryClientProvider>
 );
 
