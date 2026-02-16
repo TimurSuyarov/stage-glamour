@@ -42,7 +42,8 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { Label } from "@/components/ui/label";
-import { message, Tooltip, DatePicker } from "antd";
+import { message, Tooltip, DatePicker, Table } from "antd";
+import type { ColumnsType } from "antd/es/table";
 import { ClearOutlined } from "@ant-design/icons";
 import dayjs, { type Dayjs } from "dayjs";
 
@@ -153,6 +154,80 @@ const AdmissionPage = () => {
     selectedAdmission != null &&
     displayItems.length > 0 &&
     displayItems.every(isItemValid);
+
+  const columns: ColumnsType<Admission> = [
+    {
+      title: t("admission.docNumber"),
+      dataIndex: "documentNumber",
+      key: "documentNumber",
+      width: 120,
+    },
+    {
+      title: t("admission.supplier"),
+      dataIndex: "supplierName",
+      key: "supplierName",
+    },
+    {
+      title: t("admission.expectedDate"),
+      dataIndex: "expectedDate",
+      key: "expectedDate",
+      width: 150,
+    },
+    {
+      title: t("admission.positions"),
+      key: "positions",
+      width: 120,
+      align: "center" as const,
+      render: (_: any, record: Admission) => (
+        <span className="inline-flex items-center justify-center min-w-[40px] px-2 py-1 rounded-full bg-muted text-xs font-medium">
+          {record.items.length} {t("admission.positionsShort")}
+        </span>
+      ),
+    },
+    {
+      title: t("common.status"),
+      key: "status",
+      width: 120,
+      align: "center" as const,
+      render: (_: any, record: Admission) => (
+        <StatusBadge status={record.status} />
+      ),
+    },
+    {
+      title: "TSD",
+      dataIndex: "tsdId",
+      key: "tsdId",
+      width: 120,
+      render: (tsdId: string | undefined) => {
+        if (tsdId) {
+          return (
+            <span className="inline-flex items-center gap-1 text-xs text-primary font-medium">
+              <FileText className="w-3 h-3" />
+              {tsdId}
+            </span>
+          );
+        }
+        return <span className="text-muted-foreground">—</span>;
+      },
+    },
+    {
+      title: t("common.actions"),
+      key: "actions",
+      width: 120,
+      align: "center" as const,
+      render: (_: any, record: Admission) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-1.5"
+          onClick={() => handleOpenAdmission(record)}
+        >
+          <Eye className="w-4 h-4" />
+          {t("admission.open")}
+        </Button>
+      ),
+    },
+  ];
 
   // Build from-invoice payload and submit (complete admission)
   const handleCompleteAdmission = async () => {
@@ -356,146 +431,40 @@ const AdmissionPage = () => {
 
 
         {/* Data table */}
-        <div className="border rounded-lg overflow-hidden">
-          <table className="w-full text-sm border-collapse">
-            <thead className="bg-muted/50">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider border-r border-border last:border-r-0">
-                  {t("admission.docNumber")}
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider border-r border-border last:border-r-0">
-                  {t("admission.supplier")}
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider border-r border-border last:border-r-0">
-                  {t("admission.expectedDate")}
-                </th>
-                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider border-r border-border last:border-r-0">
-                  {t("admission.positions")}
-                </th>
-                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider border-r border-border last:border-r-0">
-                  {t("common.status")}
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider border-r border-border last:border-r-0">
-                  TSD
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider border-r border-border last:border-r-0">
-                  {t("common.actions")}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center border-r border-border">
-                    <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      {t("common.loading")}
-                    </div>
-                  </td>
-                </tr>
-              ) : error ? (
-                <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-destructive border-r border-border">
-                    {error instanceof Error ? error.message : String(error)}
-                  </td>
-                </tr>
-              ) : (
-                filteredAdmissions.map((admission) => (
-                  <tr
-                  key={admission.id}
-                  className="border-t border-border hover:bg-muted/30 transition-colors"
-                >
-                  <td className="px-4 py-4 font-medium border-r border-border last:border-r-0">
-                    {admission.documentNumber}
-                  </td>
-                  <td className="px-4 py-4 text-muted-foreground border-r border-border last:border-r-0">
-                    {admission.supplierName}
-                  </td>
-                  <td className="px-4 py-4 text-muted-foreground border-r border-border last:border-r-0">
-                    {admission.expectedDate}
-                  </td>
-                  <td className="px-4 py-4 text-center border-r border-border last:border-r-0">
-                    <span className="inline-flex items-center justify-center min-w-[40px] px-2 py-1 rounded-full bg-muted text-xs font-medium">
-                      {admission.items.length} {t("admission.positionsShort")}
-                    </span>
-                  </td>
-                  <td className="px-4 py-4 text-center border-r border-border last:border-r-0">
-                    <StatusBadge status={admission.status} />
-                  </td>
-                  <td className="px-4 py-4 border-r border-border last:border-r-0">
-                    {admission.tsdId ? (
-                      <span className="inline-flex items-center gap-1 text-xs text-primary font-medium">
-                        <FileText className="w-3 h-3" />
-                        {admission.tsdId}
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-4 text-left border-r border-border last:border-r-0">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="gap-1.5"
-                      onClick={() => handleOpenAdmission(admission)}
-                    >
-                      <Eye className="w-4 h-4" />
-                      {t("admission.open")}
-                    </Button>
-                  </td>
-                </tr>
-                ))
-              )}
-              {!isLoading && !error && filteredAdmissions.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={7}
-                    className="px-4 py-12 text-center text-muted-foreground border-r border-border"
-                  >
-                    {t("admission.noDocuments")}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        {!isLoading && !error && (filteredAdmissions.length > 0 || pageIndex > 0) && (
-          <div className="flex items-center justify-between border-t border-border px-4 py-3 mt-0">
-            <div className="text-sm text-muted-foreground">
-              {t("admission.showingRange", {
-                start: rangeStart,
-                end: rangeEnd,
-              })}
-            </div>
-            <div className="flex items-center gap-1">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => setPageIndex((p) => p - 1)}
-                disabled={!hasPrevPage}
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-              <span className="px-3 text-sm">
-                {t("admission.pageLabel", { num: pageIndex + 1 })}
-              </span>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => setPageIndex((p) => p + 1)}
-                disabled={!hasNextPage}
-              >
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        )}
+        <Table
+          columns={columns}
+          dataSource={filteredAdmissions}
+          rowKey="id"
+          loading={isLoading}
+          locale={{
+            emptyText: error ? (
+              <div className="py-12 text-center text-destructive">
+                {error instanceof Error ? error.message : String(error)}
+              </div>
+            ) : (
+              <div className="py-12 text-center text-muted-foreground">
+                {t("admission.noDocuments")}
+              </div>
+            ),
+          }}
+          pagination={{
+            current: pageIndex + 1,
+            pageSize: pageSize,
+            total: undefined, // We don't know total from API
+            showSizeChanger: false,
+            showTotal: (total, range) =>
+              t("admission.showingRange", {
+                start: range[0],
+                end: range[1],
+              }),
+            onChange: (page) => {
+              setPageIndex(page - 1);
+            },
+            showPrevNextJumpers: false,
+            hideOnSinglePage: false,
+          }}
+          scroll={{ x: "max-content" }}
+        />
       </ModuleCard>
 
       {/* Admission Detail Modal */}

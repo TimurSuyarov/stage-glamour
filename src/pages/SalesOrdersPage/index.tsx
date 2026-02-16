@@ -1,13 +1,17 @@
 import { useState, useMemo } from "react";
-import { Table, Modal, Button as AntButton } from "antd";
+import { Table, Modal, Button as AntButton, Tooltip, DatePicker } from "antd";
 import type { ColumnsType } from "antd/es/table";
+import { ClearOutlined } from "@ant-design/icons";
 import { PageHeader } from "@/components/ui/page-header";
 import { ModuleCard } from "@/components/ui/stat-card";
 import { useTranslation } from "react-i18next";
-import { useSalesOrders, type SalesOrder, type SalesOrderDocumentLine } from "@/entities/SalesOrders/api";
+import { useSalesOrders, type SalesOrder, type SalesOrderDocumentLine, type SalesOrdersFilters } from "@/entities/SalesOrders/api";
 import { ESalesOrderStatus } from "@/enums/salesOrder";
 import { Eye, Loader2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import dayjs from "dayjs";
 
 interface SalesOrdersPageProps {
   status: ESalesOrderStatus;
@@ -17,11 +21,52 @@ interface SalesOrdersPageProps {
 
 const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) => {
   const { t } = useTranslation();
-  const { data: salesOrders = [], isLoading, error } = useSalesOrders(status);
+  
+  // Filter state
+  const [filterDocNum, setFilterDocNum] = useState<string>("");
+  const [filterCardName, setFilterCardName] = useState("");
+  const [filterStartDate, setFilterStartDate] = useState("");
+  const [filterEndDate, setFilterEndDate] = useState("");
+  const [appliedFilters, setAppliedFilters] = useState<SalesOrdersFilters>({});
+  const [pageIndex, setPageIndex] = useState(0);
+  
+  const filters: SalesOrdersFilters = useMemo(() => {
+    const f: SalesOrdersFilters = { skip: pageIndex };
+    if (appliedFilters.DocNum != null) f.DocNum = appliedFilters.DocNum;
+    if (appliedFilters.CardName) f.CardName = appliedFilters.CardName;
+    if (appliedFilters.StartDate) f.StartDate = appliedFilters.StartDate;
+    if (appliedFilters.EndDate) f.EndDate = appliedFilters.EndDate;
+    return f;
+  }, [appliedFilters, pageIndex]);
+  
+  const { data: salesOrders = [], isLoading, error } = useSalesOrders(status, filters);
+  const pageSize = 20;
+  const hasNextPage = salesOrders.length >= pageSize;
+  const hasPrevPage = pageIndex > 0;
+  
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<SalesOrder | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
+  
+  const handleApplyFilters = () => {
+    setPageIndex(0);
+    setAppliedFilters({
+      DocNum: filterDocNum.trim() ? Number(filterDocNum) : undefined,
+      CardName: filterCardName.trim() || undefined,
+      StartDate: filterStartDate || undefined,
+      EndDate: filterEndDate || undefined,
+    });
+  };
+
+  const handleClearFilters = () => {
+    setFilterDocNum("");
+    setFilterCardName("");
+    setFilterStartDate("");
+    setFilterEndDate("");
+    setAppliedFilters({});
+    setPageIndex(0);
+  };
 
   const handleViewItems = (order: SalesOrder) => {
     setSelectedOrder(order);
@@ -194,6 +239,62 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
       />
 
       <ModuleCard>
+        {/* Filters (API query params) */}
+        <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
+          <div className="space-y-2">
+            <Label className="text-xs">{t("sales_orders_filter_doc_num")}</Label>
+            <Input
+              type="number"
+              placeholder={t("sales_orders_filter_doc_num")}
+              value={filterDocNum}
+              onChange={(e) => setFilterDocNum(e.target.value)}
+              className="h-9"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs">{t("sales_orders_filter_card_name")}</Label>
+            <Input
+              placeholder={t("sales_orders_filter_card_name")}
+              value={filterCardName}
+              onChange={(e) => setFilterCardName(e.target.value)}
+              className="h-9"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs">{t("sales_orders_filter_start_date")}</Label>
+            <DatePicker
+              value={filterStartDate ? dayjs(filterStartDate) : null}
+              onChange={(date) => setFilterStartDate(date ? date.format("YYYY-MM-DD") : "")}
+              placeholder={t("sales_orders_select_date")}
+              className="h-9 w-full"
+              format="YYYY-MM-DD"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs">{t("sales_orders_filter_end_date")}</Label>
+            <DatePicker
+              value={filterEndDate ? dayjs(filterEndDate) : null}
+              onChange={(date) => setFilterEndDate(date ? date.format("YYYY-MM-DD") : "")}
+              placeholder={t("sales_orders_select_date")}
+              className="h-9 w-full"
+              format="YYYY-MM-DD"
+            />
+          </div>
+          <Button onClick={handleApplyFilters} className="h-9">
+            {t("common_apply")}
+          </Button>
+          <Tooltip title={t("common_clear_filters")}>
+            <button
+              type="button"
+              onClick={handleClearFilters}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-input bg-accent text-accent-foreground"
+              aria-label={t("common_clear_filters")}
+            >
+              <ClearOutlined className="h-4 w-4" />
+            </button>
+          </Tooltip>
+        </div>
+
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -210,9 +311,20 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
             dataSource={salesOrders}
             rowKey="docEntry"
             pagination={{
-              pageSize: 20,
-              showSizeChanger: true,
-              showTotal: (total) => t("common_total", { total }),
+              current: pageIndex + 1,
+              pageSize: pageSize,
+              total: undefined,
+              showSizeChanger: false,
+              showTotal: (total, range) =>
+                t("sales_orders_showing_range", {
+                  start: range[0],
+                  end: range[1],
+                }),
+              onChange: (page) => {
+                setPageIndex(page - 1);
+              },
+              showPrevNextJumpers: false,
+              hideOnSinglePage: false,
             }}
             scroll={{ x: "max-content" }}
           />

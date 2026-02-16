@@ -16,15 +16,27 @@ export interface BinLocationsResponse {
   items: BinLocationItem[];
 }
 
-const fetchBinLocations = async (): Promise<BinLocationItem[]> => {
-  const { data } = await request.get<BinLocationsResponse>("/bin-locations");
+export interface BinLocationsFilters {
+  BinCode?: string;
+  /** Page index: 0 = first 20 items, 1 = items 21–40, etc. */
+  skip?: number;
+}
+
+const fetchBinLocations = async (filters?: BinLocationsFilters): Promise<BinLocationItem[]> => {
+  const params = new URLSearchParams();
+  
+  if (filters?.BinCode) params.set("BinCode", filters.BinCode);
+  if (filters?.skip != null) params.set("skip", String(filters.skip));
+  
+  const query = params.toString() ? `?${params.toString()}` : "";
+  const { data } = await request.get<BinLocationsResponse>(`/bin-locations${query}`);
   return data?.items ?? [];
 };
 
-export const useBinLocations = () => {
+export const useBinLocations = (filters?: BinLocationsFilters) => {
   return useQuery({
-    queryKey: ["bin-locations"],
-    queryFn: fetchBinLocations,
+    queryKey: ["bin-locations", filters ?? {}],
+    queryFn: () => fetchBinLocations(filters),
     refetchOnWindowFocus: false,
     enabled: true,
   });

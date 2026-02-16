@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Construction } from 'lucide-react';
 import SalesOrdersPage from '@/pages/SalesOrdersPage';
 import { ESalesOrderStatus } from '@/enums/salesOrder';
+import CellsPageComponent from '@/pages/CellsPage';
 
 interface PlaceholderPageProps {
   titleKey: string;
@@ -70,7 +71,7 @@ export function WarehousePage() {
 }
 
 export function CellsPage() {
-  return <PlaceholderPage titleKey="nav.cells" parentKey="nav.masterData" />;
+  return <CellsPageComponent />;
 }
 
 export function InventoryPage() {
