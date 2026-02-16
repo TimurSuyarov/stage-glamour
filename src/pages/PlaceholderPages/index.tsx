@@ -1,6 +1,6 @@
 import { PageHeader } from '@/components/ui/page-header';
 import { ModuleCard } from '@/components/ui/stat-card';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { Construction } from 'lucide-react';
 
 interface PlaceholderPageProps {
@@ -9,7 +9,7 @@ interface PlaceholderPageProps {
 }
 
 export function PlaceholderPage({ titleKey, parentKey }: PlaceholderPageProps) {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
 
   return (
     <div className="p-6 space-y-6">
@@ -23,9 +23,9 @@ export function PlaceholderPage({ titleKey, parentKey }: PlaceholderPageProps) {
           <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
             <Construction className="w-8 h-8 text-muted-foreground" />
           </div>
-          <h3 className="font-semibold text-lg mb-2">Coming Soon</h3>
+          <h3 className="font-semibold text-lg mb-2">{t('placeholder.comingSoon')}</h3>
           <p className="text-muted-foreground max-w-md">
-            This module is under development. The full functionality will be available in the next release.
+            {t('placeholder.underDevelopment')}
           </p>
         </div>
       </ModuleCard>

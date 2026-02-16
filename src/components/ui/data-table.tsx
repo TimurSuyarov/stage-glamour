@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import {
   ChevronLeft,
@@ -74,7 +74,7 @@ export function DataTable<T>({
   pageSize = 10,
   className,
 }: DataTableProps<T>) {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -241,7 +241,11 @@ export function DataTable<T>({
       {totalPages > 1 && (
         <div className="flex items-center justify-between px-4 py-3 border-t border-border">
           <div className="text-sm text-muted-foreground">
-            {startIndex + 1}-{Math.min(endIndex, data.length)} of {data.length}
+            {t('common.rangeOfTotal', {
+              start: startIndex + 1,
+              end: Math.min(endIndex, data.length),
+              total: data.length,
+            })}
           </div>
           <div className="flex items-center gap-1">
             <Button
@@ -263,7 +267,7 @@ export function DataTable<T>({
               <ChevronLeft className="w-4 h-4" />
             </Button>
             <span className="px-3 text-sm">
-              {currentPage} / {totalPages}
+              {t('common.pageOf', { current: currentPage, total: totalPages })}
             </span>
             <Button
               variant="ghost"

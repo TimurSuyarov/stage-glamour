@@ -1,6 +1,7 @@
 import { message } from 'antd';
 import axios, { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { i18n } from 'i18next';
+import i18nInstance from '@/i18n';
 
 const BASE_URL = import.meta.env.VITE_BASE_URL;
 
@@ -40,7 +41,7 @@ request.interceptors.response.use(
 
 		if (window.location.pathname !== '/') {
 			if (status === 401 || status === 403) {
-				message.error('Please login again.');
+				message.error(i18nInstance.t('error.pleaseLoginAgain'));
 				sessionStorage.clear();
 				window.location.pathname = '/';
 			}

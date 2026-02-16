@@ -3,7 +3,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { ModuleCard } from '@/components/ui/stat-card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
 import { mockValidationTasks, mockOrders } from '@/data/mockData';
 import { ValidationTask } from '@/types/wms';
@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 
 export default function ValidationPage() {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const { hasPermission } = useAuth();
   const [selectedTask, setSelectedTask] = useState<ValidationTask | null>(null);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
@@ -281,8 +281,8 @@ export default function ValidationPage() {
       <ConfirmDialog
         open={showRejectDialog}
         onOpenChange={setShowRejectDialog}
-        title="Reject Validation"
-        description="This order will be sent back for re-picking. Add notes for the picker."
+        title={t('dialog.rejectValidationTitle')}
+        description={t('dialog.rejectValidationDescription')}
         variant="destructive"
         confirmLabel={t('validation.reject')}
         onConfirm={handleReject}

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable, Column } from '@/components/ui/data-table';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { mockEmployees } from '@/data/mockData';
 import { Employee } from '@/types/wms';
 import { Button } from '@/components/ui/button';
@@ -23,7 +23,7 @@ import {
 import { cn } from '@/lib/utils';
 
 export default function EmployeesPage() {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
 
   const roleLabels = {
     executor: t('role.executor'),

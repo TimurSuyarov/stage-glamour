@@ -1,7 +1,7 @@
 import { PageHeader } from '@/components/ui/page-header';
 import { StatCard, ModuleCard } from '@/components/ui/stat-card';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
 import { mockOrders, mockValidationTasks, dashboardStats } from '@/data/mockData';
 import { 
@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 
 export default function Dashboard() {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const { user } = useAuth();
 
   const recentOrders = mockOrders.slice(0, 5);
@@ -38,28 +38,28 @@ export default function Dashboard() {
           value={dashboardStats.totalOrders}
           icon={ShoppingCart}
           iconColor="bg-primary/10 text-primary"
-          change={{ value: dashboardStats.ordersChange, label: 'vs yesterday' }}
+          change={{ value: dashboardStats.ordersChange, label: t('dashboard.vsYesterday') }}
         />
         <StatCard
           title={t('order.pendingCollection')}
           value={dashboardStats.pendingCollection}
           icon={PackageSearch}
           iconColor="bg-status-warning-bg text-status-warning"
-          change={{ value: dashboardStats.collectionChange, label: 'vs yesterday' }}
+          change={{ value: dashboardStats.collectionChange, label: t('dashboard.vsYesterday') }}
         />
         <StatCard
           title={t('order.inValidation')}
           value={dashboardStats.inValidation}
           icon={ClipboardCheck}
           iconColor="bg-status-info-bg text-status-info"
-          change={{ value: dashboardStats.validationChange, label: 'vs yesterday' }}
+          change={{ value: dashboardStats.validationChange, label: t('dashboard.vsYesterday') }}
         />
         <StatCard
           title={t('order.shippedToday')}
           value={dashboardStats.shippedToday}
           icon={Truck}
           iconColor="bg-status-success-bg text-status-success"
-          change={{ value: dashboardStats.shippedChange, label: 'vs yesterday' }}
+          change={{ value: dashboardStats.shippedChange, label: t('dashboard.vsYesterday') }}
         />
       </div>
 
@@ -68,11 +68,11 @@ export default function Dashboard() {
         {/* Recent Orders */}
         <ModuleCard
           title={t('order.title')}
-          description="Latest orders from SAP"
+          description={t('dashboard.orderLatestFromSap')}
           className="lg:col-span-2"
           actions={
             <Link to="/orders">
-              <Button variant="ghost" size="sm">View all</Button>
+              <Button variant="ghost" size="sm">{t('dashboard.viewAll')}</Button>
             </Link>
           }
         >
@@ -95,7 +95,7 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-medium">{order.items.length} items</p>
+                  <p className="text-sm font-medium">{t('dashboard.itemsCount', { count: order.items.length })}</p>
                   <p className="text-xs text-muted-foreground">
                     {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
@@ -108,10 +108,10 @@ export default function Dashboard() {
         {/* Validation Queue */}
         <ModuleCard
           title={t('validation.title')}
-          description="Pending validations"
+          description={t('dashboard.validationPending')}
           actions={
             <Link to="/validation">
-              <Button variant="ghost" size="sm">View all</Button>
+              <Button variant="ghost" size="sm">{t('dashboard.viewAll')}</Button>
             </Link>
           }
         >
@@ -120,8 +120,8 @@ export default function Dashboard() {
               <div className="w-12 h-12 rounded-full bg-status-success-bg flex items-center justify-center mb-3">
                 <CheckCircle className="w-6 h-6 text-status-success" />
               </div>
-              <p className="text-sm font-medium text-foreground">All caught up!</p>
-              <p className="text-xs text-muted-foreground">No pending validations</p>
+              <p className="text-sm font-medium text-foreground">{t('dashboard.allCaughtUp')}</p>
+              <p className="text-xs text-muted-foreground">{t('dashboard.noPendingValidations')}</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -148,7 +148,7 @@ export default function Dashboard() {
       </div>
 
       {/* Quick Actions */}
-      <ModuleCard title="Quick Actions">
+      <ModuleCard title={t('dashboard.quickActions')}>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Link to="/orders">
             <Button variant="outline" className="w-full h-auto py-4 flex-col gap-2">

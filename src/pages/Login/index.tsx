@@ -19,7 +19,7 @@ const LoginPage = () => {
       },
       onError: (error: any) => {
         message.error(
-          error?.response?.data?.errors?.description || "Login failed"
+          error?.response?.data?.errors?.description || t("loginFailed")
         );
       },
     });
@@ -28,7 +28,7 @@ const LoginPage = () => {
   return (
     <div className="login-page relative flex-row flex min-h-screen items-center justify-evenly gap-10 max-[1280px]:justify-center bg-[#0070FF]/10 p-5">
       <div className="w-[580px] flex flex-col items-center gap-8 z-10 max-[640px]:w-full max-[580px]:px-5">
-        <p className="font-inter text-[28px] font-medium">Tizimga kirish</p>
+        <p className="font-inter text-[28px] font-medium">{t("loginTitle")}</p>
 
         <Form
           form={form}

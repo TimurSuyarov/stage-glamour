@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable, Column } from '@/components/ui/data-table';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { mockGoods } from '@/data/mockData';
 import { Good } from '@/types/wms';
 import { Button } from '@/components/ui/button';
@@ -29,7 +29,7 @@ import {
 import { cn } from '@/lib/utils';
 
 export default function GoodsPage() {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const [selectedGood, setSelectedGood] = useState<Good | null>(null);
   const [showInactive, setShowInactive] = useState(false);
 

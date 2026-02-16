@@ -14,6 +14,7 @@ export interface Admission {
   status: AdmissionStatus;
   items: AdmissionItem[];
   tsdId?: string;
+  container?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -22,9 +23,15 @@ export interface AdmissionItem {
   id: string;
   sku: string;
   name: string;
-  plannedQty: number;
+  quantity: number;
   actualQty: number;
+  unitPrice?: number;
+  lineTotal?: number;
+  lineNum?: number;
+  warehouseCode?: string | null;
   expiryDate?: string;
+  manufacturingDate?: string;
+  addmisionDate?: string;
   cellLocation?: string;
   barcode: string;
   status: 'pending' | 'received' | 'mismatch';

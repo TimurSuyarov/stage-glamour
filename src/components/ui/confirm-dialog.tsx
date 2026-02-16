@@ -8,7 +8,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle, CheckCircle, XCircle, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -62,7 +62,7 @@ export function ConfirmDialog({
   variant = 'default',
   loading = false,
 }: ConfirmDialogProps) {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const config = variantConfig[variant];
   const Icon = config.icon;
 

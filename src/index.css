@@ -1,10 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Glamour Cosmetics WMS Admin Panel - Enterprise Design System */
+/* Date input placeholder styling */
+input[type="date"]:not(:focus):invalid::-webkit-datetime-edit {
+  color: transparent;
+}
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+input[type="date"]:not(:focus):invalid::-webkit-datetime-edit-fields-wrapper {
+  color: transparent;
+}
+
+input[type="date"]:not(:focus):invalid::-webkit-calendar-picker-indicator {
+  opacity: 0.5;
+}
+
+/* Glamour Cosmetics WMS Admin Panel - Enterprise Design System */
 
 @layer base {
   :root {

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable, Column } from '@/components/ui/data-table';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { mockAuditLogs } from '@/data/mockData';
 import { AuditLogEntry } from '@/types/wms';
 import { Badge } from '@/components/ui/badge';
@@ -16,7 +16,7 @@ import {
 import { cn } from '@/lib/utils';
 
 export default function HistoryPage() {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const [moduleFilter, setModuleFilter] = useState<string>('all');
   const [actionFilter, setActionFilter] = useState<string>('all');
 
@@ -121,29 +121,29 @@ export default function HistoryPage() {
           <div className="flex items-center gap-4">
             <Select value={moduleFilter} onValueChange={setModuleFilter}>
               <SelectTrigger className="w-40">
-                <SelectValue placeholder="Module" />
+                <SelectValue placeholder={t('history.module')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Modules</SelectItem>
-                <SelectItem value="order">Order</SelectItem>
-                <SelectItem value="return">Return</SelectItem>
-                <SelectItem value="transfer">Transfer</SelectItem>
-                <SelectItem value="admission">Admission</SelectItem>
-                <SelectItem value="inventory">Inventory</SelectItem>
+                <SelectItem value="all">{t('history.allModules')}</SelectItem>
+                <SelectItem value="order">{t('history.filterOrder')}</SelectItem>
+                <SelectItem value="return">{t('history.filterReturn')}</SelectItem>
+                <SelectItem value="transfer">{t('history.filterTransfer')}</SelectItem>
+                <SelectItem value="admission">{t('history.filterAdmission')}</SelectItem>
+                <SelectItem value="inventory">{t('history.filterInventory')}</SelectItem>
               </SelectContent>
             </Select>
 
             <Select value={actionFilter} onValueChange={setActionFilter}>
               <SelectTrigger className="w-40">
-                <SelectValue placeholder="Action Type" />
+                <SelectValue placeholder={t('history.actionType')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Actions</SelectItem>
-                <SelectItem value="create">Create</SelectItem>
-                <SelectItem value="edit">Edit</SelectItem>
-                <SelectItem value="status_change">Status Change</SelectItem>
-                <SelectItem value="approve">Approve</SelectItem>
-                <SelectItem value="reject">Reject</SelectItem>
+                <SelectItem value="all">{t('history.allActions')}</SelectItem>
+                <SelectItem value="create">{t('history.actionCreate')}</SelectItem>
+                <SelectItem value="edit">{t('history.actionEdit')}</SelectItem>
+                <SelectItem value="status_change">{t('history.actionStatusChange')}</SelectItem>
+                <SelectItem value="approve">{t('history.actionApprove')}</SelectItem>
+                <SelectItem value="reject">{t('history.actionReject')}</SelectItem>
               </SelectContent>
             </Select>
           </div>

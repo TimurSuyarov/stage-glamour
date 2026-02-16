@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 import { LucideIcon, Check, AlertCircle, Clock, X, Package, FileCheck, Truck, FileText } from 'lucide-react';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { OrderStatus } from '@/types/wms';
 
 interface StatusBadgeProps {
@@ -30,7 +30,7 @@ const statusConfig: Record<string, { variant: StatusBadgeProps['variant']; icon:
 };
 
 export function StatusBadge({ status, variant, size = 'md', showIcon = true, className }: StatusBadgeProps) {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
 
   const config = statusConfig[status] || { variant: 'neutral', icon: AlertCircle, labelKey: status };
   const finalVariant = variant || config.variant;
@@ -66,7 +66,7 @@ interface SAPSyncIndicatorProps {
 }
 
 export function SAPSyncIndicator({ synced, lastSyncAt, className }: SAPSyncIndicatorProps) {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
 
   return (
     <div className={cn('flex items-center gap-2 text-xs', className)}>
@@ -75,7 +75,7 @@ export function SAPSyncIndicator({ synced, lastSyncAt, className }: SAPSyncIndic
         synced ? 'bg-status-success' : 'bg-status-warning animate-pulse-subtle'
       )} />
       <span className="text-muted-foreground">
-        {synced ? t('common.syncedWithSAP') : 'Syncing...'}
+        {synced ? t('common.syncedWithSAP') : t('common.syncing')}
       </span>
       {lastSyncAt && (
         <span className="text-muted-foreground/70">

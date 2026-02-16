@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { useAuth, menuVisibility } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -79,7 +79,7 @@ interface AppSidebarProps {
 }
 
 export function AppSidebar({ collapsed, onCollapsedChange }: AppSidebarProps) {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const { user } = useAuth();
   const location = useLocation();
 
@@ -117,8 +117,8 @@ export function AppSidebar({ collapsed, onCollapsedChange }: AppSidebarProps) {
               <Sparkles className="w-5 h-5 text-accent-foreground" />
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-semibold text-sidebar-foreground">Glamour</span>
-              <span className="text-[10px] text-sidebar-muted uppercase tracking-wider">WMS Admin</span>
+              <span className="text-sm font-semibold text-sidebar-foreground">{t('app.name')}</span>
+              <span className="text-[10px] text-sidebar-muted uppercase tracking-wider">{t('app.subtitle')}</span>
             </div>
           </div>
         )}
@@ -174,7 +174,7 @@ export function AppSidebar({ collapsed, onCollapsedChange }: AppSidebarProps) {
       {!collapsed && (
         <div className="p-4 border-t border-sidebar-border">
           <div className="text-[10px] text-sidebar-muted text-center">
-            v2.1.0 · © 2025 Glamour Cosmetics
+            {t('app.footer')}
           </div>
         </div>
       )}

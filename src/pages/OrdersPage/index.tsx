@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable, Column } from '@/components/ui/data-table';
 import { StatusBadge, SAPSyncIndicator } from '@/components/ui/status-badge';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
 import { mockOrders } from '@/data/mockData';
 import { Order } from '@/types/wms';
@@ -34,7 +34,7 @@ import {
 } from '@/components/ui/select';
 
 export default function OrdersPage() {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const { hasPermission } = useAuth();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -137,7 +137,7 @@ export default function OrdersPage() {
       <div className="flex items-center gap-4">
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filter by status" />
+            <SelectValue placeholder={t('order.filterByStatus')} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{t('common.all')}</SelectItem>

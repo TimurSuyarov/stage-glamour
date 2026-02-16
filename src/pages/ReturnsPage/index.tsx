@@ -3,7 +3,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { DataTable, Column } from '@/components/ui/data-table';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
 import { mockOrders } from '@/data/mockData';
 import { Order, ReturnCondition } from '@/types/wms';
@@ -43,7 +43,7 @@ interface ReturnDraft {
 }
 
 export default function ReturnsPage() {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const { hasPermission } = useAuth();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string>('');
@@ -189,12 +189,12 @@ export default function ReturnsPage() {
               <Label>{t('return.originalOrder')}</Label>
               <Select value={selectedOrderId} onValueChange={handleOrderSelect}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select shipped order..." />
+                  <SelectValue placeholder={t('return.selectOrderPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
                   {shippedOrders.length === 0 ? (
                     <div className="p-4 text-center text-muted-foreground">
-                      No shipped orders available
+                      {t('return.noShippedOrders')}
                     </div>
                   ) : (
                     shippedOrders.map((order) => (
@@ -210,7 +210,7 @@ export default function ReturnsPage() {
             {/* Items */}
             {returnDraft && (
               <div className="space-y-3">
-                <Label>Return Items</Label>
+                <Label>{t('return.returnItems')}</Label>
                 <div className="border rounded-lg divide-y">
                   {returnDraft.items.map((item) => (
                     <div key={item.sku} className="p-4 space-y-3">
@@ -220,7 +220,7 @@ export default function ReturnsPage() {
                           <p className="text-xs text-muted-foreground font-mono">{item.sku}</p>
                         </div>
                         <span className="text-xs text-muted-foreground">
-                          Max: {item.maxQuantity}
+                          {t('return.maxLabel')}: {item.maxQuantity}
                         </span>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
@@ -248,7 +248,7 @@ export default function ReturnsPage() {
                             disabled={item.quantity === 0}
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Select..." />
+                              <SelectValue placeholder={t('common.select')} />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="good">{t('return.conditionGood')}</SelectItem>
@@ -265,7 +265,7 @@ export default function ReturnsPage() {
                 {!isValidReturn && returnDraft.items.some(i => i.quantity > 0) && (
                   <p className="text-sm text-status-warning flex items-center gap-2">
                     <AlertCircle className="w-4 h-4" />
-                    Select condition for all items with quantity &gt; 0
+                    {t('return.selectConditionAllItems')}
                   </p>
                 )}
               </div>
@@ -289,8 +289,8 @@ export default function ReturnsPage() {
       <ConfirmDialog
         open={showConfirmDialog}
         onOpenChange={setShowConfirmDialog}
-        title="Confirm Return Creation"
-        description="This will create a return document. Items will be added back to stock after approval."
+        title={t('dialog.confirmReturnTitle')}
+        description={t('dialog.confirmReturnDescription')}
         variant="warning"
         onConfirm={handleCreateReturn}
       />

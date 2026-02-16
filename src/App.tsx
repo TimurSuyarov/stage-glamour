@@ -4,7 +4,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Provider } from "react-redux";
 import store from "./redux/store/store";
@@ -40,8 +39,7 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <Provider store={store}>
-      <LanguageProvider>
-        <AuthProvider>
+      <AuthProvider>
           <TooltipProvider>
             <Toaster />
             <Sonner />
@@ -88,7 +86,6 @@ const App = () => (
             </BrowserRouter>
           </TooltipProvider>
         </AuthProvider>
-      </LanguageProvider>
     </Provider>
   </QueryClientProvider>
 );
