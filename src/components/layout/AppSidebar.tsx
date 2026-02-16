@@ -50,13 +50,12 @@ const navigationGroups: NavGroup[] = [
     id: 'operational',
     items: [
       { id: 'admission', labelKey: 'nav.admission', icon: PackageOpen, href: '/admission' },
-      { id: 'order', labelKey: 'nav.order', icon: ShoppingCart, href: '/orders' },
+      { id: 'relocation', labelKey: 'nav.relocation', icon: ArrowRightLeft, href: '/relocation' },
       { id: 'collect', labelKey: 'nav.collect', icon: PackageSearch, href: '/collect' },
       { id: 'validation', labelKey: 'nav.validation', icon: ClipboardCheck, href: '/validation' },
-      { id: 'return', labelKey: 'nav.return', icon: RotateCcw, href: '/returns' },
       { id: 'moveToRegion', labelKey: 'nav.moveToRegion', icon: Truck, href: '/move-to-region' },
-      { id: 'relocation', labelKey: 'nav.relocation', icon: ArrowRightLeft, href: '/relocation' },
       { id: 'history', labelKey: 'nav.history', icon: History, href: '/history' },
+      { id: 'return', labelKey: 'nav.return', icon: RotateCcw, href: '/returns' },
     ],
   },
   {

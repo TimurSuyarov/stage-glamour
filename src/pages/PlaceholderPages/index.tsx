@@ -2,6 +2,8 @@ import { PageHeader } from '@/components/ui/page-header';
 import { ModuleCard } from '@/components/ui/stat-card';
 import { useTranslation } from 'react-i18next';
 import { Construction } from 'lucide-react';
+import SalesOrdersPage from '@/pages/SalesOrdersPage';
+import { ESalesOrderStatus } from '@/enums/salesOrder';
 
 interface PlaceholderPageProps {
   titleKey: string;
@@ -34,15 +36,33 @@ export function PlaceholderPage({ titleKey, parentKey }: PlaceholderPageProps) {
 }
 
 export function CollectPage() {
-  return <PlaceholderPage titleKey="nav.collect" parentKey="nav.operational" />;
+  return (
+    <SalesOrdersPage
+      status={ESalesOrderStatus.Processing}
+      titleKey="nav.collect"
+      parentKey="nav.operational"
+    />
+  );
 }
 
 export function MoveToRegionPage() {
-  return <PlaceholderPage titleKey="nav.moveToRegion" parentKey="nav.operational" />;
+  return (
+    <SalesOrdersPage
+      status={ESalesOrderStatus.Picked}
+      titleKey="nav.moveToRegion"
+      parentKey="nav.operational"
+    />
+  );
 }
 
 export function RelocationPage() {
-  return <PlaceholderPage titleKey="nav.relocation" parentKey="nav.operational" />;
+  return (
+    <SalesOrdersPage
+      status={ESalesOrderStatus.Pending}
+      titleKey="nav.relocation"
+      parentKey="nav.operational"
+    />
+  );
 }
 
 export function WarehousePage() {

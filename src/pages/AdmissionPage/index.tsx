@@ -560,12 +560,6 @@ const AdmissionPage = () => {
                         <th className="px-3 py-2 text-center text-xs font-medium w-20 border-r border-border">
                           {t("admission.actual")}
                         </th>
-                        <th className="px-3 py-2 text-center text-xs font-medium w-24 border-r border-border">
-                          {t("admission.unitPrice")}
-                        </th>
-                        <th className="px-3 py-2 text-center text-xs font-medium w-24 border-r border-border">
-                          {t("admission.lineTotal")}
-                        </th>
                         <th className="px-3 py-2 text-center text-xs font-medium w-32 border-r border-border">
                           {t("admission.expiryDate")}
                         </th>
@@ -601,12 +595,7 @@ const AdmissionPage = () => {
                           )}
                         >
                           <td className="px-3 py-3 border-r border-border">
-                            <div>
                               <p className="font-medium">{item.name || "—"}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {item.sku || "—"}
-                              </p>
-                            </div>
                           </td>
                           <td className="px-3 py-3 text-center font-medium border-r border-border">
                             {item.quantity}
@@ -625,12 +614,6 @@ const AdmissionPage = () => {
                                 qtyInvalid && "border-destructive ring-1 ring-destructive"
                               )}
                             />
-                          </td>
-                          <td className="px-3 py-3 text-center border-r border-border">
-                            {item.unitPrice != null ? item.unitPrice : "—"}
-                          </td>
-                          <td className="px-3 py-3 text-center border-r border-border">
-                            {item.lineTotal != null ? item.lineTotal : "—"}
                           </td>
                           <td className="px-3 py-3 border-r border-border">
                             <DatePicker
