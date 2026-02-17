@@ -7,7 +7,7 @@ import { ModuleCard } from "@/components/ui/stat-card";
 import { useTranslation } from "react-i18next";
 import { useSalesOrders, type SalesOrder, type SalesOrderDocumentLine, type SalesOrdersFilters } from "@/entities/SalesOrders/api";
 import { ESalesOrderStatus } from "@/enums/salesOrder";
-import { Eye, Loader2, Plus } from "lucide-react";
+import { Eye, Loader2, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,19 +30,22 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
   const [appliedFilters, setAppliedFilters] = useState<SalesOrdersFilters>({});
   const [pageIndex, setPageIndex] = useState(0);
   
+  const pageSize = 20;
+  
   const filters: SalesOrdersFilters = useMemo(() => {
-    const f: SalesOrdersFilters = { skip: pageIndex };
+    const f: SalesOrdersFilters = { skip: pageIndex * pageSize };
     if (appliedFilters.DocNum != null) f.DocNum = appliedFilters.DocNum;
     if (appliedFilters.CardName) f.CardName = appliedFilters.CardName;
     if (appliedFilters.StartDate) f.StartDate = appliedFilters.StartDate;
     if (appliedFilters.EndDate) f.EndDate = appliedFilters.EndDate;
     return f;
-  }, [appliedFilters, pageIndex]);
+  }, [appliedFilters, pageIndex, pageSize]);
   
   const { data: salesOrders = [], isLoading, error } = useSalesOrders(status, filters);
-  const pageSize = 20;
   const hasNextPage = salesOrders.length >= pageSize;
   const hasPrevPage = pageIndex > 0;
+  const rangeStart = pageIndex * pageSize + 1;
+  const rangeEnd = (pageIndex + 1) * pageSize;
   
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<SalesOrder | null>(null);
@@ -305,29 +308,55 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
             {error instanceof Error ? error.message : String(error)}
           </div>
         ) : (
-          <Table
-            rowSelection={rowSelection}
-            columns={columns}
-            dataSource={salesOrders}
-            rowKey="docEntry"
-            pagination={{
-              current: pageIndex + 1,
-              pageSize: pageSize,
-              total: undefined,
-              showSizeChanger: false,
-              showTotal: (total, range) =>
-                t("sales_orders_showing_range", {
-                  start: range[0],
-                  end: range[1],
-                }),
-              onChange: (page) => {
-                setPageIndex(page - 1);
-              },
-              showPrevNextJumpers: false,
-              hideOnSinglePage: false,
-            }}
-            scroll={{ x: "max-content" }}
-          />
+          <>
+            <Table
+              rowSelection={rowSelection}
+              columns={columns}
+              dataSource={salesOrders}
+              rowKey="docEntry"
+              pagination={false}
+              scroll={{ x: "max-content" }}
+            />
+
+            {/* Custom Pagination */}
+            {(salesOrders.length > 0 || pageIndex > 0) && (
+              <div className="flex items-center justify-between border-t border-border px-4 py-3 mt-0">
+                <div className="text-sm text-muted-foreground">
+                  {t("sales_orders_showing_range", {
+                    start: rangeStart,
+                    end: rangeEnd,
+                  })}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setPageIndex((p) => p - 1)}
+                    disabled={!hasPrevPage}
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <span className="px-3 text-sm font-medium">
+                    {hasPrevPage && "< "}
+                    {rangeStart} - {rangeEnd}
+                    {hasNextPage && " >"}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setPageIndex((p) => p + 1)}
+                    disabled={!hasNextPage}
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {selectedRowKeys.length > 0 && (

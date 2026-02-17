@@ -61,7 +61,7 @@ const navigationGroups: NavGroup[] = [
   {
     id: 'masterData',
     items: [
-      { id: 'warehouse', labelKey: 'nav.warehouse', icon: Warehouse, href: '/warehouse' },
+      // { id: 'warehouse', labelKey: 'nav.warehouse', icon: Warehouse, href: '/warehouse' },
       { id: 'employees', labelKey: 'nav.employees', icon: Users, href: '/employees' },
       { id: 'cells', labelKey: 'nav.cells', icon: Grid3X3, href: '/cells' },
       { id: 'goods', labelKey: 'nav.goods', icon: Box, href: '/goods' },

@@ -72,23 +72,24 @@ const AdmissionPage = () => {
   const [appliedFilters, setAppliedFilters] = useState<PurchaseInvoicesFilters>({});
   const [pageIndex, setPageIndex] = useState(0);
 
+  const pageSize = 20;
+  
   const filters: PurchaseInvoicesFilters = useMemo(() => {
-    const f: PurchaseInvoicesFilters = { skip: pageIndex };
+    const f: PurchaseInvoicesFilters = { skip: pageIndex * pageSize };
     if (appliedFilters.DocNum != null) f.DocNum = appliedFilters.DocNum;
     if (appliedFilters.CardName) f.CardName = appliedFilters.CardName;
     if (appliedFilters.StartDate) f.StartDate = appliedFilters.StartDate;
     if (appliedFilters.EndDate) f.EndDate = appliedFilters.EndDate;
     return f;
-  }, [appliedFilters, pageIndex]);
+  }, [appliedFilters, pageIndex, pageSize]);
 
   const { data: admissionsFromApi = [], isLoading, error } = usePurchaseInvoices(filters);
   const { data: binLocations = [] } = useBinLocations();
   const fromInvoiceMutation = useFromInvoiceMutation();
-  const pageSize = 20;
   const hasNextPage = admissionsFromApi.length >= pageSize;
   const hasPrevPage = pageIndex > 0;
   const rangeStart = pageIndex * pageSize + 1;
-  const rangeEnd = pageIndex * pageSize + admissionsFromApi.length;
+  const rangeEnd = (pageIndex + 1) * pageSize;
 
   const handleApplyFilters = () => {
     setPageIndex(0);

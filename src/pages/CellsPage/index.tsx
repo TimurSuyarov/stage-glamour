@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { ModuleCard } from "@/components/ui/stat-card";
 import { useTranslation } from "react-i18next";
 import { useBinLocations, type BinLocationItem, type BinLocationsFilters } from "@/entities/BinLocations/api";
-import { Loader2 } from "lucide-react";
+import { Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,16 +19,19 @@ const CellsPage = () => {
   const [appliedFilters, setAppliedFilters] = useState<BinLocationsFilters>({});
   const [pageIndex, setPageIndex] = useState(0);
   
+  const pageSize = 20;
+  
   const filters: BinLocationsFilters = useMemo(() => {
-    const f: BinLocationsFilters = { skip: pageIndex };
+    const f: BinLocationsFilters = { skip: pageIndex * pageSize };
     if (appliedFilters.BinCode) f.BinCode = appliedFilters.BinCode;
     return f;
-  }, [appliedFilters, pageIndex]);
+  }, [appliedFilters, pageIndex, pageSize]);
   
   const { data: binLocations = [], isLoading, error } = useBinLocations(filters);
-  const pageSize = 20;
   const hasNextPage = binLocations.length >= pageSize;
   const hasPrevPage = pageIndex > 0;
+  const rangeStart = pageIndex * pageSize + 1;
+  const rangeEnd = (pageIndex + 1) * pageSize;
   
   const handleApplyFilters = () => {
     setPageIndex(0);
@@ -144,28 +147,54 @@ const CellsPage = () => {
             {error instanceof Error ? error.message : String(error)}
           </div>
         ) : (
-          <Table
-            columns={columns}
-            dataSource={binLocations}
-            rowKey="id"
-            pagination={{
-              current: pageIndex + 1,
-              pageSize: pageSize,
-              total: undefined,
-              showSizeChanger: false,
-              showTotal: (total, range) =>
-                t("cells_showing_range", {
-                  start: range[0],
-                  end: range[1],
-                }),
-              onChange: (page) => {
-                setPageIndex(page - 1);
-              },
-              showPrevNextJumpers: false,
-              hideOnSinglePage: false,
-            }}
-            scroll={{ x: "max-content" }}
-          />
+          <>
+            <Table
+              columns={columns}
+              dataSource={binLocations}
+              rowKey="id"
+              pagination={false}
+              scroll={{ x: "max-content" }}
+            />
+
+            {/* Custom Pagination */}
+            {(binLocations.length > 0 || pageIndex > 0) && (
+              <div className="flex items-center justify-between border-t border-border px-4 py-3 mt-0">
+                <div className="text-sm text-muted-foreground">
+                  {t("cells_showing_range", {
+                    start: rangeStart,
+                    end: rangeEnd,
+                  })}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setPageIndex((p) => p - 1)}
+                    disabled={!hasPrevPage}
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <span className="px-3 text-sm font-medium">
+                    {hasPrevPage && "< "}
+                    {rangeStart} - {rangeEnd}
+                    {hasNextPage && " >"}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setPageIndex((p) => p + 1)}
+                    disabled={!hasNextPage}
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </ModuleCard>
     </div>

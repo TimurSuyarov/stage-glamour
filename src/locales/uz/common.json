@@ -228,5 +228,11 @@
   "cells_minimum_qty": "Minimal miqdor",
   "cells_maximum_qty": "Maksimal miqdor",
   "cells_filter_bin_code": "Yacheyka kodi",
-  "cells_showing_range": "{{start}}–{{end}}"
+  "cells_showing_range": "{{start}}–{{end}}",
+  "employees_employee_id": "Xodim ID",
+  "employees_name": "Ism",
+  "employees_job_title": "Lavozim",
+  "employees_filter_first_name": "Ism",
+  "employees_filter_last_name": "Familiya",
+  "employees_showing_range": "{{start}}–{{end}}"
 }
