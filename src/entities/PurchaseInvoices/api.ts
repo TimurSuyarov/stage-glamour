@@ -59,7 +59,7 @@ function mapDocumentLineToAdmissionItem(
   docEntry: number
 ): AdmissionItem {
   return {
-    id: `${docEntry}-${line.lineNum}`,
+    id: `${docEntry}-${line.lineNum}`, 
     itemCode: line.itemCode ?? "",
     name: line.itemDescription ?? "",
     quantity: line.quantity,
