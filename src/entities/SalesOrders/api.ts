@@ -75,3 +75,8 @@ export const useSalesOrders = (status: ESalesOrderStatus, filters?: SalesOrdersF
     enabled: true,
   });
 };
+
+/** POST selected sales orders (by docEntry) to move to next step; backend processes and notifies via SignalR */
+export const postSalesOrdersMoveNext = async (docEntries: number[]): Promise<void> => {
+  await request.post("/sales-orders", docEntries);
+};

@@ -1,12 +1,15 @@
 import { useState, useMemo } from "react";
-import { Table, Modal, Button as AntButton, Tooltip, DatePicker } from "antd";
+import { Table, Modal, Button as AntButton, Tooltip, DatePicker, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { ClearOutlined } from "@ant-design/icons";
 import { PageHeader } from "@/components/ui/page-header";
 import { ModuleCard } from "@/components/ui/stat-card";
 import { useTranslation } from "react-i18next";
-import { useSalesOrders, type SalesOrder, type SalesOrderDocumentLine, type SalesOrdersFilters } from "@/entities/SalesOrders/api";
+import { useQueryClient } from "react-query";
+import { useSalesOrders, postSalesOrdersMoveNext, type SalesOrder, type SalesOrderDocumentLine, type SalesOrdersFilters } from "@/entities/SalesOrders/api";
 import { ESalesOrderStatus } from "@/enums/salesOrder";
+import { useCollectNotification } from "@/contexts/CollectNotificationContext";
+import { createSalesOrdersHubConnection, type ProcessingCompletedPayload } from "@/lib/salesOrdersHub";
 import { Eye, Loader2, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +24,9 @@ interface SalesOrdersPageProps {
 
 const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) => {
   const { t } = useTranslation();
-  
+  const queryClient = useQueryClient();
+  const { setCollectNotification } = useCollectNotification();
+
   // Filter state
   const [filterDocNum, setFilterDocNum] = useState<string>("");
   const [filterCardName, setFilterCardName] = useState("");
@@ -29,9 +34,9 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
   const [filterEndDate, setFilterEndDate] = useState("");
   const [appliedFilters, setAppliedFilters] = useState<SalesOrdersFilters>({});
   const [pageIndex, setPageIndex] = useState(0);
-  
+
   const pageSize = 20;
-  
+
   const filters: SalesOrdersFilters = useMemo(() => {
     const f: SalesOrdersFilters = { skip: pageIndex * pageSize };
     if (appliedFilters.DocNum != null) f.DocNum = appliedFilters.DocNum;
@@ -40,17 +45,18 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
     if (appliedFilters.EndDate) f.EndDate = appliedFilters.EndDate;
     return f;
   }, [appliedFilters, pageIndex, pageSize]);
-  
+
   const { data: salesOrders = [], isLoading, error } = useSalesOrders(status, filters);
   const hasNextPage = salesOrders.length >= pageSize;
   const hasPrevPage = pageIndex > 0;
   const rangeStart = pageIndex * pageSize + 1;
   const rangeEnd = (pageIndex + 1) * pageSize;
-  
+
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<SalesOrder | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
+  const [moveNextLoading, setMoveNextLoading] = useState(false);
   
   const handleApplyFilters = () => {
     setPageIndex(0);
@@ -89,11 +95,41 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
     setIsCreateModalVisible(false);
   };
 
-  const handleFillAbgdZone = () => {
-    // TODO: Implement API call to fill ABGD zone
-    console.log("Filling ABGD zone with selected orders:", selectedOrders);
-    handleCloseCreateModal();
-    setSelectedRowKeys([]);
+  const handleMoveToNextStep = async () => {
+    const docEntries = selectedOrders.map((o) => o.docEntry);
+    if (docEntries.length === 0) {
+      message.warning(t("sales_orders_selected_orders_count", { count: 0 }));
+      return;
+    }
+    setMoveNextLoading(true);
+    try {
+      await postSalesOrdersMoveNext(docEntries);
+    } catch {
+      message.error(t("error.somethingWentWrong") ?? "Request failed");
+      setMoveNextLoading(false);
+      return;
+    }
+    const connection = createSalesOrdersHubConnection();
+    const onDone = () => {
+      connection.stop().catch(() => {});
+      setMoveNextLoading(false);
+    };
+    connection.on("ProcessingCompleted", (payload: ProcessingCompletedPayload) => {
+      setCollectNotification(true);
+      handleCloseCreateModal();
+      setSelectedRowKeys([]);
+      queryClient.invalidateQueries({ queryKey: ["sales-orders"] });
+      message.success(payload?.message ?? t("sales_orders_move_to_next_step"));
+      onDone();
+    });
+    connection.onclose(onDone);
+    connection.on("reconnecting", () => {});
+    try {
+      await connection.start();
+    } catch {
+      message.error(t("error.somethingWentWrong") ?? "Could not connect to live updates");
+      onDone();
+    }
   };
 
   const selectedOrders = useMemo(() => {
@@ -236,7 +272,7 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
             className="gap-2"
           >
             <Plus className="w-4 h-4" />
-            {t("common_create")}
+            {t("sales_orders_move_to_next_step")}
           </Button>
         }
       />
@@ -418,9 +454,10 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
           <AntButton
             key="fill"
             type="primary"
-            onClick={handleFillAbgdZone}
+            loading={moveNextLoading}
+            onClick={handleMoveToNextStep}
           >
-            {t("sales_orders_fill_abgd_zone")}
+            {t("sales_orders_move_to_next_step")}
           </AntButton>,
         ]}
         width={1000}

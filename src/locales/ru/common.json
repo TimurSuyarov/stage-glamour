@@ -206,6 +206,7 @@
   "sales_orders_selected_count": "Выбрано: {{count}}",
   "sales_orders_create_relocation": "Создать перемещение",
   "sales_orders_fill_abgd_zone": "Заполнить ABGD зону",
+  "sales_orders_move_to_next_step": "Перейти к следующему шагу",
   "sales_orders_selected_orders_count": "Выбранные заказы: {{count}}",
   "sales_orders_summary": "Сводка",
   "sales_orders_total_orders": "Всего заказов",

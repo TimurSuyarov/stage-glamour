@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { CollectNotificationProvider } from "@/contexts/CollectNotificationContext";
 import { Provider } from "react-redux";
 import store from "./redux/store/store";
 
@@ -40,6 +41,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <Provider store={store}>
       <AuthProvider>
+        <CollectNotificationProvider>
           <TooltipProvider>
             <Toaster />
             <Sonner />
@@ -85,6 +87,7 @@ const App = () => (
               </Routes>
             </BrowserRouter>
           </TooltipProvider>
+        </CollectNotificationProvider>
         </AuthProvider>
     </Provider>
   </QueryClientProvider>

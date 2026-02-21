@@ -21,7 +21,8 @@ export interface Admission {
 
 export interface AdmissionItem {
   id: string;
-  sku: string;
+  sku?: string;
+  itemCode?: string;
   name: string;
   quantity: number;
   actualQty: number;

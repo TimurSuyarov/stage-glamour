@@ -2,6 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import { useAuth, menuVisibility } from '@/contexts/AuthContext';
+import { useCollectNotification } from '@/contexts/CollectNotificationContext';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -81,6 +82,7 @@ export function AppSidebar({ collapsed, onCollapsedChange }: AppSidebarProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const location = useLocation();
+  const { hasCollectNotification } = useCollectNotification();
 
   const visibleMenus = user ? menuVisibility[user.role] : [];
 
@@ -159,7 +161,15 @@ export function AppSidebar({ collapsed, onCollapsedChange }: AppSidebarProps) {
                     )}
                     title={collapsed ? t(item.labelKey) : undefined}
                   >
-                    <item.icon className="w-5 h-5 flex-shrink-0" />
+                    <span className="relative inline-flex">
+                      <item.icon className="w-5 h-5 flex-shrink-0" />
+                      {item.id === 'collect' && hasCollectNotification && (
+                        <span
+                          className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-destructive"
+                          aria-hidden
+                        />
+                      )}
+                    </span>
                     {!collapsed && <span>{t(item.labelKey)}</span>}
                   </NavLink>
                 ))}

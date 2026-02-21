@@ -206,6 +206,7 @@
   "sales_orders_selected_count": "Tanlangan: {{count}}",
   "sales_orders_create_relocation": "Relokatsiya yaratish",
   "sales_orders_fill_abgd_zone": "ABGD zonani to'ldirish",
+  "sales_orders_move_to_next_step": "Keyingi bosqichga o'tkazish",
   "sales_orders_selected_orders_count": "Tanlangan buyurtmalar: {{count}}",
   "sales_orders_summary": "Xulosa",
   "sales_orders_total_orders": "Jami buyurtmalar",

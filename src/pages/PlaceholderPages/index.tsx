@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { PageHeader } from '@/components/ui/page-header';
 import { ModuleCard } from '@/components/ui/stat-card';
 import { useTranslation } from 'react-i18next';
@@ -5,6 +6,7 @@ import { Construction } from 'lucide-react';
 import SalesOrdersPage from '@/pages/SalesOrdersPage';
 import { ESalesOrderStatus } from '@/enums/salesOrder';
 import CellsPageComponent from '@/pages/CellsPage';
+import { useCollectNotification } from '@/contexts/CollectNotificationContext';
 
 interface PlaceholderPageProps {
   titleKey: string;
@@ -37,6 +39,11 @@ export function PlaceholderPage({ titleKey, parentKey }: PlaceholderPageProps) {
 }
 
 export function CollectPage() {
+  const { clearCollectNotification } = useCollectNotification();
+  useEffect(() => {
+    clearCollectNotification();
+  }, [clearCollectNotification]);
+
   return (
     <SalesOrdersPage
       status={ESalesOrderStatus.Processing}

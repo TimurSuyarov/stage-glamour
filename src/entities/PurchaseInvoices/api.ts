@@ -60,7 +60,7 @@ function mapDocumentLineToAdmissionItem(
 ): AdmissionItem {
   return {
     id: `${docEntry}-${line.lineNum}`,
-    sku: line.itemCode ?? "",
+    itemCode: line.itemCode ?? "",
     name: line.itemDescription ?? "",
     quantity: line.quantity,
     actualQty: line.quantity,
@@ -125,15 +125,12 @@ export interface FromInvoiceBatchNumber {
   manufacturingDate: string;
   addmisionDate: string;
   quantity: number;
-  baseLineNumber: number;
-  itemCode: string;
 }
 
 export interface FromInvoiceBinAllocation {
   binAbsEntry: number;
   quantity: number;
   serialAndBatchNumbersBaseLine: number;
-  baseLineNumber: number;
 }
 
 export interface FromInvoiceDocumentLine {
@@ -142,7 +139,6 @@ export interface FromInvoiceDocumentLine {
   warehouseCode: string;
   baseType: number;
   baseEntry: number;
-  baseLine: number;
   batchNumbers: FromInvoiceBatchNumber[];
   documentLinesBinAllocations: FromInvoiceBinAllocation[];
 }
@@ -154,7 +150,11 @@ export interface FromInvoiceRequestBody {
 }
 
 const postFromInvoice = async (body: FromInvoiceRequestBody): Promise<unknown> => {
-  const { data } = await request.post("/from-invoice", body);
+  // Backend serves from-invoice at root (no /api prefix); other endpoints use /api
+  const baseUrl = import.meta.env.VITE_BASE_URL ?? "";
+  const rootUrl = baseUrl.replace(/\/api\/?$/, "") || baseUrl;
+  const url = `${rootUrl}/from-invoice`;
+  const { data } = await request.post(url, body);
   return data;
 };
 

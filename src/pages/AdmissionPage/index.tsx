@@ -239,6 +239,8 @@ const AdmissionPage = () => {
       return;
     }
     const items = displayItems;
+    console.log(items, "items");
+    
     const docEntry = Number(selectedAdmission.id);
     const now = new Date().toISOString();
     const body: FromInvoiceRequestBody = {
@@ -247,20 +249,17 @@ const AdmissionPage = () => {
       documentLines: items.map((item) => {
         const quantity = item.actualQty;
         return {
-          itemCode: item.sku,
+          itemCode: item.itemCode,
           quantity,
           warehouseCode: item.warehouseCode ?? "",
           baseType: 18,
           baseEntry: docEntry,
-          baseLine: item.lineNum ?? 0,
           batchNumbers: [
             {
               expiryDate: item.expiryDate ? new Date(item.expiryDate).toISOString() : now,
               manufacturingDate: item.manufacturingDate ? new Date(item.manufacturingDate).toISOString() : now,
               addmisionDate: item.addmisionDate ? new Date(item.addmisionDate).toISOString() : now,
               quantity,
-              baseLineNumber: item.lineNum ?? 0,
-              itemCode: item.sku,
             },
           ],
           documentLinesBinAllocations: item.cellLocation
@@ -268,8 +267,7 @@ const AdmissionPage = () => {
                 {
                   binAbsEntry: Number(item.cellLocation),
                   quantity,
-                  serialAndBatchNumbersBaseLine: item.lineNum ?? 0,
-                  baseLineNumber: item.lineNum ?? 0,
+                  serialAndBatchNumbersBaseLine: 0,
                 },
               ]
             : [],
