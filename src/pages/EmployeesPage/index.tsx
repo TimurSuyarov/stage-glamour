@@ -10,6 +10,13 @@ import { Loader2, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function EmployeesPage() {
   const { t } = useTranslation();
@@ -19,11 +26,15 @@ export default function EmployeesPage() {
   const [filterLastName, setFilterLastName] = useState("");
   const [appliedFilters, setAppliedFilters] = useState<EmployeesFilters>({});
   const [pageIndex, setPageIndex] = useState(0);
-  
-  const pageSize = 20;
-  
+  const [pageSize, setPageSize] = useState(20);
+
+  const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
+
   const filters: EmployeesFilters = useMemo(() => {
-    const f: EmployeesFilters = { skip: pageIndex * pageSize };
+    const f: EmployeesFilters = {
+      PageSize: pageSize,
+      Skip: pageIndex * pageSize,
+    };
     if (appliedFilters.FirstName) f.FirstName = appliedFilters.FirstName;
     if (appliedFilters.LastName) f.LastName = appliedFilters.LastName;
     return f;
@@ -33,7 +44,7 @@ export default function EmployeesPage() {
   const hasNextPage = employees.length >= pageSize;
   const hasPrevPage = pageIndex > 0;
   const rangeStart = pageIndex * pageSize + 1;
-  const rangeEnd = (pageIndex + 1) * pageSize;
+  const rangeEnd = pageIndex * pageSize + employees.length;
 
   const handleApplyFilters = () => {
     setPageIndex(0);
@@ -47,6 +58,12 @@ export default function EmployeesPage() {
     setFilterFirstName("");
     setFilterLastName("");
     setAppliedFilters({});
+    setPageIndex(0);
+  };
+
+  const handlePageSizeChange = (value: string) => {
+    const size = Number(value);
+    setPageSize(size);
     setPageIndex(0);
   };
 
@@ -116,6 +133,24 @@ export default function EmployeesPage() {
               onChange={(e) => setFilterLastName(e.target.value)}
               className="h-9"
             />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs">{t("employees_page_size")}</Label>
+            <Select
+              value={String(pageSize)}
+              onValueChange={handlePageSizeChange}
+            >
+              <SelectTrigger className="h-9 w-24">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PAGE_SIZE_OPTIONS.map((size) => (
+                  <SelectItem key={size} value={String(size)}>
+                    {size}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <Button onClick={handleApplyFilters} className="h-9">
             {t("common_apply")}

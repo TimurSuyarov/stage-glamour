@@ -20,12 +20,18 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import {
   Search,
@@ -40,6 +46,8 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  Check,
 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { message, Tooltip, DatePicker, Table } from "antd";
@@ -63,6 +71,7 @@ const AdmissionPage = () => {
   );
   const [editedItems, setEditedItems] = useState<AdmissionItem[]>([]);
   const [showValidationErrors, setShowValidationErrors] = useState(false);
+  const [openCellPopoverId, setOpenCellPopoverId] = useState<string | null>(null);
 
   // API filter form state
   const [filterDocNum, setFilterDocNum] = useState<string>("");
@@ -623,28 +632,77 @@ const AdmissionPage = () => {
                             />
                           </td>
                           <td className="px-3 py-3 border-r border-border">
-                            <Select
-                              value={item.cellLocation || ""}
-                              onValueChange={(value) =>
-                                handleCellChange(item.id, value)
+                            <Popover
+                              open={openCellPopoverId === item.id}
+                              onOpenChange={(open) =>
+                                setOpenCellPopoverId(open ? item.id : null)
                               }
                             >
-                              <SelectTrigger
-                                className={cn(
-                                  "w-full h-8 text-xs",
-                                  cellInvalid && "border-destructive ring-1 ring-destructive"
-                                )}
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  role="combobox"
+                                  className={cn(
+                                    "w-full h-8 text-xs justify-between font-normal",
+                                    cellInvalid &&
+                                      "border-destructive ring-1 ring-destructive"
+                                  )}
+                                >
+                                  <span className="truncate">
+                                    {item.cellLocation
+                                      ? binLocations.find(
+                                          (b) =>
+                                            String(b.absEntry) ===
+                                            item.cellLocation
+                                        )?.binCode ?? item.cellLocation
+                                      : t("common.select")}
+                                  </span>
+                                  <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                className="w-[var(--radix-popover-trigger-width)] p-0"
+                                align="start"
                               >
-                                <SelectValue placeholder={t("common.select")} />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {binLocations.map((bin) => (
-                                  <SelectItem key={bin.id} value={String(bin.absEntry)}>
-                                    {bin.binCode}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                                <Command>
+                                  <CommandInput
+                                    placeholder={t("common.search")}
+                                    className="h-9"
+                                  />
+                                  <CommandList className="max-h-[280px]">
+                                    <CommandEmpty>
+                                      {t("common.noResults")}
+                                    </CommandEmpty>
+                                    <CommandGroup>
+                                      {binLocations.map((bin) => (
+                                        <CommandItem
+                                          key={bin.id}
+                                          value={bin.binCode}
+                                          onSelect={() => {
+                                            handleCellChange(
+                                              item.id,
+                                              String(bin.absEntry)
+                                            );
+                                            setOpenCellPopoverId(null);
+                                          }}
+                                        >
+                                          <Check
+                                            className={cn(
+                                              "mr-2 h-4 w-4 shrink-0",
+                                              item.cellLocation ===
+                                                String(bin.absEntry)
+                                                ? "opacity-100"
+                                                : "opacity-0"
+                                            )}
+                                          />
+                                          {bin.binCode}
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  </CommandList>
+                                </Command>
+                              </PopoverContent>
+                            </Popover>
                           </td>
                           <td className="px-3 py-3 text-center border-r border-border last:border-r-0">
                             {itemStatusIcon[item.status]}

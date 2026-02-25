@@ -18,17 +18,18 @@ export interface EmployeesResponse {
 export interface EmployeesFilters {
   FirstName?: string;
   LastName?: string;
-  /** Page index: 0 = first 20 items, 1 = items 21–40, etc. */
-  skip?: number;
+  /** Page size (e.g. 20). Sent as PageSize. */
+  PageSize?: number;
+  /** Skip (offset). Sent as Skip; typically pageIndex * PageSize. */
+  Skip?: number;
 }
 
 const fetchEmployees = async (filters?: EmployeesFilters): Promise<EmployeeItem[]> => {
   const params = new URLSearchParams();
-  
   if (filters?.FirstName) params.set("FirstName", filters.FirstName);
   if (filters?.LastName) params.set("LastName", filters.LastName);
-  if (filters?.skip != null) params.set("skip", String(filters.skip));
-  
+  if (filters?.PageSize != null) params.set("PageSize", String(filters.PageSize));
+  if (filters?.Skip != null) params.set("Skip", String(filters.Skip));
   const query = params.toString() ? `?${params.toString()}` : "";
   const { data } = await request.get<EmployeesResponse>(`/employees${query}`);
   return data?.items ?? [];

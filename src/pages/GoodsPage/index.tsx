@@ -1,18 +1,21 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable, Column } from '@/components/ui/data-table';
-import { StatusBadge } from '@/components/ui/status-badge';
 import { useTranslation } from 'react-i18next';
-import { mockGoods } from '@/data/mockData';
+import { useItems, type ItemsFilters } from '@/entities/Items/api';
 import { Good } from '@/types/wms';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Plus, 
+import {
+  Plus,
   Eye,
   MoreHorizontal,
   Edit,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -28,14 +31,49 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 
+const PAGE_SIZE = 20;
+
 export default function GoodsPage() {
   const { t } = useTranslation();
   const [selectedGood, setSelectedGood] = useState<Good | null>(null);
-  const [showInactive, setShowInactive] = useState(false);
+  const [filterItemCode, setFilterItemCode] = useState('');
+  const [filterItemName, setFilterItemName] = useState('');
+  const [filterItemsGroupCode, setFilterItemsGroupCode] = useState('');
+  const [appliedFilters, setAppliedFilters] = useState<ItemsFilters>({});
+  const [pageIndex, setPageIndex] = useState(0);
 
-  const filteredGoods = showInactive 
-    ? mockGoods 
-    : mockGoods.filter(g => g.isActive);
+  const filters: ItemsFilters = useMemo(
+    () => ({
+      ...appliedFilters,
+      PageSize: PAGE_SIZE,
+      Skip: pageIndex * PAGE_SIZE,
+    }),
+    [appliedFilters, pageIndex]
+  );
+
+  const { data, isLoading } = useItems(filters);
+  const goods = data?.items ?? [];
+  const total = data?.total;
+  const hasNextPage = total != null ? (pageIndex + 1) * PAGE_SIZE < total : goods.length >= PAGE_SIZE;
+  const hasPrevPage = pageIndex > 0;
+  const totalPages = total != null ? Math.ceil(total / PAGE_SIZE) : null;
+
+  const handleApplyFilters = () => {
+    setPageIndex(0);
+    setAppliedFilters({
+      ItemCode: filterItemCode.trim() || undefined,
+      ItemName: filterItemName.trim() || undefined,
+      ItemsGroupCode: filterItemsGroupCode.trim() ? Number(filterItemsGroupCode) || filterItemsGroupCode : undefined,
+    });
+  };
+
+  const handleClearFilters = () => {
+    setFilterItemCode('');
+    setFilterItemName('');
+    setFilterItemsGroupCode('');
+    setAppliedFilters({});
+    setPageIndex(0);
+  };
 
   const columns: Column<Good>[] = [
     {
@@ -136,27 +174,92 @@ export default function GoodsPage() {
       />
 
       {/* Filters */}
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
-          <Switch
-            id="show-inactive"
-            checked={showInactive}
-            onCheckedChange={setShowInactive}
+      <div className="flex flex-wrap items-end gap-4">
+        <div className="flex flex-col gap-1.5">
+          <Label className="text-xs">{t('common.itemCode') || 'Item code'}</Label>
+          <Input
+            placeholder={t('common.search')}
+            value={filterItemCode}
+            onChange={(e) => setFilterItemCode(e.target.value)}
+            className="h-9 w-40"
           />
-          <label htmlFor="show-inactive" className="text-sm text-muted-foreground">
-            Show inactive items
-          </label>
         </div>
+        <div className="flex flex-col gap-1.5">
+          <Label className="text-xs">{t('common.itemName') || 'Item name'}</Label>
+          <Input
+            placeholder={t('common.search')}
+            value={filterItemName}
+            onChange={(e) => setFilterItemName(e.target.value)}
+            className="h-9 w-48"
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label className="text-xs">{t('common.itemsGroupCode') || 'Group code'}</Label>
+          <Input
+            placeholder="—"
+            value={filterItemsGroupCode}
+            onChange={(e) => setFilterItemsGroupCode(e.target.value)}
+            className="h-9 w-32"
+          />
+        </div>
+        <Button variant="outline" size="sm" className="h-9" onClick={handleApplyFilters}>
+          {t('common.apply')}
+        </Button>
+        <Button variant="ghost" size="sm" className="h-9" onClick={handleClearFilters}>
+          {t('common.clearFilters')}
+        </Button>
       </div>
 
       <DataTable
         columns={columns}
-        data={filteredGoods}
+        data={goods}
+        loading={isLoading}
         showSearch
         showFilters
         showExport
+        pageSize={PAGE_SIZE}
         onRowClick={(good) => setSelectedGood(good)}
       />
+
+      {/* Server-side pagination */}
+      {(hasPrevPage || hasNextPage) && (
+        <div className="flex items-center justify-between px-4 py-2 border rounded-md bg-card">
+          <p className="text-sm text-muted-foreground">
+            {total != null
+              ? t('common.rangeOfTotal', {
+                  start: pageIndex * PAGE_SIZE + 1,
+                  end: Math.min((pageIndex + 1) * PAGE_SIZE, total),
+                  total,
+                })
+              : `${pageIndex * PAGE_SIZE + 1}–${pageIndex * PAGE_SIZE + goods.length}`}
+          </p>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8"
+              onClick={() => setPageIndex((p) => p - 1)}
+              disabled={!hasPrevPage || isLoading}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <span className="px-2 text-sm text-muted-foreground">
+              {totalPages != null
+                ? t('common.pageOf', { current: pageIndex + 1, total: totalPages })
+                : pageIndex + 1}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8"
+              onClick={() => setPageIndex((p) => p + 1)}
+              disabled={!hasNextPage || isLoading}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Good Detail Dialog */}
       <Dialog open={!!selectedGood} onOpenChange={() => setSelectedGood(null)}>

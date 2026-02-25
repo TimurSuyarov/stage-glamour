@@ -6,6 +6,7 @@ import { Construction } from 'lucide-react';
 import SalesOrdersPage from '@/pages/SalesOrdersPage';
 import { ESalesOrderStatus } from '@/enums/salesOrder';
 import CellsPageComponent from '@/pages/CellsPage';
+import CollectPageComponent from '@/pages/CollectPage';
 import { useCollectNotification } from '@/contexts/CollectNotificationContext';
 
 interface PlaceholderPageProps {
@@ -44,13 +45,7 @@ export function CollectPage() {
     clearCollectNotification();
   }, [clearCollectNotification]);
 
-  return (
-    <SalesOrdersPage
-      status={ESalesOrderStatus.Processing}
-      titleKey="nav.collect"
-      parentKey="nav.operational"
-    />
-  );
+  return <CollectPageComponent />;
 }
 
 export function MoveToRegionPage() {
