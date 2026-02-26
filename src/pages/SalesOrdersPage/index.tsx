@@ -160,9 +160,6 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
       dataIndex: "docDate",
       key: "docDate",
       width: 150,
-      render: (date: string) => {
-        return date ? new Date(date).toLocaleDateString() : "-";
-      },
     },
     {
       title: t("sales_orders_doc_total"),

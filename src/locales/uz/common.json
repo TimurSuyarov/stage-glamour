@@ -8,6 +8,7 @@
   "nav.return": "Qaytarish",
   "nav.moveToRegion": "Viloyatga ko'chirish",
   "nav.relocation": "ABGD zona to'ldirish",
+  "nav.requiredStockTransfer": "Kerakli tovar ko'chirish",
   "nav.history": "Tarix",
   "nav.masterData": "Asosiy ma'lumotlar",
   "nav.warehouse": "Ombor",
@@ -42,6 +43,10 @@
   "common.noData": "Ma'lumot topilmadi",
   "common.error": "Xatolik yuz berdi",
   "common.success": "Muvaffaqiyatli",
+  "common.see": "Ko'rish",
+  "common.name": "Nomi",
+  "common.quantity": "Miqdor",
+  "common.createdAt": "Yaratilgan sana",
   "common.all": "Hammasi",
   "common.syncedWithSAP": "SAP bilan sinxronlangan",
   "common.lastUpdated": "Oxirgi yangilanish",
@@ -255,5 +260,13 @@
   "picklist_line_requested_qty": "So'ralgan",
   "picklist_line_allocated_qty": "Ajratilgan",
   "picklist_line_picked_qty": "Yig'ilgan",
-  "picklist_line_status": "Holat"
+  "picklist_line_status": "Holat",
+  "requiredTransfers.requiredQty": "Kerakli miqdor",
+  "requiredTransfers.assignedUser": "Tayinlangan xodim",
+  "requiredTransfers.assign": "Tayinlash",
+  "requiredTransfers.productName": "Mahsulot",
+  "requiredTransfers.sourceBin": "Manba yacheyka",
+  "requiredTransfers.targetBin": "Maqsad yacheyka",
+  "requiredTransfers.transfer": "Ko'chirish",
+  "requiredTransfers.transferred": "Ko'chirildi"
 }

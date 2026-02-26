@@ -10,6 +10,7 @@ import {
   PackageOpen,
   ShoppingCart,
   PackageSearch,
+  PackageCheck,
   ClipboardCheck,
   RotateCcw,
   Truck,
@@ -52,6 +53,7 @@ const navigationGroups: NavGroup[] = [
     items: [
       { id: 'admission', labelKey: 'nav.admission', icon: PackageOpen, href: '/admission' },
       { id: 'relocation', labelKey: 'nav.relocation', icon: ArrowRightLeft, href: '/relocation' },
+      { id: 'requiredStockTransfer', labelKey: 'nav.requiredStockTransfer', icon: PackageCheck, href: '/required-transfers' },
       { id: 'collect', labelKey: 'nav.collect', icon: PackageSearch, href: '/collect' },
       { id: 'validation', labelKey: 'nav.validation', icon: ClipboardCheck, href: '/validation' },
       { id: 'moveToRegion', labelKey: 'nav.moveToRegion', icon: Truck, href: '/move-to-region' },

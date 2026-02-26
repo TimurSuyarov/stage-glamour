@@ -8,6 +8,7 @@
   "nav.return": "Возврат",
   "nav.moveToRegion": "Перемещение в регион",
   "nav.relocation": "Заполнение ABGD зоны",
+  "nav.requiredStockTransfer": "Требуемое перемещение товара",
   "nav.history": "История",
   "nav.masterData": "Справочники",
   "nav.warehouse": "Склад",
@@ -42,6 +43,10 @@
   "common.noData": "Данные не найдены",
   "common.error": "Произошла ошибка",
   "common.success": "Успешно",
+  "common.see": "Смотреть",
+  "common.name": "Название",
+  "common.quantity": "Количество",
+  "common.createdAt": "Дата создания",
   "common.all": "Все",
   "common.syncedWithSAP": "Синхронизировано с SAP",
   "common.lastUpdated": "Последнее обновление",
@@ -255,5 +260,13 @@
   "picklist_line_requested_qty": "Заказано",
   "picklist_line_allocated_qty": "Выделено",
   "picklist_line_picked_qty": "Собрано",
-  "picklist_line_status": "Статус"
+  "picklist_line_status": "Статус",
+  "requiredTransfers.requiredQty": "Требуемое кол-во",
+  "requiredTransfers.assignedUser": "Назначенный сотрудник",
+  "requiredTransfers.assign": "Назначить",
+  "requiredTransfers.productName": "Товар",
+  "requiredTransfers.sourceBin": "Ячейка источник",
+  "requiredTransfers.targetBin": "Ячейка назначения",
+  "requiredTransfers.transfer": "Переместить",
+  "requiredTransfers.transferred": "Перемещено"
 }

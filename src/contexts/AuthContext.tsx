@@ -73,17 +73,17 @@ const permissions: Record<UserRole, Record<string, string[]>> = {
 // Menu visibility based on role
 export const menuVisibility: Record<UserRole, string[]> = {
   executor: [
-    'dashboard', 'admission', 'order', 'collect', 'validation', 
+    'dashboard', 'admission', 'order', 'requiredStockTransfer', 'collect', 'validation', 
     'moveToRegion', 'relocation', 'return', 'history', 'warehouse', 
     'employees', 'cells', 'goods', 'inventory', 'reports', 'bonuses'
   ],
   validator: [
-    'dashboard', 'admission', 'order', 'collect', 'validation', 
+    'dashboard', 'admission', 'order', 'requiredStockTransfer', 'collect', 'validation', 
     'return', 'history', 'warehouse', 'employees', 'cells', 'goods', 
     'inventory', 'reports'
   ],
   returner: [
-    'dashboard', 'order', 'return', 'history', 'warehouse', 
+    'dashboard', 'order', 'requiredStockTransfer', 'return', 'history', 'warehouse', 
     'employees', 'cells', 'goods', 'inventory', 'reports'
   ],
 };

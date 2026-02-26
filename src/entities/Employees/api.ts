@@ -2,12 +2,14 @@ import request from "@/services";
 import { useQuery } from "react-query";
 
 export interface EmployeeItem {
-  EmployeeID: number;
+  /** Backend may send employeeId (camelCase) or EmployeeID (PascalCase) */
+  employeeId?: number;
+  EmployeeID?: number;
   firstName: string;
   lastName: string;
   mobilePhone: string | null;
   active: string;
-  salesPersonCode: number | null;
+  salesPersonCode?: number | null;
   jobTitle: string | null;
 }
 

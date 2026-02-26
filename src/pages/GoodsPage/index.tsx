@@ -111,30 +111,6 @@ export default function GoodsPage() {
       ),
     },
     {
-      key: 'status',
-      header: t('common.status'),
-      cell: (good) => (
-        <Badge variant={good.isActive ? "default" : "secondary"}>
-          {good.isActive ? 'Active' : 'Inactive'}
-        </Badge>
-      ),
-    },
-    {
-      key: 'sync',
-      header: 'SAP',
-      cell: (good) => (
-        <div className="flex items-center gap-2">
-          <div className={cn(
-            "w-2 h-2 rounded-full",
-            good.syncInfo.synced ? "bg-status-success" : "bg-status-warning"
-          )} />
-          <span className="text-xs text-muted-foreground font-mono">
-            {good.syncInfo.sapId}
-          </span>
-        </div>
-      ),
-    },
-    {
       key: 'actions',
       header: t('common.actions'),
       cell: (good) => (

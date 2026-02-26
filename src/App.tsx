@@ -19,6 +19,7 @@ import HistoryPage from "./pages/HistoryPage";
 import GoodsPage from "./pages/GoodsPage";
 import EmployeesPage from "./pages/EmployeesPage";
 import AdmissionPage from "./pages/AdmissionPage";
+import RequiredTransfersPage from "./pages/RequiredTransfersPage";
 import {
   CollectPage,
   MoveToRegionPage,
@@ -71,6 +72,7 @@ const App = () => (
                       element={<MoveToRegionPage />}
                     />
                     <Route path="/relocation" element={<RelocationPage />} />
+                    <Route path="/required-transfers" element={<RequiredTransfersPage />} />
                     <Route path="/history" element={<HistoryPage />} />
                     <Route path="/warehouse" element={<WarehousePage />} />
                     <Route path="/employees" element={<EmployeesPage />} />
