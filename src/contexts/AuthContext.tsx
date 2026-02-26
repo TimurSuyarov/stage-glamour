@@ -74,12 +74,12 @@ const permissions: Record<UserRole, Record<string, string[]>> = {
 export const menuVisibility: Record<UserRole, string[]> = {
   executor: [
     'dashboard', 'admission', 'order', 'collect', 'validation', 
-    'moveToRegion', 'relocation', 'history', 'warehouse', 
+    'moveToRegion', 'relocation', 'return', 'history', 'warehouse', 
     'employees', 'cells', 'goods', 'inventory', 'reports', 'bonuses'
   ],
   validator: [
     'dashboard', 'admission', 'order', 'collect', 'validation', 
-    'history', 'warehouse', 'employees', 'cells', 'goods', 
+    'return', 'history', 'warehouse', 'employees', 'cells', 'goods', 
     'inventory', 'reports'
   ],
   returner: [

@@ -55,8 +55,8 @@ const navigationGroups: NavGroup[] = [
       { id: 'collect', labelKey: 'nav.collect', icon: PackageSearch, href: '/collect' },
       { id: 'validation', labelKey: 'nav.validation', icon: ClipboardCheck, href: '/validation' },
       { id: 'moveToRegion', labelKey: 'nav.moveToRegion', icon: Truck, href: '/move-to-region' },
-      { id: 'history', labelKey: 'nav.history', icon: History, href: '/history' },
       { id: 'return', labelKey: 'nav.return', icon: RotateCcw, href: '/returns' },
+      { id: 'history', labelKey: 'nav.history', icon: History, href: '/history' },
     ],
   },
   {
@@ -67,7 +67,7 @@ const navigationGroups: NavGroup[] = [
       { id: 'cells', labelKey: 'nav.cells', icon: Grid3X3, href: '/cells' },
       { id: 'goods', labelKey: 'nav.goods', icon: Box, href: '/goods' },
       { id: 'inventory', labelKey: 'nav.inventory', icon: ClipboardList, href: '/inventory' },
-      { id: 'reports', labelKey: 'nav.reports', icon: BarChart3, href: '/reports' },
+      // { id: 'reports', labelKey: 'nav.reports', icon: BarChart3, href: '/reports' },
       { id: 'bonuses', labelKey: 'nav.bonuses', icon: Gift, href: '/bonuses' },
     ],
   },
