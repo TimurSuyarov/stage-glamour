@@ -1,0 +1,96 @@
+import request from "@/services";
+import { useQuery } from "react-query";
+
+export interface InventoryTransferRequestLine {
+  lineNum: number;
+  itemCode: string;
+  itemDescription: string;
+  quantity: number;
+  quantityPerPackage: number | null;
+  fromWarehouseCode: string;
+  fromWarehouseName: string;
+  warehouseCode: string;
+  warehouseName: string;
+  uoMCode: string;
+  uoMName: string;
+}
+
+export interface InventoryTransferRequestItem {
+  docEntry: number;
+  docNum: number;
+  assignedEmployeeId: number | null;
+  docDate: string;
+  docDueDate: string;
+  documentStatus: string;
+  comments: string | null;
+  fromWarehouse: string;
+  fromWarehouseName: string;
+  toWarehouse: string;
+  toWarehouseName: string;
+  stockTransferLines: InventoryTransferRequestLine[];
+}
+
+export interface InventoryTransferRequestsResponse {
+  items: InventoryTransferRequestItem[];
+}
+
+export interface InventoryTransferRequestsFilters {
+  DocEntry?: number;
+  DocEntries?: number[];
+  DocNum?: number;
+  /** Always 2 for move-to-region page, but kept configurable */
+  Status?: number;
+  StartDate?: string;
+  EndDate?: string;
+  FromWarehouseCode?: string;
+  ToWarehouseCode?: string;
+  CardName?: string;
+  PageSize?: number;
+  Skip?: number;
+}
+
+const fetchInventoryTransferRequests = async (
+  filters?: InventoryTransferRequestsFilters
+): Promise<InventoryTransferRequestItem[]> => {
+  const params = new URLSearchParams();
+
+  // Status is always 2 for this page unless explicitly overridden
+  params.set("Status", String(filters?.Status ?? 2));
+
+  if (filters?.DocEntry != null) params.set("DocEntry", String(filters.DocEntry));
+  if (filters?.DocNum != null) params.set("DocNum", String(filters.DocNum));
+  if (filters?.CardName) params.set("CardName", filters.CardName);
+  if (filters?.StartDate) params.set("StartDate", filters.StartDate);
+  if (filters?.EndDate) params.set("EndDate", filters.EndDate);
+  if (filters?.FromWarehouseCode) {
+    params.set("FromWarehouseCode", filters.FromWarehouseCode);
+  }
+  if (filters?.ToWarehouseCode) {
+    params.set("ToWarehouseCode", filters.ToWarehouseCode);
+  }
+  if (filters?.DocEntries && filters.DocEntries.length > 0) {
+    params.set(
+      "DocEntries",
+      filters.DocEntries.map((n) => String(n)).join(",")
+    );
+  }
+  if (filters?.PageSize != null) params.set("PageSize", String(filters.PageSize));
+  if (filters?.Skip != null) params.set("Skip", String(filters.Skip));
+
+  const { data } = await request.get<InventoryTransferRequestsResponse>(
+    `/inventory-transfer-requests?${params.toString()}`
+  );
+
+  return data?.items ?? [];
+};
+
+export const useInventoryTransferRequests = (
+  filters?: InventoryTransferRequestsFilters
+) => {
+  return useQuery({
+    queryKey: ["inventory-transfer-requests", filters ?? {}],
+    queryFn: () => fetchInventoryTransferRequests(filters),
+    refetchOnWindowFocus: false,
+  });
+};
+

@@ -9,11 +9,12 @@ import {
   usePicklistByDocEntry,
   useAssignPicklist,
   useValidationScan,
+  useValidationFinalize,
   type PicklistItem,
   type PicklistLine,
   type PicklistsFilters,
 } from "@/entities/Picklists/api";
-import { EPickListStatus } from "@/enums/picklist";
+import { EPickListStatus, EPickListLineStatus } from "@/enums/picklist";
 import { Button } from "@/components/ui/button";
 import { Eye, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { message } from "antd";
@@ -40,6 +41,7 @@ export default function PicklistsPage({
 
   const assignPicklist = useAssignPicklist();
   const validationScan = useValidationScan();
+  const finalizeValidation = useValidationFinalize();
   const isValidationMode = mode === "validation";
 
   const filters: PicklistsFilters = useMemo(
@@ -48,6 +50,13 @@ export default function PicklistsPage({
   );
   const { data: picklists = [], isLoading, error } = usePicklists(filters);
   const { data: picklistDetail, isLoading: detailLoading } = usePicklistByDocEntry(selectedDocEntry);
+
+  const allLinesValidated =
+    !!picklistDetail &&
+    (picklistDetail.lines ?? []).length > 0 &&
+    (picklistDetail.lines ?? []).every(
+      (line) => line.status === EPickListLineStatus.Validated
+    );
 
   const hasNextPage = picklists.length >= PAGE_SIZE;
   const hasPrevPage = pageIndex > 0;
@@ -67,7 +76,16 @@ export default function PicklistsPage({
     { title: t("picklist_sales_order_doc_entry"), dataIndex: "salesOrderDocEntry", key: "salesOrderDocEntry", width: 140 },
     { title: t("picklist_card_name"), dataIndex: "cardName", key: "cardName", width: 200 },
     { title: t("picklist_warehouse_code"), dataIndex: "warehouseCode", key: "warehouseCode", width: 120 },
-    { title: t("picklist_status"), dataIndex: "status", key: "status", width: 100 },
+    {
+      title: t("picklist_status"),
+      dataIndex: "status",
+      key: "status",
+      width: 120,
+      render: (status: number) => {
+        const key = EPickListStatus[status];
+        return key ? t(`picklistStatus.${key.toLowerCase()}`) : status;
+      },
+    },
     { title: t("picklist_lines_total"), dataIndex: "linesTotalCount", key: "linesTotalCount", width: 100 },
     { title: t("picklist_lines_picked"), dataIndex: "linesPickedCount", key: "linesPickedCount", width: 100 },
     {
@@ -88,7 +106,7 @@ export default function PicklistsPage({
           variant="outline"
           size="sm"
           className="gap-1"
-          onClick={() => handleViewDetail(record.salesOrderDocEntry)}
+          onClick={() => handleViewDetail(record.id)}
         >
           <Eye className="w-4 h-4" />
           {t("common_view")}
@@ -104,7 +122,16 @@ export default function PicklistsPage({
     { title: t("picklist_line_requested_qty"), dataIndex: "requestedQty", key: "requestedQty", width: 100 },
     { title: t("picklist_line_allocated_qty"), dataIndex: "allocatedQty", key: "allocatedQty", width: 100 },
     { title: t("picklist_line_picked_qty"), dataIndex: "pickedQty", key: "pickedQty", width: 100 },
-    { title: t("picklist_line_status"), dataIndex: "status", key: "status", width: 80 },
+    {
+      title: t("picklist_line_status"),
+      dataIndex: "status",
+      key: "status",
+      width: 120,
+      render: (status: number) => {
+        const key = EPickListLineStatus[status];
+        return key ? t(`picklistLineStatus.${key.toLowerCase()}`) : String(status);
+      },
+    },
   ];
 
   const validationColumn: ColumnsType<PicklistLine> = [
@@ -115,7 +142,7 @@ export default function PicklistsPage({
       width: 120,
       fixed: "right",
       render: (_: unknown, line: PicklistLine) => {
-        const isValidated = line.status === EPickListStatus.Validated;
+        const isValidated = line.status === EPickListLineStatus.Validated;
         if (isValidated) {
           return (
             <span className="text-xs font-medium text-status-success">
@@ -123,6 +150,8 @@ export default function PicklistsPage({
             </span>
           );
         }
+        const noAssignee = !picklistDetail?.assigneeName;
+        const disabled = validationScan.isLoading || noAssignee;
         return (
           <Button
             type="button"
@@ -133,7 +162,7 @@ export default function PicklistsPage({
               if (!picklistDetail) return;
               validationScan.mutate(
                 {
-                  docEntry: picklistDetail.salesOrderDocEntry,
+                  docEntry: picklistDetail.id,
                   lineId: line.id,
                 },
                 {
@@ -146,7 +175,7 @@ export default function PicklistsPage({
                 }
               );
             }}
-            disabled={validationScan.isLoading}
+            disabled={disabled}
           >
             {validationScan.isLoading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -229,11 +258,35 @@ export default function PicklistsPage({
         title={t("picklist_detail_title", { docEntry: selectedDocEntry ?? "" })}
         open={selectedDocEntry != null}
         onCancel={handleCloseModal}
+        style={{ width: "calc(100vw - 40px)", maxWidth: 1200 }}
         footer={[
+          isValidationMode &&
+            picklistDetail &&
+            allLinesValidated && (
+              <AntButton
+                key="finalize"
+                type="primary"
+                loading={finalizeValidation.isLoading}
+                onClick={() => {
+                  if (!picklistDetail) return;
+                  finalizeValidation.mutate(picklistDetail.id, {
+                    onSuccess: () => {
+                      message.success(t("common.success"));
+                      handleCloseModal();
+                    },
+                    onError: () => {
+                      message.error(t("error.somethingWentWrong"));
+                    },
+                  });
+                }}
+              >
+                {t("validation.finalize")}
+              </AntButton>
+            ),
           <AntButton key="close" onClick={handleCloseModal}>
             {t("common_close")}
           </AntButton>,
-        ]}
+        ].filter(Boolean)}
         width={900}
       >
         {detailLoading ? (
@@ -279,8 +332,8 @@ export default function PicklistsPage({
             {(() => {
               const lines = picklistDetail.lines ?? [];
               const sortedLines = [...lines].sort((a, b) => {
-                const aValidated = a.status === EPickListStatus.Validated;
-                const bValidated = b.status === EPickListStatus.Validated;
+                const aValidated = a.status === EPickListLineStatus.Validated;
+                const bValidated = b.status === EPickListLineStatus.Validated;
                 if (aValidated === bValidated) return 0;
                 return aValidated ? 1 : -1;
               });

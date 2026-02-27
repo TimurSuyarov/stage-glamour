@@ -7,6 +7,7 @@ import SalesOrdersPage from '@/pages/SalesOrdersPage';
 import { ESalesOrderStatus } from '@/enums/salesOrder';
 import CellsPageComponent from '@/pages/CellsPage';
 import CollectPageComponent from '@/pages/CollectPage';
+import MoveToRegionPageComponent from '@/pages/MoveToRegionPage';
 import { useCollectNotification } from '@/contexts/CollectNotificationContext';
 
 interface PlaceholderPageProps {
@@ -49,13 +50,7 @@ export function CollectPage() {
 }
 
 export function MoveToRegionPage() {
-  return (
-    <SalesOrdersPage
-      status={ESalesOrderStatus.Picked}
-      titleKey="nav.moveToRegion"
-      parentKey="nav.operational"
-    />
-  );
+  return <MoveToRegionPageComponent />;
 }
 
 export function RelocationPage() {

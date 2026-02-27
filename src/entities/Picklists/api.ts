@@ -75,7 +75,8 @@ export const usePicklistByDocEntry = (docEntry: number | null) => {
 };
 
 const postPicklistAssign = async (picklistId: number): Promise<unknown> => {
-  const { data } = await request.post(`/picklists/${picklistId}/assign`);
+  // Validation assign endpoint assigns current user to a validation task by picklist id
+  const { data } = await request.post(`/validation/${picklistId}/assign`);
   return data;
 };
 
@@ -106,6 +107,21 @@ export const useValidationScan = () => {
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ["picklists"] });
       queryClient.invalidateQueries({ queryKey: ["picklists", vars.docEntry] });
+    },
+  });
+};
+
+const postValidationFinalize = async (picklistId: number): Promise<unknown> => {
+  const { data } = await request.post(`/validation/${picklistId}/finalize`);
+  return data;
+};
+
+export const useValidationFinalize = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (picklistId: number) => postValidationFinalize(picklistId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["picklists"] });
     },
   });
 };

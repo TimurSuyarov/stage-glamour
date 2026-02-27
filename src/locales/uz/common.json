@@ -83,6 +83,7 @@
   "validation.assignMe": "Menga tayinlash",
   "validation.validate": "Tasdiqlash",
   "validation.validated": "Tasdiqlandi",
+  "validation.finalize": "Tekshiruvni yakunlash",
   "return.title": "Qaytarishlar",
   "return.originalOrder": "Asl buyurtma",
   "return.condition": "Holat",
@@ -264,6 +265,13 @@
   "picklist_line_allocated_qty": "Ajratilgan",
   "picklist_line_picked_qty": "Yig'ilgan",
   "picklist_line_status": "Holat",
+  "picklistStatus.draft": "Qoralama",
+  "picklistStatus.inprogress": "Jarayonda",
+  "picklistStatus.picked": "Yig'ilgan",
+  "picklistStatus.validated": "Tasdiqlangan",
+  "picklistLineStatus.waiting": "Kutilmoqda",
+  "picklistLineStatus.picked": "Yig'ilgan",
+  "picklistLineStatus.validated": "Tasdiqlangan",
   "requiredTransfers.requiredQty": "Kerakli miqdor",
   "requiredTransfers.assignedUser": "Tayinlangan xodim",
   "requiredTransfers.assign": "Tayinlash",
@@ -271,5 +279,6 @@
   "requiredTransfers.sourceBin": "Manba yacheyka",
   "requiredTransfers.targetBin": "Maqsad yacheyka",
   "requiredTransfers.transfer": "Ko'chirish",
-  "requiredTransfers.transferred": "Ko'chirildi"
+  "requiredTransfers.transferred": "Ko'chirildi",
+  "requiredTransfers.finalize": "Ko'chirishni yakunlash"
 }

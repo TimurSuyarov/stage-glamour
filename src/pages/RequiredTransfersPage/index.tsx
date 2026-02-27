@@ -6,6 +6,7 @@ import {
   useRequiredTransferById,
   useTransferMutation,
   useAssignMutation,
+  useFinalizeMutation,
   type RequiredTransferItem,
   type RequiredTransferLine,
 } from "@/entities/RequiredTransfers/api";
@@ -63,6 +64,7 @@ export default function RequiredTransfersPage() {
   const { data: employees = [] } = useEmployees({ PageSize: 500 });
   const transferMutation = useTransferMutation();
   const assignMutation = useAssignMutation();
+  const finalizeMutation = useFinalizeMutation();
 
   const selectedRequest = items.find((r) => r.id === modalRequestId);
 
@@ -100,6 +102,22 @@ export default function RequiredTransfersPage() {
       {
         onSuccess: () => {
           message.success(t("common.success") ?? "Done");
+        },
+        onError: () => {
+          message.error(t("error.somethingWentWrong") ?? "Error");
+        },
+      }
+    );
+  };
+
+  const handleFinalize = () => {
+    if (!modalRequestId) return;
+    finalizeMutation.mutate(
+      { requestId: modalRequestId },
+      {
+        onSuccess: () => {
+          message.success(t("common.success") ?? "Finalized");
+          handleCloseModal();
         },
         onError: () => {
           message.error(t("error.somethingWentWrong") ?? "Error");
@@ -314,7 +332,12 @@ export default function RequiredTransfersPage() {
                               size="sm"
                               className="h-8"
                               onClick={() => handleTransfer(line)}
-                              disabled={line.isTransferred || transferMutation.isLoading}
+                              disabled={
+                                !selectedRequest?.assignedUser ||
+                                line.isTransferred ||
+                                transferMutation.isLoading ||
+                                finalizeMutation.isLoading
+                              }
                             >
                               {line.isTransferred
                                 ? (t("requiredTransfers.transferred") ?? "Transferred")
@@ -326,6 +349,28 @@ export default function RequiredTransfersPage() {
                     )}
                   </TableBody>
                 </Table>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4">
+                <Button variant="outline" size="sm" onClick={handleCloseModal}>
+                  {t("common.close") ?? "Close"}
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleFinalize}
+                  disabled={
+                    !selectedRequest.assignedUser ||
+                    lines.length === 0 ||
+                    lines.some((l) => !l.isTransferred) ||
+                    finalizeMutation.isLoading
+                  }
+                >
+                  {finalizeMutation.isLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    t("requiredTransfers.finalize") ?? "Finalize"
+                  )}
+                </Button>
               </div>
             </div>
           )}

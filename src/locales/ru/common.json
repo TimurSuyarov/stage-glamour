@@ -83,6 +83,7 @@
   "validation.assignMe": "Назначить на меня",
   "validation.validate": "Проверить",
   "validation.validated": "Проверено",
+  "validation.finalize": "Завершить проверку",
   "return.title": "Возвраты",
   "return.originalOrder": "Исходный заказ",
   "return.condition": "Состояние",
@@ -264,6 +265,13 @@
   "picklist_line_allocated_qty": "Выделено",
   "picklist_line_picked_qty": "Собрано",
   "picklist_line_status": "Статус",
+  "picklistStatus.draft": "Черновик",
+  "picklistStatus.inprogress": "В процессе",
+  "picklistStatus.picked": "Собрано",
+  "picklistStatus.validated": "Проверено",
+  "picklistLineStatus.waiting": "Ожидание",
+  "picklistLineStatus.picked": "Собрано",
+  "picklistLineStatus.validated": "Проверено",
   "requiredTransfers.requiredQty": "Требуемое кол-во",
   "requiredTransfers.assignedUser": "Назначенный сотрудник",
   "requiredTransfers.assign": "Назначить",
@@ -271,5 +279,6 @@
   "requiredTransfers.sourceBin": "Ячейка источник",
   "requiredTransfers.targetBin": "Ячейка назначения",
   "requiredTransfers.transfer": "Переместить",
-  "requiredTransfers.transferred": "Перемещено"
+  "requiredTransfers.transferred": "Перемещено",
+  "requiredTransfers.finalize": "Завершить перемещение"
 }

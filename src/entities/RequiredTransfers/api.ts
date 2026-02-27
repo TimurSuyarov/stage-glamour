@@ -92,3 +92,19 @@ export const useAssignMutation = () => {
     },
   });
 };
+
+const postFinalize = async (requestId: number): Promise<unknown> => {
+  const { data } = await request.post(`/required-transfers/${requestId}/finalize`);
+  return data;
+};
+
+export const useFinalizeMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ requestId }: { requestId: number }) => postFinalize(requestId),
+    onSuccess: (_, { requestId }) => {
+      queryClient.invalidateQueries({ queryKey: ["required-transfers"] });
+      queryClient.invalidateQueries({ queryKey: ["required-transfers", requestId] });
+    },
+  });
+};
