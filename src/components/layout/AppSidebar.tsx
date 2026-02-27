@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import { useAuth, menuVisibility } from '@/contexts/AuthContext';
 import { useCollectNotification } from '@/contexts/CollectNotificationContext';
+import { useRequiredTransfersNotification } from '@/contexts/RequiredTransfersNotificationContext';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -85,6 +86,7 @@ export function AppSidebar({ collapsed, onCollapsedChange }: AppSidebarProps) {
   const { user } = useAuth();
   const location = useLocation();
   const { hasCollectNotification } = useCollectNotification();
+  const { hasRequiredTransfersNotification } = useRequiredTransfersNotification();
 
   const visibleMenus = user ? menuVisibility[user.role] : [];
 
@@ -171,6 +173,13 @@ export function AppSidebar({ collapsed, onCollapsedChange }: AppSidebarProps) {
                           aria-hidden
                         />
                       )}
+                      {item.id === 'requiredStockTransfer' &&
+                        hasRequiredTransfersNotification && (
+                          <span
+                            className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-destructive"
+                            aria-hidden
+                          />
+                        )}
                     </span>
                     {!collapsed && <span>{t(item.labelKey)}</span>}
                   </NavLink>

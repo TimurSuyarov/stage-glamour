@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CollectNotificationProvider } from "@/contexts/CollectNotificationContext";
+import { RequiredTransfersNotificationProvider } from "@/contexts/RequiredTransfersNotificationContext";
 import { Provider } from "react-redux";
 import store from "./redux/store/store";
 
@@ -43,54 +44,56 @@ const App = () => (
     <Provider store={store}>
       <AuthProvider>
         <CollectNotificationProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-                {/* Public */}
-                <Route
-                  path="/login"
-                  element={
-                    <PublicRoute>
-                      <LoginPage />
-                    </PublicRoute>
-                  }
-                />
+          <RequiredTransfersNotificationProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Routes>
+                  {/* Public */}
+                  <Route
+                    path="/login"
+                    element={
+                      <PublicRoute>
+                        <LoginPage />
+                      </PublicRoute>
+                    }
+                  />
 
-                {/* Protected area */}
-                <Route element={<ProtectedRoute />}>
-                  <Route element={<AppShell />}>
-                    <Route path="/" element={<Dashboard />} />
-                    <Route path="/admission" element={<AdmissionPage />} />
-                    <Route path="/orders" element={<OrdersPage />} />
-                    <Route path="/collect" element={<CollectPage />} />
-                    <Route path="/validation" element={<ValidationPage />} />
-                    <Route path="/returns" element={<ReturnsPage />} />
-                    <Route
-                      path="/move-to-region"
-                      element={<MoveToRegionPage />}
-                    />
-                    <Route path="/relocation" element={<RelocationPage />} />
-                    <Route path="/required-transfers" element={<RequiredTransfersPage />} />
-                    <Route path="/history" element={<HistoryPage />} />
-                    <Route path="/warehouse" element={<WarehousePage />} />
-                    <Route path="/employees" element={<EmployeesPage />} />
-                    <Route path="/cells" element={<CellsPage />} />
-                    <Route path="/goods" element={<GoodsPage />} />
-                    <Route path="/inventory" element={<InventoryPage />} />
-                    <Route path="/reports" element={<ReportsPage />} />
-                    <Route path="/bonuses" element={<BonusesPage />} />
+                  {/* Protected area */}
+                  <Route element={<ProtectedRoute />}>
+                    <Route element={<AppShell />}>
+                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/admission" element={<AdmissionPage />} />
+                      <Route path="/orders" element={<OrdersPage />} />
+                      <Route path="/collect" element={<CollectPage />} />
+                      <Route path="/validation" element={<ValidationPage />} />
+                      <Route path="/returns" element={<ReturnsPage />} />
+                      <Route
+                        path="/move-to-region"
+                        element={<MoveToRegionPage />}
+                      />
+                      <Route path="/relocation" element={<RelocationPage />} />
+                      <Route path="/required-transfers" element={<RequiredTransfersPage />} />
+                      <Route path="/history" element={<HistoryPage />} />
+                      <Route path="/warehouse" element={<WarehousePage />} />
+                      <Route path="/employees" element={<EmployeesPage />} />
+                      <Route path="/cells" element={<CellsPage />} />
+                      <Route path="/goods" element={<GoodsPage />} />
+                      <Route path="/inventory" element={<InventoryPage />} />
+                      <Route path="/reports" element={<ReportsPage />} />
+                      <Route path="/bonuses" element={<BonusesPage />} />
+                    </Route>
                   </Route>
-                </Route>
 
-                {/* Catch-all */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
+                  {/* Catch-all */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+            </TooltipProvider>
+          </RequiredTransfersNotificationProvider>
         </CollectNotificationProvider>
-        </AuthProvider>
+      </AuthProvider>
     </Provider>
   </QueryClientProvider>
 );

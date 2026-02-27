@@ -13,7 +13,8 @@ function getHubUrl(): string {
 
 export interface ProcessingCompletedPayload {
   message?: string;
-  salesOrderCount?: number;
+  totalItemsRetrieved?: number;
+  hasRequiredTransferExist?: boolean;
   timestamp?: string;
 }
 

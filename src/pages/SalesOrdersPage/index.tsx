@@ -9,6 +9,7 @@ import { useQueryClient } from "react-query";
 import { useSalesOrders, postSalesOrdersMoveNext, type SalesOrder, type SalesOrderDocumentLine, type SalesOrdersFilters } from "@/entities/SalesOrders/api";
 import { ESalesOrderStatus } from "@/enums/salesOrder";
 import { useCollectNotification } from "@/contexts/CollectNotificationContext";
+import { useRequiredTransfersNotification } from "@/contexts/RequiredTransfersNotificationContext";
 import { createSalesOrdersHubConnection, type ProcessingCompletedPayload } from "@/lib/salesOrdersHub";
 import { Eye, Loader2, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,10 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { setCollectNotification } = useCollectNotification();
+  const {
+    setRequiredTransfersNotification,
+    clearRequiredTransfersNotification,
+  } = useRequiredTransfersNotification();
 
   // Filter state
   const [filterDocNum, setFilterDocNum] = useState<string>("");
@@ -109,15 +114,23 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
       setMoveNextLoading(false);
       return;
     }
+    // Close modal and clear selection as soon as the POST succeeds.
+    handleCloseCreateModal();
+    setSelectedRowKeys([]);
     const connection = createSalesOrdersHubConnection();
     const onDone = () => {
       connection.stop().catch(() => {});
       setMoveNextLoading(false);
     };
     connection.on("ProcessingCompleted", (payload: ProcessingCompletedPayload) => {
-      setCollectNotification(true);
-      handleCloseCreateModal();
-      setSelectedRowKeys([]);
+      if (payload?.hasRequiredTransferExist) {
+        setRequiredTransfersNotification(true);
+        setCollectNotification(false);
+      } else {
+        setCollectNotification(true);
+        clearRequiredTransfersNotification();
+      }
+
       queryClient.invalidateQueries({ queryKey: ["sales-orders"] });
       message.success(payload?.message ?? t("sales_orders_move_to_next_step"));
       onDone();

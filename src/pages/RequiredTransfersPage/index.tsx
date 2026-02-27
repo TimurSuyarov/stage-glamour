@@ -42,6 +42,7 @@ import {
 import { Eye, Loader2, Check, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { message } from "antd";
+import { useRequiredTransfersNotification } from "@/contexts/RequiredTransfersNotificationContext";
 
 function getEmployeeId(emp: { employeeId?: number; EmployeeID?: number }): number {
   return emp.employeeId ?? emp.EmployeeID ?? 0;
@@ -65,6 +66,11 @@ export default function RequiredTransfersPage() {
   const transferMutation = useTransferMutation();
   const assignMutation = useAssignMutation();
   const finalizeMutation = useFinalizeMutation();
+  const { clearRequiredTransfersNotification } = useRequiredTransfersNotification();
+
+  useEffect(() => {
+    clearRequiredTransfersNotification();
+  }, [clearRequiredTransfersNotification]);
 
   const selectedRequest = items.find((r) => r.id === modalRequestId);
 
