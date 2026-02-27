@@ -14,6 +14,7 @@ export default function CollectPage() {
       status={EPickListStatus.Draft}
       titleKey="nav.collect"
       parentKey="nav.operational"
+      mode="collect"
     />
   );
 }

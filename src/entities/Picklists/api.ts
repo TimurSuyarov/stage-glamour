@@ -1,5 +1,5 @@
 import request from "@/services";
-import { useQuery } from "react-query";
+import { useMutation, useQuery, useQueryClient } from "react-query";
 
 export interface PicklistLine {
   id: number;
@@ -71,5 +71,41 @@ export const usePicklistByDocEntry = (docEntry: number | null) => {
     queryFn: () => fetchPicklistByDocEntry(docEntry!),
     refetchOnWindowFocus: false,
     enabled: docEntry != null,
+  });
+};
+
+const postPicklistAssign = async (picklistId: number): Promise<unknown> => {
+  const { data } = await request.post(`/picklists/${picklistId}/assign`);
+  return data;
+};
+
+export const useAssignPicklist = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (picklistId: number) => postPicklistAssign(picklistId),
+    onSuccess: (_, picklistId) => {
+      queryClient.invalidateQueries({ queryKey: ["picklists"] });
+      queryClient.invalidateQueries({ queryKey: ["picklists", picklistId] });
+    },
+  });
+};
+
+const postValidationScan = async (
+  docEntry: number,
+  lineId: number
+): Promise<unknown> => {
+  const { data } = await request.post(`/validation/${docEntry}/scan/${lineId}`);
+  return data;
+};
+
+export const useValidationScan = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: { docEntry: number; lineId: number }) =>
+      postValidationScan(vars.docEntry, vars.lineId),
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["picklists"] });
+      queryClient.invalidateQueries({ queryKey: ["picklists", vars.docEntry] });
+    },
   });
 };

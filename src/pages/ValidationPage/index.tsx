@@ -7,6 +7,7 @@ export default function ValidationPage() {
       status={EPickListStatus.InProgress}
       titleKey="nav.validation"
       parentKey="nav.operational"
+      mode="validation"
     />
   );
 }
