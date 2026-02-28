@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
@@ -24,6 +25,7 @@ import {
   BarChart3,
   Gift,
   ChevronLeft,
+  ChevronDown,
   Sparkles,
   LucideIcon,
 } from 'lucide-react';
@@ -35,12 +37,26 @@ interface NavItem {
   href: string;
 }
 
-interface NavGroup {
+/** Parent menu with child links (e.g. Qaytarish -> Qaytarish, Qaytgan tovarlar tarixi) */
+interface NavParent {
   id: string;
-  items: NavItem[];
+  labelKey: string;
+  icon: LucideIcon;
+  children: { id: string; labelKey: string; href: string }[];
 }
 
-// Flat navigation with groups for dividers
+type NavEntry = NavItem | NavParent;
+
+function isNavParent(entry: NavEntry): entry is NavParent {
+  return 'children' in entry && Array.isArray((entry as NavParent).children);
+}
+
+interface NavGroup {
+  id: string;
+  items: NavEntry[];
+}
+
+// Flat navigation with groups for dividers; return is a parent with 2 children
 const navigationGroups: NavGroup[] = [
   {
     id: 'operational',
@@ -51,7 +67,15 @@ const navigationGroups: NavGroup[] = [
       { id: 'collect', labelKey: 'nav.collect', icon: PackageSearch, href: '/collect' },
       { id: 'validation', labelKey: 'nav.validation', icon: ClipboardCheck, href: '/validation' },
       { id: 'moveToRegion', labelKey: 'nav.moveToRegion', icon: Truck, href: '/move-to-region' },
-      { id: 'return', labelKey: 'nav.return', icon: RotateCcw, href: '/returns' },
+      {
+        id: 'return',
+        labelKey: 'nav.return',
+        icon: RotateCcw,
+        children: [
+          { id: 'returnDrafts', labelKey: 'nav.returnDrafts', href: '/returns/drafts' },
+          { id: 'returnHistory', labelKey: 'nav.returnHistory', href: '/returns/history' },
+        ],
+      },
       { id: 'history', labelKey: 'nav.history', icon: History, href: '/history' },
     ],
   },
@@ -81,10 +105,18 @@ export function AppSidebar({ collapsed, onCollapsedChange }: AppSidebarProps) {
   const { hasCollectNotification } = useCollectNotification();
   const { hasRequiredTransfersNotification } = useRequiredTransfersNotification();
 
+  const [returnMenuOpen, setReturnMenuOpen] = useState(true);
+
+  const isReturnRoute = location.pathname.startsWith('/returns');
+  useEffect(() => {
+    if (isReturnRoute) setReturnMenuOpen(true);
+  }, [isReturnRoute]);
+
   const visibleMenus = user ? menuVisibility[user.role] : [];
 
-  const isItemVisible = (item: NavItem): boolean => {
-    return visibleMenus.includes(item.id);
+  const isItemVisible = (entry: NavEntry): boolean => {
+    if (isNavParent(entry)) return visibleMenus.includes(entry.id);
+    return visibleMenus.includes(entry.id);
   };
 
   const isActive = (href: string) => {
@@ -92,7 +124,7 @@ export function AppSidebar({ collapsed, onCollapsedChange }: AppSidebarProps) {
     return location.pathname.startsWith(href);
   };
 
-  // Filter groups to only show visible items
+  // Filter groups to only show visible items (parents count as one)
   const visibleGroups = navigationGroups
     .map((group) => ({
       ...group,
@@ -145,38 +177,103 @@ export function AppSidebar({ collapsed, onCollapsedChange }: AppSidebarProps) {
 
               {/* Group items */}
               <div className="space-y-1">
-                {group.items.map((item) => (
-                  <NavLink
-                    key={item.id}
-                    to={item.href}
-                    className={cn(
-                      'flex items-center gap-3 px-3 h-10 rounded-lg text-sm font-medium transition-colors',
-                      isActive(item.href)
-                        ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                        : 'text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent/50',
-                      collapsed && 'justify-center px-0'
-                    )}
-                    title={collapsed ? t(item.labelKey) : undefined}
-                  >
-                    <span className="relative inline-flex">
-                      <item.icon className="w-5 h-5 flex-shrink-0" />
-                      {item.id === 'collect' && hasCollectNotification && (
-                        <span
-                          className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-destructive"
-                          aria-hidden
-                        />
+                {group.items.map((entry) => {
+                  if (isNavParent(entry)) {
+                    const parent = entry;
+                    const isChildActive = parent.children.some((c) =>
+                      isActive(c.href)
+                    );
+                    if (collapsed) {
+                      return (
+                        <NavLink
+                          key={parent.id}
+                          to={parent.children[0]?.href ?? '#'}
+                          className={cn(
+                            'flex items-center gap-3 px-3 h-10 rounded-lg text-sm font-medium transition-colors',
+                            isChildActive
+                              ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                              : 'text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent/50',
+                            'justify-center px-0'
+                          )}
+                          title={t(parent.labelKey)}
+                        >
+                          <parent.icon className="w-5 h-5 flex-shrink-0" />
+                        </NavLink>
+                      );
+                    }
+                    return (
+                      <div key={parent.id} className="space-y-1">
+                        <button
+                          type="button"
+                          onClick={() => setReturnMenuOpen((open) => !open)}
+                          className={cn(
+                            'flex w-full items-center gap-3 px-3 h-10 rounded-lg text-sm font-medium transition-colors',
+                            isChildActive
+                              ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                              : 'text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent/50'
+                          )}
+                        >
+                          <parent.icon className="w-5 h-5 flex-shrink-0" />
+                          <span className="flex-1 text-left">{t(parent.labelKey)}</span>
+                          <ChevronDown
+                            className={cn(
+                              'w-4 h-4 flex-shrink-0 transition-transform duration-200',
+                              returnMenuOpen && 'rotate-180'
+                            )}
+                          />
+                        </button>
+                        {returnMenuOpen &&
+                          parent.children.map((child) => (
+                            <NavLink
+                              key={child.id}
+                              to={child.href}
+                              className={cn(
+                                'flex items-center gap-3 pl-8 pr-3 h-9 rounded-lg text-sm font-medium transition-colors',
+                                isActive(child.href)
+                                  ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                                  : 'text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent/50'
+                              )}
+                            >
+                              <span>{t(child.labelKey)}</span>
+                            </NavLink>
+                          ))}
+                      </div>
+                    );
+                  }
+                  const item = entry as NavItem;
+                  return (
+                    <NavLink
+                      key={item.id}
+                      to={item.href}
+                      className={cn(
+                        'flex items-center gap-3 px-3 h-10 rounded-lg text-sm font-medium transition-colors',
+                        isActive(item.href)
+                          ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                          : 'text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent/50',
+                        collapsed && 'justify-center px-0'
                       )}
-                      {item.id === 'requiredStockTransfer' &&
-                        hasRequiredTransfersNotification && (
+                      title={collapsed ? t(item.labelKey) : undefined}
+                    >
+                      <span className="relative inline-flex">
+                        <item.icon className="w-5 h-5 flex-shrink-0" />
+                        {item.id === 'collect' && hasCollectNotification && (
                           <span
                             className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-destructive"
                             aria-hidden
                           />
                         )}
-                    </span>
-                    {!collapsed && <span>{t(item.labelKey)}</span>}
-                  </NavLink>
-                ))}
+                        {item.id === 'requiredStockTransfer' &&
+                          hasRequiredTransfersNotification && (
+                            <span
+                              className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-destructive"
+                              aria-hidden
+                            />
+                          )}
+                      </span>
+                      {!collapsed && <span>{t(item.labelKey)}</span>}
+                    </NavLink>
+                  );
+                })}
               </div>
             </div>
           ))}

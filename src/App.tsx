@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CollectNotificationProvider } from "@/contexts/CollectNotificationContext";
 import { RequiredTransfersNotificationProvider } from "@/contexts/RequiredTransfersNotificationContext";
@@ -15,7 +15,8 @@ import { AppShell } from "@/components/layout/AppShell";
 import Dashboard from "./pages/Dashboard";
 import OrdersPage from "./pages/OrdersPage";
 import ValidationPage from "./pages/ValidationPage";
-import ReturnsPage from "./pages/ReturnsPage";
+import CreditMemosDraftsPage from "./pages/CreditMemosDraftsPage";
+import CreditMemosHistoryPage from "./pages/CreditMemosHistoryPage";
 import HistoryPage from "./pages/HistoryPage";
 import GoodsPage from "./pages/GoodsPage";
 import EmployeesPage from "./pages/EmployeesPage";
@@ -68,7 +69,9 @@ const App = () => (
                       <Route path="/orders" element={<OrdersPage />} />
                       <Route path="/collect" element={<CollectPage />} />
                       <Route path="/validation" element={<ValidationPage />} />
-                      <Route path="/returns" element={<ReturnsPage />} />
+                      <Route path="/returns" element={<Navigate to="/returns/drafts" replace />} />
+                      <Route path="/returns/drafts" element={<CreditMemosDraftsPage />} />
+                      <Route path="/returns/history" element={<CreditMemosHistoryPage />} />
                       <Route
                         path="/move-to-region"
                         element={<MoveToRegionPage />}
