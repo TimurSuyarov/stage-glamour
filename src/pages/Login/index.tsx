@@ -1,4 +1,6 @@
 import { useLoginMutation } from "@/entities/Auth/api";
+import { useAuth, userFromEmployee } from "@/contexts/AuthContext";
+import { setStoredAuth, type LoginResponse } from "@/lib/authStorage";
 import { Button, message, Form } from "antd";
 import { useNavigate } from "react-router-dom";
 import { AntInput } from "./styled";
@@ -7,14 +9,16 @@ import { useTranslation } from "react-i18next";
 const LoginPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { setUser } = useAuth();
   const { mutateAsync, isLoading } = useLoginMutation();
   const [form] = Form.useForm();
 
   const onFinish = (values: any) => {
     mutateAsync(values, {
-      onSuccess: (data) => {
+      onSuccess: (data: LoginResponse) => {
         message.success(t("login_successfully"));
-        sessionStorage.setItem("token", data.token);
+        setStoredAuth(data.token, data.employee);
+        setUser(userFromEmployee(data.employee));
         navigate("/");
       },
       onError: (error: any) => {

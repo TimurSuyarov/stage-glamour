@@ -109,6 +109,7 @@
   "error.insufficientStock": "Zaxira yetarli emas",
   "error.negativeBalance": "Manfiy balans",
   "error.cannotDelete": "O'chirib bo'lmaydi",
+  "role.admin": "Admin",
   "role.executor": "Ijrochi",
   "role.validator": "Tekshiruvchi",
   "role.returner": "Qaytaruvchi",

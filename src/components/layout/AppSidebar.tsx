@@ -112,7 +112,8 @@ export function AppSidebar({ collapsed, onCollapsedChange }: AppSidebarProps) {
     if (isReturnRoute) setReturnMenuOpen(true);
   }, [isReturnRoute]);
 
-  const visibleMenus = user ? menuVisibility[user.role] : [];
+  // When user is null (e.g. token exists but no stored employee) show all menus (admin)
+  const visibleMenus = user ? menuVisibility[user.role] : menuVisibility.admin;
 
   const isItemVisible = (entry: NavEntry): boolean => {
     if (isNavParent(entry)) return visibleMenus.includes(entry.id);

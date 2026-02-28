@@ -109,6 +109,7 @@
   "error.insufficientStock": "Недостаточно запаса",
   "error.negativeBalance": "Отрицательный баланс",
   "error.cannotDelete": "Удаление невозможно",
+  "role.admin": "Админ",
   "role.executor": "Исполнитель",
   "role.validator": "Проверяющий",
   "role.returner": "Возвратчик",

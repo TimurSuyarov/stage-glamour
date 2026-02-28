@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import { AppSidebar } from "./AppSidebar";
 import { TopBar } from "./TopBar";
+import { clearStoredAuth } from "@/lib/authStorage";
 
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes inactivity → logout
 const CHECK_INTERVAL_MS = 60 * 1000; // check every minute
@@ -20,7 +21,7 @@ function useSessionTimeout() {
 
     const interval = setInterval(() => {
       if (Date.now() - lastActivityRef.current >= SESSION_TIMEOUT_MS) {
-        sessionStorage.removeItem("token");
+        clearStoredAuth();
         window.location.reload();
       }
     }, CHECK_INTERVAL_MS);

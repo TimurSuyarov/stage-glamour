@@ -1,16 +1,13 @@
 import request from "@/services";
 import { useMutation, useQuery } from "react-query";
+import type { LoginResponse } from "@/lib/authStorage";
 
 export const loginApi = async (credentials: {
   login: string;
   password: string;
-}) => {
-  try {
-    const response = await request.post("/auth/login", credentials);
-    return response.data;
-  } catch (error: any) {
-    throw error;
-  }
+}): Promise<LoginResponse> => {
+  const response = await request.post<LoginResponse>("/auth/login", credentials);
+  return response.data;
 };
 
 export const useLoginMutation = () => {

@@ -1,12 +1,43 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { getStoredToken, getStoredEmployee, type LoginEmployee } from '@/lib/authStorage';
 
-export type UserRole = 'executor' | 'validator' | 'returner';
+/** Backend sends jobTitle: "Admin" | "Tekshiruvchi" | "Qaytaruvchi" */
+export type UserRole = 'admin' | 'validator' | 'returner';
 
-interface User {
+export interface User {
   id: string;
   name: string;
   role: UserRole;
   employeeId: string;
+}
+
+/** Map backend jobTitle to UserRole. Role is derived from employee.jobTitle. */
+export function jobTitleToRole(jobTitle: string): UserRole {
+  const t = (jobTitle || '').trim().toLowerCase();
+  if (t === 'admin') return 'admin';
+  if (t === 'tekshiruvchi') return 'validator';
+  if (t === 'qaytaruvchi') return 'returner';
+  return 'admin';
+}
+
+/** Map login API employee to User. Role is taken from employee.jobTitle. */
+export function userFromEmployee(employee: LoginEmployee): User {
+  const name = [employee.firstName, employee.lastName].filter(Boolean).join(' ') || '—';
+  const role = jobTitleToRole(employee.jobTitle);
+  return {
+    id: String(employee.employeeId),
+    name,
+    role,
+    employeeId: String(employee.employeeId),
+  };
+}
+
+function getInitialUser(): User | null {
+  const token = getStoredToken();
+  if (!token) return null;
+  const employee = getStoredEmployee();
+  if (!employee) return null;
+  return userFromEmployee(employee);
 }
 
 interface AuthContextType {
@@ -15,14 +46,14 @@ interface AuthContextType {
   hasPermission: (module: string, action: string) => boolean;
 }
 
-// RBAC Permissions Matrix
+// RBAC Permissions Matrix (admin = all; validator = validation; returner = return)
 const permissions: Record<UserRole, Record<string, string[]>> = {
-  executor: {
+  admin: {
     admission: ['create', 'edit', 'view'],
     order: ['manage', 'view'],
     collect: ['manage', 'view'],
-    validation: ['view'],
-    return: [],
+    validation: ['approve', 'reject', 'view'],
+    return: ['manage', 'create', 'edit', 'view'],
     masterData: ['view'],
     move: ['initiate', 'view'],
     relocation: ['initiate', 'view'],
@@ -35,68 +66,55 @@ const permissions: Record<UserRole, Record<string, string[]>> = {
     reports: ['view'],
   },
   validator: {
-    admission: ['view'],
-    order: ['view'],
-    collect: ['view'],
+    admission: [],
+    order: [],
+    collect: [],
     validation: ['approve', 'reject', 'view'],
     return: [],
-    masterData: ['view'],
+    masterData: [],
     move: [],
     relocation: [],
-    history: ['view'],
-    warehouse: ['view'],
-    employees: ['view'],
-    cells: ['view'],
-    goods: ['view'],
-    inventory: ['view'],
-    reports: ['view'],
+    history: [],
+    warehouse: [],
+    employees: [],
+    cells: [],
+    goods: [],
+    inventory: [],
+    reports: [],
   },
   returner: {
     admission: [],
-    order: ['view'],
+    order: [],
     collect: [],
     validation: [],
     return: ['manage', 'create', 'edit', 'view'],
-    masterData: ['view'],
+    masterData: [],
     move: [],
     relocation: [],
-    history: ['view'],
-    warehouse: ['view'],
-    employees: ['view'],
-    cells: ['view'],
-    goods: ['view'],
-    inventory: ['view'],
-    reports: ['view'],
+    history: [],
+    warehouse: [],
+    employees: [],
+    cells: [],
+    goods: [],
+    inventory: [],
+    reports: [],
   },
 };
 
-// Menu visibility based on role
+// Menu visibility: Admin = everything; Tekshiruvchi = validation; Qaytaruvchi = return (parent + children)
 export const menuVisibility: Record<UserRole, string[]> = {
-  executor: [
-    'dashboard', 'admission', 'order', 'requiredStockTransfer', 'collect', 'validation', 
-    'moveToRegion', 'relocation', 'return', 'history', 'warehouse', 
-    'employees', 'cells', 'goods', 'inventory', 'reports', 'bonuses'
+  admin: [
+    'admission', 'relocation', 'requiredStockTransfer', 'collect', 'validation',
+    'moveToRegion', 'return', 'history', 'employees', 'cells', 'goods', 'inventory', 'bonuses',
   ],
-  validator: [
-    'dashboard', 'admission', 'order', 'requiredStockTransfer', 'collect', 'validation', 
-    'return', 'history', 'warehouse', 'employees', 'cells', 'goods', 
-    'inventory', 'reports'
-  ],
-  returner: [
-    'dashboard', 'order', 'requiredStockTransfer', 'return', 'history', 'warehouse', 
-    'employees', 'cells', 'goods', 'inventory', 'reports'
-  ],
+  validator: ['validation'],
+  returner: ['return'],
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>({
-    id: '1',
-    name: 'Admin User',
-    role: 'executor',
-    employeeId: 'EMP-001',
-  });
+  const [user, setUser] = useState<User | null>(getInitialUser);
 
   const hasPermission = (module: string, action: string): boolean => {
     if (!user) return false;
