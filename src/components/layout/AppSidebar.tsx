@@ -7,7 +7,6 @@ import { useRequiredTransfersNotification } from '@/contexts/RequiredTransfersNo
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import {
-  LayoutDashboard,
   PackageOpen,
   ShoppingCart,
   PackageSearch,
@@ -43,12 +42,6 @@ interface NavGroup {
 
 // Flat navigation with groups for dividers
 const navigationGroups: NavGroup[] = [
-  {
-    id: 'main',
-    items: [
-      { id: 'dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboard, href: '/' },
-    ],
-  },
   {
     id: 'operational',
     items: [

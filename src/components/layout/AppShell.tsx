@@ -1,11 +1,40 @@
 // AppShell.tsx
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import { AppSidebar } from "./AppSidebar";
 import { TopBar } from "./TopBar";
 
+const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes inactivity → logout
+const CHECK_INTERVAL_MS = 60 * 1000; // check every minute
+
+function useSessionTimeout() {
+  const lastActivityRef = useRef(Date.now());
+
+  useEffect(() => {
+    const onActivity = () => {
+      lastActivityRef.current = Date.now();
+    };
+
+    const events = ["mousemove", "keydown", "click", "scroll", "touchstart"];
+    events.forEach((e) => window.addEventListener(e, onActivity));
+
+    const interval = setInterval(() => {
+      if (Date.now() - lastActivityRef.current >= SESSION_TIMEOUT_MS) {
+        sessionStorage.removeItem("token");
+        window.location.reload();
+      }
+    }, CHECK_INTERVAL_MS);
+
+    return () => {
+      events.forEach((e) => window.removeEventListener(e, onActivity));
+      clearInterval(interval);
+    };
+  }, []);
+}
+
 export function AppShell() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  useSessionTimeout();
 
   return (
     <div className="h-screen flex w-full bg-background overflow-hidden">
