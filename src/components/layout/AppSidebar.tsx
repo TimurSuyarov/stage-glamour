@@ -61,7 +61,7 @@ const navigationGroups: NavGroup[] = [
   {
     id: 'operational',
     items: [
-      { id: 'admission', labelKey: 'nav.admission', icon: PackageOpen, href: '/' },
+      { id: 'admission', labelKey: 'nav.admission', icon: PackageOpen, href: '/admission' },
       { id: 'relocation', labelKey: 'nav.relocation', icon:  PackageSearch, href: '/relocation' },
       { id: 'requiredStockTransfer', labelKey: 'nav.requiredStockTransfer', icon:ArrowRightLeft, href: '/required-transfers' },
       { id: 'collect', labelKey: 'nav.collect', icon:  PackageCheck, href: '/collect' },

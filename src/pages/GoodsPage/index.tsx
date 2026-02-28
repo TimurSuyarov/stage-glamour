@@ -152,7 +152,7 @@ export default function GoodsPage() {
       {/* Filters */}
       <div className="flex flex-wrap items-end gap-4">
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs">{t('common.itemCode') || 'Item code'}</Label>
+          <Label className="text-xs">{t('common.itemCode')}</Label>
           <Input
             placeholder={t('common.search')}
             value={filterItemCode}
@@ -161,7 +161,7 @@ export default function GoodsPage() {
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs">{t('common.itemName') || 'Item name'}</Label>
+          <Label className="text-xs">{t('common.itemName')}</Label>
           <Input
             placeholder={t('common.search')}
             value={filterItemName}
@@ -170,7 +170,7 @@ export default function GoodsPage() {
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label className="text-xs">{t('common.itemsGroupCode') || 'Group code'}</Label>
+          <Label className="text-xs">{t('common.itemsGroupCode')}</Label>
           <Input
             placeholder="—"
             value={filterItemsGroupCode}

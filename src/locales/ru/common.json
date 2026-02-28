@@ -216,6 +216,9 @@
   "placeholder.comingSoon": "Скоро",
   "placeholder.underDevelopment": "Модуль в разработке. Полный функционал будет доступен в следующем релизе.",
   "error.pleaseLoginAgain": "Повторите вход в систему.",
+  "error.somethingWentWrong": "Что-то пошло не так.",
+  "error.requestFailed": "Запрос не выполнен.",
+  "error.couldNotConnect": "Не удалось подключиться.",
   "sales_orders_doc_num": "Номер документа",
   "sales_orders_card_name": "Имя клиента",
   "sales_orders_doc_date": "Дата документа",
@@ -295,5 +298,12 @@
   "requiredTransfers.targetBin": "Ячейка назначения",
   "requiredTransfers.transfer": "Переместить",
   "requiredTransfers.transferred": "Перемещено",
-  "requiredTransfers.finalize": "Завершить перемещение"
+  "requiredTransfers.finalize": "Завершить перемещение",
+  "welcome.title": "Добро пожаловать, {{name}}!",
+  "welcome.guest": "Гость",
+  "welcome.tagline": "Используйте боковую панель для перехода к нужному модулю.",
+  "common.guest": "Гость",
+  "common.itemCode": "Код товара",
+  "common.itemName": "Название товара",
+  "common.itemsGroupCode": "Код группы"
 }

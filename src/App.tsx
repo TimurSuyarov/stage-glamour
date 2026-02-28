@@ -13,6 +13,7 @@ import store from "./redux/store/store";
 import { AppShell } from "@/components/layout/AppShell";
 
 import Dashboard from "./pages/Dashboard";
+import WelcomePage from "./pages/WelcomePage";
 import OrdersPage from "./pages/OrdersPage";
 import ValidationPage from "./pages/ValidationPage";
 import CreditMemosDraftsPage from "./pages/CreditMemosDraftsPage";
@@ -64,8 +65,8 @@ const App = () => (
                   {/* Protected area */}
                   <Route element={<ProtectedRoute />}>
                     <Route element={<AppShell />}>
-                      {/* <Route path="/" element={<Dashboard />} /> */}
-                      <Route path="/" element={<AdmissionPage />} />
+                      <Route path="/" element={<WelcomePage />} />
+                      <Route path="/admission" element={<AdmissionPage />} />
                       <Route path="/orders" element={<OrdersPage />} />
                       <Route path="/collect" element={<CollectPage />} />
                       <Route path="/validation" element={<ValidationPage />} />

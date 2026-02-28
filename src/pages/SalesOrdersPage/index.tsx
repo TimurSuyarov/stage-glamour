@@ -110,7 +110,7 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
     try {
       await postSalesOrdersMoveNext(docEntries);
     } catch {
-      message.error(t("error.somethingWentWrong") ?? "Request failed");
+      message.error(t("error.somethingWentWrong"));
       setMoveNextLoading(false);
       return;
     }
@@ -140,7 +140,7 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
     try {
       await connection.start();
     } catch {
-      message.error(t("error.somethingWentWrong") ?? "Could not connect to live updates");
+      message.error(t("error.couldNotConnect"));
       onDone();
     }
   };

@@ -216,6 +216,9 @@
   "placeholder.comingSoon": "Tez kunda",
   "placeholder.underDevelopment": "Ushbu modul hali ishlab chiqilmoqda. To'liq funksionallik keyingi relizda mavjud bo'ladi.",
   "error.pleaseLoginAgain": "Iltimos, qayta kiring.",
+  "error.somethingWentWrong": "Nimadir xato ketdi.",
+  "error.requestFailed": "So'rov bajarilmadi.",
+  "error.couldNotConnect": "Ulanish amalga oshmadi.",
   "sales_orders_doc_num": "Hujjat raqami",
   "sales_orders_card_name": "Mijoz nomi",
   "sales_orders_doc_date": "Hujjat sanasi",
@@ -295,5 +298,12 @@
   "requiredTransfers.targetBin": "Maqsad yacheyka",
   "requiredTransfers.transfer": "Ko'chirish",
   "requiredTransfers.transferred": "Ko'chirildi",
-  "requiredTransfers.finalize": "Ko'chirishni yakunlash"
+  "requiredTransfers.finalize": "Ko'chirishni yakunlash",
+  "welcome.title": "Xush kelibsiz, {{name}}!",
+  "welcome.guest": "Mehmon",
+  "welcome.tagline": "Kerakli modulga o'tish uchun yon paneldan foydalaning.",
+  "common.guest": "Mehmon",
+  "common.itemCode": "Mahsulot kodi",
+  "common.itemName": "Mahsulot nomi",
+  "common.itemsGroupCode": "Guruh kodi"
 }

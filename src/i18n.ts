@@ -9,14 +9,17 @@ const resources = {
   ru: { translation: ru },
 };
 
-const selectedLanguage = localStorage.getItem('i18nextLng') || 'uz';
+const supportedLngs = ['uz', 'ru'] as const;
+const defaultLng = 'uz';
+const stored = localStorage.getItem('i18nextLng');
+const initialLng = stored && supportedLngs.includes(stored as any) ? stored : defaultLng;
 
 i18n.use(initReactI18next).init({
   resources,
-  lng: selectedLanguage,
-  fallbackLng: selectedLanguage,
+  lng: initialLng,
+  fallbackLng: defaultLng,
   keySeparator: false,
-  supportedLngs: Object.keys(resources),
+  supportedLngs: [...supportedLngs],
   interpolation: {
     escapeValue: false,
   },

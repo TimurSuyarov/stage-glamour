@@ -23,7 +23,7 @@ input[type="date"]:not(:focus):invalid::-webkit-calendar-picker-indicator {
   :root {
     /* Core Backgrounds */
     --background: 210 20% 98%;
-    --foreground: 222 47% 11%;
+    --foreground: 220 10% 22%;
     
     /* Cards & Surfaces */
     --card: 0 0% 100%;
@@ -146,14 +146,15 @@ input[type="date"]:not(:focus):invalid::-webkit-calendar-picker-indicator {
     @apply border-border;
   }
 
+  /* QA: fontlarni biroz kichiklashtirish, matnni yig'iroq (kulrangroq) qilish */
+  html {
+    scroll-behavior: smooth;
+    font-size: 14px;
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', system-ui, sans-serif;
-  }
-  
-  /* Smooth scrolling behavior */
-  html {
-    scroll-behavior: smooth;
   }
 }
 

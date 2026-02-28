@@ -107,10 +107,10 @@ export default function RequiredTransfersPage() {
       { requestId: modalRequestId, lineId: line.id },
       {
         onSuccess: () => {
-          message.success(t("common.success") ?? "Done");
+          message.success(t("common.success"));
         },
         onError: () => {
-          message.error(t("error.somethingWentWrong") ?? "Error");
+          message.error(t("error.somethingWentWrong"));
         },
       }
     );
@@ -122,11 +122,11 @@ export default function RequiredTransfersPage() {
       { requestId: modalRequestId },
       {
         onSuccess: () => {
-          message.success(t("common.success") ?? "Finalized");
+          message.success(t("common.success"));
           handleCloseModal();
         },
         onError: () => {
-          message.error(t("error.somethingWentWrong") ?? "Error");
+          message.error(t("error.somethingWentWrong"));
         },
       }
     );
@@ -134,19 +134,19 @@ export default function RequiredTransfersPage() {
 
   const handleAssign = () => {
     if (!modalRequestId || selectedEmployeeId == null) {
-      message.warning(t("common.select") ?? "Select an employee");
+      message.warning(t("common.select"));
       return;
     }
     assignMutation.mutate(
       { requestId: modalRequestId, userId: selectedEmployeeId },
       {
         onSuccess: () => {
-          message.success(t("common.success") ?? "Assigned");
+          message.success(t("common.success"));
           setAssignPopoverOpen(false);
           setSelectedEmployeeId(null);
         },
         onError: () => {
-          message.error(t("error.somethingWentWrong") ?? "Error");
+          message.error(t("error.somethingWentWrong"));
         },
       }
     );
@@ -167,9 +167,9 @@ export default function RequiredTransfersPage() {
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className="text-xs font-semibold uppercase">#</TableHead>
-              <TableHead className="text-xs font-semibold uppercase">{t("common.name") ?? "Name"}</TableHead>
-              <TableHead className="text-xs font-semibold uppercase">{t("requiredTransfers.requiredQty") ?? "Required qty"}</TableHead>
-              <TableHead className="text-xs font-semibold uppercase">{t("common.createdAt") ?? "Created"}</TableHead>
+              <TableHead className="text-xs font-semibold uppercase">{t("common.name")}</TableHead>
+              <TableHead className="text-xs font-semibold uppercase">{t("requiredTransfers.requiredQty")}</TableHead>
+              <TableHead className="text-xs font-semibold uppercase">{t("common.createdAt")}</TableHead>
               <TableHead className="text-xs font-semibold uppercase w-24">{t("common.actions")}</TableHead>
             </TableRow>
           </TableHeader>
@@ -203,7 +203,7 @@ export default function RequiredTransfersPage() {
                       onClick={() => handleOpenModal(request)}
                     >
                       <Eye className="w-4 h-4" />
-                      {t("common.see") ?? "See"}
+                      {t("common.see")}
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -232,7 +232,7 @@ export default function RequiredTransfersPage() {
             <div className="space-y-4">
               {/* Assign section */}
               <div className="flex flex-wrap items-center gap-3 p-3 rounded-lg border bg-muted/30">
-                <span className="text-sm font-medium">{t("requiredTransfers.assignedUser") ?? "Assigned user"}:</span>
+                <span className="text-sm font-medium">{t("requiredTransfers.assignedUser")}:</span>
                 {selectedRequest.assignedUser ? (
                   <span className="text-sm text-muted-foreground">{selectedRequest.assignedUser}</span>
                 ) : (
@@ -291,7 +291,7 @@ export default function RequiredTransfersPage() {
                       {assignMutation.isLoading ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
-                        t("requiredTransfers.assign") ?? "Assign"
+                        t("requiredTransfers.assign")
                       )}
                     </Button>
                   </>
@@ -303,10 +303,10 @@ export default function RequiredTransfersPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
-                      <TableHead className="text-xs font-semibold uppercase">{t("requiredTransfers.productName") ?? "Product"}</TableHead>
-                      <TableHead className="text-xs font-semibold uppercase">{t("common.quantity") ?? "Qty"}</TableHead>
-                      <TableHead className="text-xs font-semibold uppercase">{t("requiredTransfers.sourceBin") ?? "Source"}</TableHead>
-                      <TableHead className="text-xs font-semibold uppercase">{t("requiredTransfers.targetBin") ?? "Target"}</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase">{t("requiredTransfers.productName")}</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase">{t("common.quantity")}</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase">{t("requiredTransfers.sourceBin")}</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase">{t("requiredTransfers.targetBin")}</TableHead>
                       <TableHead className="text-xs font-semibold uppercase w-28"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -346,8 +346,8 @@ export default function RequiredTransfersPage() {
                               }
                             >
                               {line.isTransferred
-                                ? (t("requiredTransfers.transferred") ?? "Transferred")
-                                : (t("requiredTransfers.transfer") ?? "Transfer")}
+                                ? t("requiredTransfers.transferred")
+                                : t("requiredTransfers.transfer")}
                             </Button>
                           </TableCell>
                         </TableRow>
@@ -359,7 +359,7 @@ export default function RequiredTransfersPage() {
 
               <div className="flex justify-end gap-2 pt-4">
                 <Button variant="outline" size="sm" onClick={handleCloseModal}>
-                  {t("common.close") ?? "Close"}
+                  {t("common.close")}
                 </Button>
                 <Button
                   size="sm"
@@ -374,7 +374,7 @@ export default function RequiredTransfersPage() {
                   {finalizeMutation.isLoading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
-                    t("requiredTransfers.finalize") ?? "Finalize"
+                    t("requiredTransfers.finalize")
                   )}
                 </Button>
               </div>
