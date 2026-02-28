@@ -246,7 +246,7 @@ export default function CreditMemosHistoryPage() {
 
       {/* Lines modal (history includes cancelItemType) */}
       <Dialog open={selectedDoc != null} onOpenChange={(open) => !open && setSelectedDoc(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+        <DialogContent className="max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex flex-wrap items-center gap-3">
               {selectedDoc && (

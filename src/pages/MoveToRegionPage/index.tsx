@@ -355,12 +355,13 @@ const MoveToRegionPage = () => {
         title={t("sales_orders_document_lines")}
         open={isModalVisible}
         onCancel={handleCloseModal}
+        width="100%"
+        style={{ maxWidth: "min(1200px, calc(100vw - 40px))" }}
         footer={
           <Button variant="outline" onClick={handleCloseModal}>
             {t("common_close")}
           </Button>
         }
-        style={{ width: "calc(100vw - 40px)", maxWidth: 1200 }}
       >
         {selectedRequest && (
           <div className="space-y-4">

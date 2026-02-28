@@ -64,8 +64,8 @@ const App = () => (
                   {/* Protected area */}
                   <Route element={<ProtectedRoute />}>
                     <Route element={<AppShell />}>
-                      <Route path="/" element={<Dashboard />} />
-                      <Route path="/admission" element={<AdmissionPage />} />
+                      {/* <Route path="/" element={<Dashboard />} /> */}
+                      <Route path="/" element={<AdmissionPage />} />
                       <Route path="/orders" element={<OrdersPage />} />
                       <Route path="/collect" element={<CollectPage />} />
                       <Route path="/validation" element={<ValidationPage />} />

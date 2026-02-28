@@ -418,12 +418,13 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
         title={t("sales_orders_document_lines")}
         open={isModalVisible}
         onCancel={handleCloseModal}
+        width="100%"
+        style={{ maxWidth: "min(1200px, calc(100vw - 40px))" }}
         footer={[
           <AntButton key="close" onClick={handleCloseModal}>
             {t("common_close")}
           </AntButton>,
         ]}
-        style={{ width: "calc(100vw - 40px)", maxWidth: 1200 }}
       >
         {selectedOrder && (
           <div className="space-y-4">
@@ -457,6 +458,8 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
         title={t("sales_orders_create_relocation")}
         open={isCreateModalVisible}
         onCancel={handleCloseCreateModal}
+        width="100%"
+        style={{ maxWidth: "min(1200px, calc(100vw - 40px))" }}
         footer={[
           <AntButton key="cancel" onClick={handleCloseCreateModal}>
             {t("common_cancel")}
@@ -470,7 +473,6 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
             {t("sales_orders_move_to_next_step")}
           </AntButton>,
         ]}
-        style={{ width: "calc(100vw - 40px)", maxWidth: 1200 }}
       >
         <div className="space-y-4">
           <div className="p-4 bg-muted/30 rounded-lg">

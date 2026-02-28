@@ -160,7 +160,7 @@ export default function OrdersPage() {
 
       {/* Order Detail Dialog */}
       <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3">
               {selectedOrder?.sapOrderId}

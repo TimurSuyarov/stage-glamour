@@ -258,7 +258,8 @@ export default function PicklistsPage({
         title={t("picklist_detail_title", { docEntry: selectedDocEntry ?? "" })}
         open={selectedDocEntry != null}
         onCancel={handleCloseModal}
-        style={{ width: "calc(100vw - 40px)", maxWidth: 1200 }}
+        width="100%"
+        style={{ maxWidth: "min(1200px, calc(100vw - 40px))" }}
         footer={[
           isValidationMode &&
             picklistDetail &&
@@ -287,7 +288,6 @@ export default function PicklistsPage({
             {t("common_close")}
           </AntButton>,
         ].filter(Boolean)}
-        width={900}
       >
         {detailLoading ? (
           <div className="flex items-center justify-center py-8">

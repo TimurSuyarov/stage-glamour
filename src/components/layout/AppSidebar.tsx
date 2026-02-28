@@ -61,10 +61,10 @@ const navigationGroups: NavGroup[] = [
   {
     id: 'operational',
     items: [
-      { id: 'admission', labelKey: 'nav.admission', icon: PackageOpen, href: '/admission' },
-      { id: 'relocation', labelKey: 'nav.relocation', icon: ArrowRightLeft, href: '/relocation' },
-      { id: 'requiredStockTransfer', labelKey: 'nav.requiredStockTransfer', icon: PackageCheck, href: '/required-transfers' },
-      { id: 'collect', labelKey: 'nav.collect', icon: PackageSearch, href: '/collect' },
+      { id: 'admission', labelKey: 'nav.admission', icon: PackageOpen, href: '/' },
+      { id: 'relocation', labelKey: 'nav.relocation', icon:  PackageSearch, href: '/relocation' },
+      { id: 'requiredStockTransfer', labelKey: 'nav.requiredStockTransfer', icon:ArrowRightLeft, href: '/required-transfers' },
+      { id: 'collect', labelKey: 'nav.collect', icon:  PackageCheck, href: '/collect' },
       { id: 'validation', labelKey: 'nav.validation', icon: ClipboardCheck, href: '/validation' },
       { id: 'moveToRegion', labelKey: 'nav.moveToRegion', icon: Truck, href: '/move-to-region' },
       {
@@ -76,13 +76,13 @@ const navigationGroups: NavGroup[] = [
           { id: 'returnHistory', labelKey: 'nav.returnHistory', href: '/returns/history' },
         ],
       },
-      { id: 'history', labelKey: 'nav.history', icon: History, href: '/history' },
     ],
   },
   {
     id: 'masterData',
     items: [
       // { id: 'warehouse', labelKey: 'nav.warehouse', icon: Warehouse, href: '/warehouse' },
+      { id: 'history', labelKey: 'nav.history', icon: History, href: '/history' },
       { id: 'employees', labelKey: 'nav.employees', icon: Users, href: '/employees' },
       { id: 'cells', labelKey: 'nav.cells', icon: Grid3X3, href: '/cells' },
       { id: 'goods', labelKey: 'nav.goods', icon: Box, href: '/goods' },
@@ -105,7 +105,7 @@ export function AppSidebar({ collapsed, onCollapsedChange }: AppSidebarProps) {
   const { hasCollectNotification } = useCollectNotification();
   const { hasRequiredTransfersNotification } = useRequiredTransfersNotification();
 
-  const [returnMenuOpen, setReturnMenuOpen] = useState(true);
+  const [returnMenuOpen, setReturnMenuOpen] = useState(false);
 
   const isReturnRoute = location.pathname.startsWith('/returns');
   useEffect(() => {
