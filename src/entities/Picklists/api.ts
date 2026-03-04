@@ -14,6 +14,7 @@ export interface PicklistLine {
   pickedQty: number;
   requiredTransferQty: number;
   expirationDate: string | null;
+  batchNumber?: string | null;
   status: number;
 }
 
@@ -111,15 +112,22 @@ export const useValidationScan = () => {
   });
 };
 
-const postValidationFinalize = async (picklistId: number): Promise<unknown> => {
-  const { data } = await request.post(`/validation/${picklistId}/finalize`);
+export interface ValidationFinalizeBody {
+  picklistId: number;
+  deliveryPackageCount: number;
+}
+
+const postValidationFinalize = async (
+  body: ValidationFinalizeBody
+): Promise<unknown> => {
+  const { data } = await request.post("/validation/finalize", body);
   return data;
 };
 
 export const useValidationFinalize = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (picklistId: number) => postValidationFinalize(picklistId),
+    mutationFn: (body: ValidationFinalizeBody) => postValidationFinalize(body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["picklists"] });
     },

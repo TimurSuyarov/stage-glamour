@@ -16,6 +16,8 @@ import {
 } from "@/entities/Picklists/api";
 import { EPickListStatus, EPickListLineStatus } from "@/enums/picklist";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Eye, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { message } from "antd";
 
@@ -38,6 +40,7 @@ export default function PicklistsPage({
   const { t } = useTranslation();
   const [pageIndex, setPageIndex] = useState(0);
   const [selectedDocEntry, setSelectedDocEntry] = useState<number | null>(null);
+  const [deliveryPackageCount, setDeliveryPackageCount] = useState<number>(0);
 
   const assignPicklist = useAssignPicklist();
   const validationScan = useValidationScan();
@@ -69,11 +72,12 @@ export default function PicklistsPage({
 
   const handleCloseModal = () => {
     setSelectedDocEntry(null);
+    setDeliveryPackageCount(0);
   };
 
   const columns: ColumnsType<PicklistItem> = [
     { title: t("picklist_id"), dataIndex: "id", key: "id", width: 80 },
-    { title: t("picklist_sales_order_doc_entry"), dataIndex: "salesOrderDocEntry", key: "salesOrderDocEntry", width: 140 },
+    { title: t("picklist_sales_order_doc_num"), dataIndex: "salesOrderDocNum", key: "salesOrderDocNum", width: 140 },
     { title: t("picklist_card_name"), dataIndex: "cardName", key: "cardName", width: 200 },
     { title: t("picklist_warehouse_code"), dataIndex: "warehouseCode", key: "warehouseCode", width: 120 },
     {
@@ -119,6 +123,21 @@ export default function PicklistsPage({
     { title: t("picklist_line_item_code"), dataIndex: "itemCode", key: "itemCode", width: 100 },
     { title: t("picklist_line_product_name"), dataIndex: "productName", key: "productName", width: 220 },
     { title: t("picklist_line_bin_code"), dataIndex: "binCode", key: "binCode", width: 120 },
+    {
+      title: t("picklist_line_batch_number"),
+      dataIndex: "batchNumber",
+      key: "batchNumber",
+      width: 140,
+      render: (val: string | null | undefined) => val ?? "—",
+    },
+    {
+      title: t("admission.expiryDate"),
+      dataIndex: "expirationDate",
+      key: "expirationDate",
+      width: 130,
+      render: (val: string | null | undefined) =>
+        val ? new Date(val).toLocaleDateString() : "—",
+    },
     { title: t("picklist_line_requested_qty"), dataIndex: "requestedQty", key: "requestedQty", width: 100 },
     { title: t("picklist_line_allocated_qty"), dataIndex: "allocatedQty", key: "allocatedQty", width: 100 },
     { title: t("picklist_line_picked_qty"), dataIndex: "pickedQty", key: "pickedQty", width: 100 },
@@ -260,34 +279,66 @@ export default function PicklistsPage({
         onCancel={handleCloseModal}
         width="100%"
         style={{ maxWidth: "min(1200px, calc(100vw - 40px))" }}
-        footer={[
-          isValidationMode &&
-            picklistDetail &&
-            allLinesValidated && (
-              <AntButton
-                key="finalize"
-                type="primary"
-                loading={finalizeValidation.isLoading}
-                onClick={() => {
-                  if (!picklistDetail) return;
-                  finalizeValidation.mutate(picklistDetail.id, {
-                    onSuccess: () => {
-                      message.success(t("common.success"));
-                      handleCloseModal();
-                    },
-                    onError: () => {
-                      message.error(t("error.somethingWentWrong"));
-                    },
-                  });
-                }}
-              >
-                {t("validation.finalize")}
+        footer={
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              {isValidationMode && picklistDetail && allLinesValidated && (
+                <>
+                  <Label className="text-sm whitespace-nowrap mb-0">
+                    {t("picklist.deliveryPackageCount")}
+                  </Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={deliveryPackageCount === 0 ? "" : deliveryPackageCount}
+                    placeholder={t("picklist.deliveryPackageCountPlaceholder")}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setDeliveryPackageCount(
+                        v === "" ? 0 : Math.max(0, parseInt(v, 10) || 0)
+                      );
+                    }}
+                    className="w-28 h-9"
+                  />
+                </>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {isValidationMode &&
+                picklistDetail &&
+                allLinesValidated && (
+                  <AntButton
+                    key="finalize"
+                    type="primary"
+                    loading={finalizeValidation.isLoading}
+                    onClick={() => {
+                      if (!picklistDetail) return;
+                      finalizeValidation.mutate(
+                        {
+                          picklistId: picklistDetail.id,
+                          deliveryPackageCount,
+                        },
+                        {
+                          onSuccess: () => {
+                            message.success(t("common.success"));
+                            handleCloseModal();
+                          },
+                          onError: () => {
+                            message.error(t("error.somethingWentWrong"));
+                          },
+                        }
+                      );
+                    }}
+                  >
+                    {t("validation.finalize")}
+                  </AntButton>
+                )}
+              <AntButton key="close" onClick={handleCloseModal}>
+                {t("common_close")}
               </AntButton>
-            ),
-          <AntButton key="close" onClick={handleCloseModal}>
-            {t("common_close")}
-          </AntButton>,
-        ].filter(Boolean)}
+            </div>
+          </div>
+        }
       >
         {detailLoading ? (
           <div className="flex items-center justify-center py-8">
@@ -341,9 +392,9 @@ export default function PicklistsPage({
                 <Table
                   columns={lineColumns}
                   dataSource={sortedLines}
-              rowKey="id"
-              pagination={false}
-              scroll={{ x: "max-content" }}
+                  rowKey="id"
+                  pagination={false}
+                  scroll={{ x: "max-content" }}
                   size="small"
                 />
               );

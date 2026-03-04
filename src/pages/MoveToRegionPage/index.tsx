@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
-import { Table, Modal, Tooltip } from "antd";
+import { Table, Modal, Tooltip, message } from "antd";
+import { useQueryClient } from "react-query";
 import type { ColumnsType } from "antd/es/table";
 import { ClearOutlined } from "@ant-design/icons";
 import { PageHeader } from "@/components/ui/page-header";
@@ -13,13 +14,26 @@ import { DatePicker } from "antd";
 import dayjs from "dayjs";
 import {
   useInventoryTransferRequests,
+  usePostInventoryTransferRequests,
   type InventoryTransferRequestItem,
   type InventoryTransferRequestLine,
   type InventoryTransferRequestsFilters,
 } from "@/entities/InventoryTransferRequests/api";
+import { useCollectNotification } from "@/contexts/CollectNotificationContext";
+import { useRequiredTransfersNotification } from "@/contexts/RequiredTransfersNotificationContext";
+import {
+  createSalesOrdersHubConnection,
+  type ProcessingCompletedPayload,
+} from "@/lib/salesOrdersHub";
 
 const MoveToRegionPage = () => {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const { setCollectNotification } = useCollectNotification();
+  const {
+    setRequiredTransfersNotification,
+    clearRequiredTransfersNotification,
+  } = useRequiredTransfersNotification();
 
   // Filters state
   const [filterDocNum, setFilterDocNum] = useState<string>("");
@@ -28,6 +42,8 @@ const MoveToRegionPage = () => {
   const [filterEndDate, setFilterEndDate] = useState("");
   const [filterFromWarehouse, setFilterFromWarehouse] = useState("");
   const [filterToWarehouse, setFilterToWarehouse] = useState("");
+  const [filterStatus, setFilterStatus] = useState<string>("");
+  const [filterDocEntry, setFilterDocEntry] = useState<string>("");
   const [appliedFilters, setAppliedFilters] =
     useState<InventoryTransferRequestsFilters>({});
   const [pageIndex, setPageIndex] = useState(0);
@@ -40,7 +56,9 @@ const MoveToRegionPage = () => {
       Skip: pageIndex * pageSize,
     };
 
+    if (appliedFilters.DocEntry != null) f.DocEntry = appliedFilters.DocEntry;
     if (appliedFilters.DocNum != null) f.DocNum = appliedFilters.DocNum;
+    if (appliedFilters.Status != null) f.Status = appliedFilters.Status;
     if (appliedFilters.CardName) f.CardName = appliedFilters.CardName;
     if (appliedFilters.StartDate) f.StartDate = appliedFilters.StartDate;
     if (appliedFilters.EndDate) f.EndDate = appliedFilters.EndDate;
@@ -68,11 +86,16 @@ const MoveToRegionPage = () => {
   const [selectedRequest, setSelectedRequest] =
     useState<InventoryTransferRequestItem | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<number[]>([]);
+
+  const postMutation = usePostInventoryTransferRequests();
 
   const handleApplyFilters = () => {
     setPageIndex(0);
     setAppliedFilters({
+      DocEntry: filterDocEntry.trim() ? Number(filterDocEntry) : undefined,
       DocNum: filterDocNum.trim() ? Number(filterDocNum) : undefined,
+      Status: filterStatus.trim() ? Number(filterStatus) : undefined,
       CardName: filterCardName.trim() || undefined,
       StartDate: filterStartDate || undefined,
       EndDate: filterEndDate || undefined,
@@ -82,7 +105,9 @@ const MoveToRegionPage = () => {
   };
 
   const handleClearFilters = () => {
+    setFilterDocEntry("");
     setFilterDocNum("");
+    setFilterStatus("");
     setFilterCardName("");
     setFilterStartDate("");
     setFilterEndDate("");
@@ -90,6 +115,56 @@ const MoveToRegionPage = () => {
     setFilterToWarehouse("");
     setAppliedFilters({});
     setPageIndex(0);
+  };
+
+  const handleSubmitSelected = () => {
+    if (selectedRowKeys.length === 0) {
+      message.warning(t("common.select"));
+      return;
+    }
+    postMutation.mutate(selectedRowKeys, {
+      onSuccess: () => {
+        const connection = createSalesOrdersHubConnection();
+
+        const onDone = () => {
+          connection.stop().catch(() => {});
+          setSelectedRowKeys([]);
+        };
+
+        connection.on(
+          "ProcessingCompleted",
+          (payload: ProcessingCompletedPayload) => {
+            if (payload?.hasRequiredTransferExist) {
+              setRequiredTransfersNotification(true);
+              setCollectNotification(false);
+            } else {
+              setCollectNotification(true);
+              clearRequiredTransfersNotification();
+            }
+
+            queryClient.invalidateQueries({
+              queryKey: ["inventory-transfer-requests"],
+            });
+            message.success(
+              payload?.message ?? t("moveToRegion.submit")
+            );
+            onDone();
+          }
+        );
+
+        connection.onclose(onDone);
+
+        connection
+          .start()
+          .catch(() => {
+            message.error(t("error.couldNotConnect"));
+            onDone();
+          });
+      },
+      onError: () => {
+        message.error(t("error.somethingWentWrong"));
+      },
+    });
   };
 
   const handleViewLines = (request: InventoryTransferRequestItem) => {
@@ -100,6 +175,14 @@ const MoveToRegionPage = () => {
   const handleCloseModal = () => {
     setIsModalVisible(false);
     setSelectedRequest(null);
+  };
+
+  const rowSelection: {
+    selectedRowKeys: number[];
+    onChange: (keys: React.Key[]) => void;
+  } = {
+    selectedRowKeys,
+    onChange: (keys) => setSelectedRowKeys(keys as number[]),
   };
 
   const columns: ColumnsType<InventoryTransferRequestItem> = [
@@ -123,14 +206,14 @@ const MoveToRegionPage = () => {
       width: 150,
     },
     {
-      title: t("cells_warehouse"),
+      title: t("moveToRegion.fromWarehouse"),
       dataIndex: "fromWarehouseName",
       key: "fromWarehouseName",
       render: (_: unknown, record: InventoryTransferRequestItem) =>
         record.fromWarehouseName || record.fromWarehouse,
     },
     {
-      title: t("picklist_warehouse_code"),
+      title: t("moveToRegion.toWarehouse"),
       dataIndex: "toWarehouseName",
       key: "toWarehouseName",
       render: (_: unknown, record: InventoryTransferRequestItem) =>
@@ -157,14 +240,14 @@ const MoveToRegionPage = () => {
 
   const documentLineColumns: ColumnsType<InventoryTransferRequestLine> = [
     {
-      title: t("sales_orders_line_num"),
-      dataIndex: "lineNum",
-      key: "lineNum",
-      width: 80,
-      align: "center" as const,
+      title: t("creditMemos.itemCode"),
+      dataIndex: "itemCode",
+      key: "itemCode",
+      width: 120,
+      render: (val: string) => <span className="font-mono text-sm">{val}</span>,
     },
     {
-      title: t("sales_orders_item_description"),
+      title: t("creditMemos.itemDescription"),
       dataIndex: "itemDescription",
       key: "itemDescription",
     },
@@ -176,25 +259,20 @@ const MoveToRegionPage = () => {
       align: "right" as const,
     },
     {
-      title: t("sales_orders_warehouse_code"),
-      dataIndex: "fromWarehouseCode",
-      key: "fromWarehouseCode",
-      width: 120,
-      align: "center" as const,
+      title: t("admission.manufacturingDate"),
+      dataIndex: "batchManufactureDate",
+      key: "batchManufactureDate",
+      width: 130,
+      render: (val: string | null | undefined) =>
+        val ? new Date(val).toLocaleDateString() : "—",
     },
     {
-      title: t("picklist_warehouse_code"),
-      dataIndex: "warehouseCode",
-      key: "warehouseCode",
-      width: 120,
-      align: "center" as const,
-    },
-    {
-      title: t("cells_bin_code"),
-      dataIndex: "uoMName",
-      key: "uoMName",
-      width: 120,
-      align: "center" as const,
+      title: t("admission.expiryDate"),
+      dataIndex: "batchExpiryDate",
+      key: "batchExpiryDate",
+      width: 130,
+      render: (val: string | null | undefined) =>
+        val ? new Date(val).toLocaleDateString() : "—",
     },
   ];
 
@@ -210,7 +288,17 @@ const MoveToRegionPage = () => {
 
       <ModuleCard>
         {/* Filters */}
-        <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
+        <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-8 gap-4 items-end">
+          <div className="space-y-2">
+            <Label className="text-xs">{t("creditMemos.docEntry")}</Label>
+            <Input
+              type="number"
+              placeholder="—"
+              value={filterDocEntry}
+              onChange={(e) => setFilterDocEntry(e.target.value)}
+              className="h-9"
+            />
+          </div>
           <div className="space-y-2">
             <Label className="text-xs">{t("sales_orders_filter_doc_num")}</Label>
             <Input
@@ -218,6 +306,16 @@ const MoveToRegionPage = () => {
               placeholder={t("sales_orders_filter_doc_num")}
               value={filterDocNum}
               onChange={(e) => setFilterDocNum(e.target.value)}
+              className="h-9"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs">{t("creditMemos.documentStatus")}</Label>
+            <Input
+              type="number"
+              placeholder="—"
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
               className="h-9"
             />
           </div>
@@ -255,18 +353,18 @@ const MoveToRegionPage = () => {
             />
           </div>
           <div className="space-y-2">
-            <Label className="text-xs">{t("picklist_warehouse_code")}</Label>
+            <Label className="text-xs">{t("moveToRegion.fromWarehouse")}</Label>
             <Input
-              placeholder={t("picklist_warehouse_code")}
+              placeholder={t("moveToRegion.fromWarehouse")}
               value={filterFromWarehouse}
               onChange={(e) => setFilterFromWarehouse(e.target.value)}
               className="h-9"
             />
           </div>
           <div className="space-y-2">
-            <Label className="text-xs">{t("cells_warehouse")}</Label>
+            <Label className="text-xs">{t("moveToRegion.toWarehouse")}</Label>
             <Input
-              placeholder={t("cells_warehouse")}
+              placeholder={t("moveToRegion.toWarehouse")}
               value={filterToWarehouse}
               onChange={(e) => setFilterToWarehouse(e.target.value)}
               className="h-9"
@@ -303,7 +401,24 @@ const MoveToRegionPage = () => {
           </div>
         ) : (
           <>
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+              <span className="text-sm text-muted-foreground">
+                {selectedRowKeys.length > 0
+                  ? t("sales_orders_selected_count", { count: selectedRowKeys.length })
+                  : null}
+              </span>
+              <Button
+                onClick={handleSubmitSelected}
+                disabled={selectedRowKeys.length === 0 || postMutation.isLoading}
+              >
+                {postMutation.isLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2 inline" />
+                ) : null}
+                {t("moveToRegion.submit")}
+              </Button>
+            </div>
             <Table
+              rowSelection={rowSelection}
               columns={columns}
               dataSource={requests}
               rowKey="docEntry"

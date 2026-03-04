@@ -1,5 +1,5 @@
 import request from "@/services";
-import { useQuery } from "react-query";
+import { useMutation, useQuery, useQueryClient } from "react-query";
 
 export interface InventoryTransferRequestLine {
   lineNum: number;
@@ -7,12 +7,17 @@ export interface InventoryTransferRequestLine {
   itemDescription: string;
   quantity: number;
   quantityPerPackage: number | null;
-  fromWarehouseCode: string;
-  fromWarehouseName: string;
-  warehouseCode: string;
-  warehouseName: string;
-  uoMCode: string;
-  uoMName: string;
+  fromWarehouseCode?: string;
+  fromWarehouseName?: string;
+  warehouseCode?: string;
+  warehouseName?: string;
+  uoMCode?: string;
+  uoMName?: string;
+  batchNumber?: string | null;
+  batchQuantity?: number | null;
+  batchExpiryDate?: string | null;
+  batchManufactureDate?: string | null;
+  shelf?: string | null;
 }
 
 export interface InventoryTransferRequestItem {
@@ -91,6 +96,27 @@ export const useInventoryTransferRequests = (
     queryKey: ["inventory-transfer-requests", filters ?? {}],
     queryFn: () => fetchInventoryTransferRequests(filters),
     refetchOnWindowFocus: false,
+  });
+};
+
+/** POST: submit selected docEntries (array of numbers) */
+const postInventoryTransferRequests = async (
+  docEntries: number[]
+): Promise<unknown> => {
+  const { data } = await request.post<unknown>(
+    "/inventory-transfer-requests",
+    docEntries
+  );
+  return data;
+};
+
+export const usePostInventoryTransferRequests = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: postInventoryTransferRequests,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["inventory-transfer-requests"] });
+    },
   });
 };
 

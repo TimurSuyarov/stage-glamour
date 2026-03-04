@@ -267,6 +267,7 @@
   "employees_showing_range": "{{start}}–{{end}}",
   "picklist_id": "ID",
   "picklist_sales_order_doc_entry": "Buyurtma DocEntry",
+  "picklist_sales_order_doc_num": "Buyurtma hujjat raqami",
   "picklist_card_name": "Mijoz",
   "picklist_warehouse_code": "Ombor",
   "picklist_status": "Holat",
@@ -282,6 +283,9 @@
   "picklist_line_requested_qty": "So'ralgan",
   "picklist_line_allocated_qty": "Ajratilgan",
   "picklist_line_picked_qty": "Yig'ilgan",
+  "picklist.deliveryPackageCount": "Yetkazib berish qadoqlari soni",
+  "picklist.deliveryPackageCountPlaceholder": "0",
+  "picklist_line_batch_number": "Partiya raqami",
   "picklist_line_status": "Holat",
   "picklistStatus.draft": "Qoralama",
   "picklistStatus.inprogress": "Jarayonda",
@@ -305,5 +309,8 @@
   "common.guest": "Mehmon",
   "common.itemCode": "Mahsulot kodi",
   "common.itemName": "Mahsulot nomi",
-  "common.itemsGroupCode": "Guruh kodi"
+  "common.itemsGroupCode": "Guruh kodi",
+  "moveToRegion.submit": "Yuborish",
+  "moveToRegion.fromWarehouse": "Ombordan",
+  "moveToRegion.toWarehouse": "Omborga"
 }

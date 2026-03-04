@@ -267,6 +267,7 @@
   "employees_showing_range": "{{start}}–{{end}}",
   "picklist_id": "ID",
   "picklist_sales_order_doc_entry": "DocEntry заказа",
+  "picklist_sales_order_doc_num": "Номер документа заказа",
   "picklist_card_name": "Клиент",
   "picklist_warehouse_code": "Склад",
   "picklist_status": "Статус",
@@ -282,6 +283,9 @@
   "picklist_line_requested_qty": "Заказано",
   "picklist_line_allocated_qty": "Выделено",
   "picklist_line_picked_qty": "Собрано",
+  "picklist.deliveryPackageCount": "Количество пакетов доставки",
+  "picklist.deliveryPackageCountPlaceholder": "0",
+  "picklist_line_batch_number": "Номер партии",
   "picklist_line_status": "Статус",
   "picklistStatus.draft": "Черновик",
   "picklistStatus.inprogress": "В процессе",
@@ -305,5 +309,8 @@
   "common.guest": "Гость",
   "common.itemCode": "Код товара",
   "common.itemName": "Название товара",
-  "common.itemsGroupCode": "Код группы"
+  "common.itemsGroupCode": "Код группы",
+  "moveToRegion.submit": "Отправить",
+  "moveToRegion.fromWarehouse": "Со склада",
+  "moveToRegion.toWarehouse": "На склад"
 }
