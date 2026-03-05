@@ -111,6 +111,15 @@ export default function GoodsPage() {
       ),
     },
     {
+      key: 'batchNumber',
+      header: t('returns.batchNumber'),
+      cell: (good) => (
+        <span className="font-mono text-sm">
+          {good.batchNumber || "—"}
+        </span>
+      ),
+    },
+    {
       key: 'actions',
       header: t('common.actions'),
       cell: (good) => (

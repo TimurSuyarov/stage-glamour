@@ -22,11 +22,15 @@ export interface CreditMemoLine {
   quantity: number;
   quantityPerPackage: number | null;
   warehouseCode: string;
-  cancelItemType?: number;
+  cancelItemType?: number | null;
   U_CancelItem: string | null;
   U_QuantityPerBoxLine: number | null;
   batchNumbers: BatchNumber[];
   documentLinesBinAllocations: BinAllocation[];
+  batchNumber?: string | null;
+  batchQuantity?: number | null;
+  batchExpiryDate?: string | null;
+  batchManufacturingDate?: string | null;
 }
 
 export interface CreditMemoItem {

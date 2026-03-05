@@ -158,6 +158,7 @@ export interface Good {
   barcode: string;
   name: string;
   category: string;
+  batchNumber: string;
   isActive: boolean;
   syncInfo: SAPSyncInfo;
 }

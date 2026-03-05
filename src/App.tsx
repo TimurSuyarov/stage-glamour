@@ -23,6 +23,7 @@ import GoodsPage from "./pages/GoodsPage";
 import EmployeesPage from "./pages/EmployeesPage";
 import AdmissionPage from "./pages/AdmissionPage";
 import RequiredTransfersPage from "./pages/RequiredTransfersPage";
+import InventoryCountingsPage from "./pages/InventoryCountingsPage";
 import {
   CollectPage,
   MoveToRegionPage,
@@ -85,6 +86,7 @@ const App = () => (
                       <Route path="/cells" element={<CellsPage />} />
                       <Route path="/goods" element={<GoodsPage />} />
                       <Route path="/inventory" element={<InventoryPage />} />
+                      <Route path="/inventory-countings" element={<InventoryCountingsPage />} />
                       <Route path="/reports" element={<ReportsPage />} />
                       <Route path="/bonuses" element={<BonusesPage />} />
                     </Route>

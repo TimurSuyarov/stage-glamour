@@ -9,6 +9,12 @@ export interface ItemPriceDto {
   currency: string | null;
 }
 
+export interface ItemBatchDto {
+  batchNumber: string;
+  manufactureDate: string | null;
+  expiryDate: string | null;
+}
+
 /** Backend item (API response shape – camelCase) */
 export interface ItemDto {
   itemCode: string;
@@ -19,7 +25,9 @@ export interface ItemDto {
   barCode: string | null;
   itemType: string;
   quantityPerPackage: number | null;
-  prices: ItemPriceDto[];
+  batches: ItemBatchDto[];
+  prices?: ItemPriceDto[];
+  U_Shelf: string | null;
 }
 
 export interface ItemsResponse {
@@ -52,6 +60,7 @@ function mapItemToGood(dto: ItemDto): Good {
     barcode: dto.barCode ?? "",
     name: dto.itemName ?? "",
     category: dto.itemGroup ?? "",
+    batchNumber: dto.batches?.[0]?.batchNumber ?? "",
     isActive: true,
     syncInfo,
   };

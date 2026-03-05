@@ -325,6 +325,7 @@ export default function PicklistsPage({
                     key="finalize"
                     type="primary"
                     loading={finalizeValidation.isLoading}
+                    disabled={deliveryPackageCount <= 0}
                     onClick={() => {
                       if (!picklistDetail) return;
                       finalizeValidation.mutate(

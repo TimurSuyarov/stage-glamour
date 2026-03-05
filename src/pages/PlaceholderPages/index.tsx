@@ -6,6 +6,7 @@ import { Construction } from 'lucide-react';
 import SalesOrdersPage from '@/pages/SalesOrdersPage';
 import { ESalesOrderStatus } from '@/enums/salesOrder';
 import CellsPageComponent from '@/pages/CellsPage';
+import InventoryPageComponent from '@/pages/InventoryPage';
 import CollectPageComponent from '@/pages/CollectPage';
 import MoveToRegionPageComponent from '@/pages/MoveToRegionPage';
 import { useCollectNotification } from '@/contexts/CollectNotificationContext';
@@ -72,7 +73,7 @@ export function CellsPage() {
 }
 
 export function InventoryPage() {
-  return <PlaceholderPage titleKey="nav.inventory" parentKey="nav.masterData" />;
+  return <InventoryPageComponent />;
 }
 
 export function ReportsPage() {

@@ -7,6 +7,7 @@ import {
   type CreditMemoItem,
   type CreditMemoLine,
 } from "@/entities/CreditMemos/api";
+import { EReturnReasonType } from "@/enums/returnReason";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,11 +31,16 @@ import dayjs from "dayjs";
 
 const PAGE_SIZE = 20;
 
+const REASON_LABEL_KEYS: Record<number, string> = {
+  [EReturnReasonType.Valid]: "returns.reasonValid",
+  [EReturnReasonType.Damaged]: "returns.reasonDamaged",
+  [EReturnReasonType.Expired]: "returns.reasonExpired",
+};
+
 export default function CreditMemosHistoryPage() {
   const { t } = useTranslation();
   const [selectedDoc, setSelectedDoc] = useState<CreditMemoItem | null>(null);
   const [pageIndex, setPageIndex] = useState(0);
-  const [filterDocEntry, setFilterDocEntry] = useState("");
   const [filterDocNum, setFilterDocNum] = useState("");
   const [filterCardCode, setFilterCardCode] = useState("");
   const [filterCardName, setFilterCardName] = useState("");
@@ -58,7 +64,6 @@ export default function CreditMemosHistoryPage() {
   const handleApplyFilters = () => {
     setPageIndex(0);
     setAppliedFilters({
-      DocEntry: filterDocEntry.trim() ? Number(filterDocEntry) : undefined,
       DocNum: filterDocNum.trim() ? Number(filterDocNum) : undefined,
       CardCode: filterCardCode.trim() || undefined,
       CardName: filterCardName.trim() || undefined,
@@ -68,7 +73,6 @@ export default function CreditMemosHistoryPage() {
   };
 
   const handleClearFilters = () => {
-    setFilterDocEntry("");
     setFilterDocNum("");
     setFilterCardCode("");
     setFilterCardName("");
@@ -93,15 +97,6 @@ export default function CreditMemosHistoryPage() {
 
       {/* Filters */}
       <div className="flex flex-wrap items-end gap-4 p-4 rounded-lg border bg-card">
-        <div className="flex flex-col gap-1.5">
-          <Label className="text-xs">{t("creditMemos.docEntry")}</Label>
-          <Input
-            placeholder="—"
-            value={filterDocEntry}
-            onChange={(e) => setFilterDocEntry(e.target.value)}
-            className="h-9 w-28"
-          />
-        </div>
         <div className="flex flex-col gap-1.5">
           <Label className="text-xs">{t("creditMemos.docNum")}</Label>
           <Input
@@ -157,43 +152,40 @@ export default function CreditMemosHistoryPage() {
         </Button>
       </div>
 
+      {/* Main table */}
       <div className="rounded-lg border bg-card">
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="text-xs font-semibold uppercase">DocEntry</TableHead>
               <TableHead className="text-xs font-semibold uppercase">{t("creditMemos.docNum")}</TableHead>
-              <TableHead className="text-xs font-semibold uppercase">{t("common.date")}</TableHead>
-              <TableHead className="text-xs font-semibold uppercase">{t("creditMemos.cardCode")}</TableHead>
               <TableHead className="text-xs font-semibold uppercase">{t("creditMemos.cardName")}</TableHead>
-              <TableHead className="text-xs font-semibold uppercase">{t("creditMemos.documentStatus")}</TableHead>
+              <TableHead className="text-xs font-semibold uppercase">{t("creditMemos.cardCode")}</TableHead>
+              <TableHead className="text-xs font-semibold uppercase">{t("common.date")}</TableHead>
               <TableHead className="text-xs font-semibold uppercase w-24">{t("common.actions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-32 text-center">
+                <TableCell colSpan={5} className="h-32 text-center">
                   <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
                 </TableCell>
               </TableRow>
             ) : items.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
+                <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
                   {t("common.noData")}
                 </TableCell>
               </TableRow>
             ) : (
               items.map((doc) => (
                 <TableRow key={doc.docEntry} className="hover:bg-muted/50">
-                  <TableCell className="font-mono text-sm">{doc.docEntry}</TableCell>
                   <TableCell className="font-mono text-sm">{doc.docNum}</TableCell>
-                  <TableCell className="text-muted-foreground text-sm">{doc.docDate}</TableCell>
-                  <TableCell className="font-mono text-sm">{doc.cardCode}</TableCell>
                   <TableCell className="max-w-[200px] truncate" title={doc.cardName}>
                     {doc.cardName}
                   </TableCell>
-                  <TableCell className="text-sm">{doc.documentStatus}</TableCell>
+                  <TableCell className="font-mono text-sm">{doc.cardCode}</TableCell>
+                  <TableCell className="text-muted-foreground text-sm">{doc.docDate}</TableCell>
                   <TableCell>
                     <Button
                       variant="outline"
@@ -244,9 +236,9 @@ export default function CreditMemosHistoryPage() {
         </div>
       )}
 
-      {/* Lines modal (history includes cancelItemType) */}
+      {/* Lines modal */}
       <Dialog open={selectedDoc != null} onOpenChange={(open) => !open && setSelectedDoc(null)}>
-        <DialogContent className="max-h-[90vh] flex flex-col">
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex flex-wrap items-center gap-3">
               {selectedDoc && (
@@ -265,12 +257,12 @@ export default function CreditMemosHistoryPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
-                    <TableHead className="text-xs font-semibold uppercase">{t("creditMemos.itemCode")}</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase w-12">#</TableHead>
                     <TableHead className="text-xs font-semibold uppercase">{t("creditMemos.itemDescription")}</TableHead>
-                    <TableHead className="text-xs font-semibold uppercase">{t("common.quantity")}</TableHead>
-                    <TableHead className="text-xs font-semibold uppercase">{t("creditMemos.quantityPerPackage")}</TableHead>
-                    <TableHead className="text-xs font-semibold uppercase">{t("creditMemos.warehouse")}</TableHead>
-                    <TableHead className="text-xs font-semibold uppercase">cancelItemType</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase w-20">{t("common.quantity")}</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase">{t("returns.condition")}</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase">{t("returns.batchNumber")}</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase">{t("admission.expiryDate")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -283,14 +275,22 @@ export default function CreditMemosHistoryPage() {
                   ) : (
                     lines.map((line: CreditMemoLine, idx: number) => (
                       <TableRow key={idx}>
-                        <TableCell className="font-mono text-sm">{line.itemCode}</TableCell>
+                        <TableCell className="font-mono text-sm">{idx + 1}</TableCell>
                         <TableCell className="max-w-[240px] truncate" title={line.itemDescription}>
                           {line.itemDescription}
                         </TableCell>
-                        <TableCell>{line.quantity}</TableCell>
-                        <TableCell>{line.quantityPerPackage ?? "—"}</TableCell>
-                        <TableCell className="font-mono text-sm">{line.warehouseCode}</TableCell>
-                        <TableCell>{line.cancelItemType ?? "—"}</TableCell>
+                        <TableCell className="text-center">{line.quantity}</TableCell>
+                        <TableCell>
+                          {line.cancelItemType != null
+                            ? t(REASON_LABEL_KEYS[line.cancelItemType] ?? "common.noData")
+                            : "—"}
+                        </TableCell>
+                        <TableCell className="text-sm">{line.batchNumber ?? "—"}</TableCell>
+                        <TableCell className="text-sm">
+                          {line.batchExpiryDate
+                            ? new Date(line.batchExpiryDate).toLocaleDateString()
+                            : "—"}
+                        </TableCell>
                       </TableRow>
                     ))
                   )}

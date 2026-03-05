@@ -87,6 +87,7 @@ const navigationGroups: NavGroup[] = [
       { id: 'cells', labelKey: 'nav.cells', icon: Grid3X3, href: '/cells' },
       { id: 'goods', labelKey: 'nav.goods', icon: Box, href: '/goods' },
       { id: 'inventory', labelKey: 'nav.inventory', icon: ClipboardList, href: '/inventory' },
+      { id: 'inventoryCountings', labelKey: 'nav.inventoryCountings', icon: ClipboardList, href: '/inventory-countings' },
       // { id: 'reports', labelKey: 'nav.reports', icon: BarChart3, href: '/reports' },
       { id: 'bonuses', labelKey: 'nav.bonuses', icon: Gift, href: '/bonuses' },
     ],
@@ -122,6 +123,8 @@ export function AppSidebar({ collapsed, onCollapsedChange }: AppSidebarProps) {
 
   const isActive = (href: string) => {
     if (href === '/') return location.pathname === '/';
+    // /inventory must not match /inventory-countings
+    if (href === '/inventory') return location.pathname === '/inventory';
     return location.pathname.startsWith(href);
   };
 
