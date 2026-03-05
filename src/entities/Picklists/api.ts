@@ -21,14 +21,17 @@ export interface PicklistLine {
 export interface PicklistItem {
   id: number;
   salesOrderDocEntry: number;
+  salesOrderDocNum: string;
   cardName: string;
   warehouseCode: string;
   status: number;
   inventoryTransferRequired: boolean;
   requiredTransferQty: number;
+  type: number;
   linesTotalCount: number;
   linesPickedCount: number;
   assignedUserId: number | null;
+  assigneeName: string | null;
   completedAt: string | null;
 }
 

@@ -3,10 +3,15 @@ import { PageHeader } from "@/components/ui/page-header";
 import { useTranslation } from "react-i18next";
 import {
   useCreditMemosDrafts,
+  useCreditMemoDraftDetail,
+  useReturnMutation,
   type CreditMemosFilters,
   type CreditMemoItem,
-  type CreditMemoLine,
+  type ReturnLinePayload,
 } from "@/entities/CreditMemos/api";
+import { EReturnReasonType } from "@/enums/returnReason";
+import { createReturnsHubConnection } from "@/lib/returnsHub";
+import { useRequiredTransfersNotification } from "@/contexts/RequiredTransfersNotificationContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,16 +28,43 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
-import { Eye, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
-import { DatePicker } from "antd";
+import { Eye, Loader2, ChevronLeft, ChevronRight, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+import { DatePicker, message } from "antd";
+import { cn } from "@/lib/utils";
+import { useQueryClient } from "react-query";
 import dayjs from "dayjs";
 
 const PAGE_SIZE = 20;
 
+const REASON_BUTTONS = [
+  {
+    reason: EReturnReasonType.Valid,
+    labelKey: "returns.reasonValid",
+    icon: CheckCircle2,
+    activeClass: "bg-green-600 text-white border-green-600 hover:bg-green-700",
+  },
+  {
+    reason: EReturnReasonType.Damaged,
+    labelKey: "returns.reasonDamaged",
+    icon: XCircle,
+    activeClass: "bg-red-600 text-white border-red-600 hover:bg-red-700",
+  },
+  {
+    reason: EReturnReasonType.Expired,
+    labelKey: "returns.reasonExpired",
+    icon: AlertTriangle,
+    activeClass: "bg-amber-600 text-white border-amber-600 hover:bg-amber-700",
+  },
+];
+
 export default function CreditMemosDraftsPage() {
   const { t } = useTranslation();
-  const [selectedDoc, setSelectedDoc] = useState<CreditMemoItem | null>(null);
+  const queryClient = useQueryClient();
+  const { setRequiredTransfersNotification } = useRequiredTransfersNotification();
+
+  const [selectedDocEntry, setSelectedDocEntry] = useState<number | null>(null);
   const [pageIndex, setPageIndex] = useState(0);
   const [filterDocEntry, setFilterDocEntry] = useState("");
   const [filterDocNum, setFilterDocNum] = useState("");
@@ -42,9 +74,15 @@ export default function CreditMemosDraftsPage() {
   const [filterEndDate, setFilterEndDate] = useState("");
   const [appliedFilters, setAppliedFilters] = useState<CreditMemosFilters>({});
 
+  const [lineReasons, setLineReasons] = useState<Record<number, number>>({});
+  const [returnLoading, setReturnLoading] = useState(false);
+
+  const returnMutation = useReturnMutation();
+
   const filters: CreditMemosFilters = useMemo(
     () => ({
       ...appliedFilters,
+      Status: 2,
       PageSize: PAGE_SIZE,
       Skip: pageIndex * PAGE_SIZE,
     }),
@@ -52,6 +90,7 @@ export default function CreditMemosDraftsPage() {
   );
 
   const { data: items = [], isLoading } = useCreditMemosDrafts(filters);
+  const { data: detail, isLoading: detailLoading } = useCreditMemoDraftDetail(selectedDocEntry);
   const hasNextPage = items.length >= PAGE_SIZE;
   const hasPrevPage = pageIndex > 0;
 
@@ -78,7 +117,66 @@ export default function CreditMemosDraftsPage() {
     setPageIndex(0);
   };
 
-  const lines = selectedDoc?.stockTransferLines ?? [];
+  const handleOpenModal = (doc: CreditMemoItem) => {
+    setSelectedDocEntry(doc.docEntry);
+    setLineReasons({});
+  };
+
+  const handleCloseModal = () => {
+    setSelectedDocEntry(null);
+    setLineReasons({});
+  };
+
+  const setReason = (lineNum: number, reason: number) => {
+    setLineReasons((prev) => ({ ...prev, [lineNum]: reason }));
+  };
+
+  const detailLines = detail?.documentLines ?? [];
+  const allLinesHaveReason =
+    detailLines.length > 0 &&
+    detailLines.every((line) => lineReasons[line.lineNum] != null);
+
+  const handleReturn = async () => {
+    if (!selectedDocEntry || !allLinesHaveReason) return;
+
+    const payload: ReturnLinePayload[] = detailLines.map((line) => ({
+      lineNum: line.lineNum,
+      reasonId: lineReasons[line.lineNum],
+    }));
+
+    setReturnLoading(true);
+    try {
+      await returnMutation.mutateAsync({ docEntry: selectedDocEntry, lines: payload });
+    } catch {
+      message.error(t("error.somethingWentWrong"));
+      setReturnLoading(false);
+      return;
+    }
+
+    handleCloseModal();
+
+    const connection = createReturnsHubConnection();
+    const onDone = () => {
+      connection.stop().catch(() => {});
+      setReturnLoading(false);
+    };
+
+    connection.on("ProcessingCompleted", () => {
+      setRequiredTransfersNotification(true);
+      queryClient.invalidateQueries({ queryKey: ["credit-memos"] });
+      message.success(t("common.success"));
+      onDone();
+    });
+    connection.onclose(onDone);
+
+    try {
+      await connection.start();
+    } catch {
+      message.error(t("error.couldNotConnect"));
+      setRequiredTransfersNotification(true);
+      onDone();
+    }
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -157,6 +255,7 @@ export default function CreditMemosDraftsPage() {
         </Button>
       </div>
 
+      {/* Table */}
       <div className="rounded-lg border bg-card">
         <Table>
           <TableHeader>
@@ -188,7 +287,9 @@ export default function CreditMemosDraftsPage() {
                 <TableRow key={doc.docEntry} className="hover:bg-muted/50">
                   <TableCell className="font-mono text-sm">{doc.docEntry}</TableCell>
                   <TableCell className="font-mono text-sm">{doc.docNum}</TableCell>
-                  <TableCell className="text-muted-foreground text-sm">{doc.docDate}</TableCell>
+                  <TableCell className="text-muted-foreground text-sm">
+                    {new Date(doc.docDate).toLocaleDateString()}
+                  </TableCell>
                   <TableCell className="font-mono text-sm">{doc.cardCode}</TableCell>
                   <TableCell className="max-w-[200px] truncate" title={doc.cardName}>
                     {doc.cardName}
@@ -199,7 +300,7 @@ export default function CreditMemosDraftsPage() {
                       variant="outline"
                       size="sm"
                       className="gap-2 h-8"
-                      onClick={() => setSelectedDoc(doc)}
+                      onClick={() => handleOpenModal(doc)}
                     >
                       <Eye className="w-4 h-4" />
                       {t("common.see")}
@@ -244,58 +345,107 @@ export default function CreditMemosDraftsPage() {
         </div>
       )}
 
-      {/* Lines modal */}
-      <Dialog open={selectedDoc != null} onOpenChange={(open) => !open && setSelectedDoc(null)}>
-        <DialogContent className="max-h-[90vh] flex flex-col">
+      {/* Detail + Return modal */}
+      <Dialog open={selectedDocEntry != null} onOpenChange={(open) => !open && handleCloseModal()}>
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex flex-wrap items-center gap-3">
-              {selectedDoc && (
+              {detail && (
                 <>
-                  <span className="font-mono text-muted-foreground">#{selectedDoc.docEntry}</span>
-                  <span>{selectedDoc.cardName}</span>
+                  <span className="font-mono text-muted-foreground">#{detail.docEntry}</span>
+                  <span>{detail.cardName}</span>
                   <span className="text-muted-foreground font-normal text-sm">
-                    ({selectedDoc.docNum}, {selectedDoc.docDate})
+                    ({detail.docNum}, {new Date(detail.docDate).toLocaleDateString()})
                   </span>
                 </>
               )}
             </DialogTitle>
           </DialogHeader>
-          {selectedDoc && (
+
+          {detailLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : detail ? (
             <div className="border rounded-lg overflow-auto flex-1 min-h-0">
               <Table>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
-                    <TableHead className="text-xs font-semibold uppercase">{t("creditMemos.itemCode")}</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase w-12">#</TableHead>
                     <TableHead className="text-xs font-semibold uppercase">{t("creditMemos.itemDescription")}</TableHead>
-                    <TableHead className="text-xs font-semibold uppercase">{t("common.quantity")}</TableHead>
-                    <TableHead className="text-xs font-semibold uppercase">{t("creditMemos.quantityPerPackage")}</TableHead>
-                    <TableHead className="text-xs font-semibold uppercase">{t("creditMemos.warehouse")}</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase w-16">{t("common.quantity")}</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase">{t("returns.batchNumber")}</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase">{t("admission.expiryDate")}</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase">{t("returns.condition")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {lines.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                        {t("common.noData")}
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    lines.map((line: CreditMemoLine, idx: number) => (
-                      <TableRow key={idx}>
-                        <TableCell className="font-mono text-sm">{line.itemCode}</TableCell>
-                        <TableCell className="max-w-[240px] truncate" title={line.itemDescription}>
-                          {line.itemDescription}
+                  {detailLines.map((line, idx) => {
+                    const batch = line.batchNumbers?.[0];
+                    const selectedReason = lineReasons[line.lineNum];
+                    return (
+                      <TableRow key={line.lineNum}>
+                        <TableCell className="font-mono text-sm">{idx + 1}</TableCell>
+                        <TableCell className="max-w-[240px]">
+                          <div className="font-medium truncate" title={line.itemDescription}>
+                            {line.itemDescription}
+                          </div>
+                          <div className="text-xs text-muted-foreground">{line.itemCode}</div>
                         </TableCell>
-                        <TableCell>{line.quantity}</TableCell>
-                        <TableCell>{line.quantityPerPackage ?? "—"}</TableCell>
-                        <TableCell className="font-mono text-sm">{line.warehouseCode}</TableCell>
+                        <TableCell className="font-semibold text-center">{line.quantity}</TableCell>
+                        <TableCell className="text-sm">
+                          {batch?.batchNumber ?? "—"}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {batch?.expiryDate
+                            ? new Date(batch.expiryDate).toLocaleDateString()
+                            : "—"}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1.5">
+                            {REASON_BUTTONS.map(({ reason, labelKey, icon: Icon, activeClass }) => {
+                              const isActive = selectedReason === reason;
+                              return (
+                                <button
+                                  key={reason}
+                                  type="button"
+                                  onClick={() => setReason(line.lineNum, reason)}
+                                  className={cn(
+                                    "inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors",
+                                    isActive
+                                      ? activeClass
+                                      : "border-border bg-background text-muted-foreground hover:bg-muted"
+                                  )}
+                                >
+                                  <Icon className="w-3.5 h-3.5" />
+                                  {t(labelKey)}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </TableCell>
                       </TableRow>
-                    ))
-                  )}
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
-          )}
+          ) : null}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCloseModal}>
+              {t("common.close")}
+            </Button>
+            <Button
+              onClick={handleReturn}
+              disabled={!allLinesHaveReason || returnLoading}
+            >
+              {returnLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : null}
+              {t("returns.submit")}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

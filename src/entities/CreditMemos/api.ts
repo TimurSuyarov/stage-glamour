@@ -1,7 +1,20 @@
 import request from "@/services";
-import { useQuery } from "react-query";
+import { useMutation, useQuery, useQueryClient } from "react-query";
 
-/** Line item in credit memo (drafts and history) */
+export interface BatchNumber {
+  batchNumber: string;
+  expiryDate: string | null;
+  manufacturingDate: string | null;
+  addmisionDate: string | null;
+}
+
+export interface BinAllocation {
+  binAbsEntry: number;
+  quantity: number;
+  serialAndBatchNumbersBaseLine: number;
+  baseLineNumber: number;
+}
+
 export interface CreditMemoLine {
   lineNum: number;
   itemCode: string;
@@ -9,11 +22,13 @@ export interface CreditMemoLine {
   quantity: number;
   quantityPerPackage: number | null;
   warehouseCode: string;
-  /** Only in history (credit-memos) response */
   cancelItemType?: number;
+  U_CancelItem: string | null;
+  U_QuantityPerBoxLine: number | null;
+  batchNumbers: BatchNumber[];
+  documentLinesBinAllocations: BinAllocation[];
 }
 
-/** Single credit memo document (drafts or history) */
 export interface CreditMemoItem {
   docEntry: number;
   docNum: number;
@@ -22,14 +37,15 @@ export interface CreditMemoItem {
   documentStatus: string;
   cardCode: string;
   cardName: string;
-  stockTransferLines: CreditMemoLine[];
+  U_Status: string | null;
+  documentLines: CreditMemoLine[];
+  stockTransferLines?: CreditMemoLine[];
 }
 
 export interface CreditMemosResponse {
   items: CreditMemoItem[];
 }
 
-/** Query params for both /credit-memos/drafts and /credit-memos */
 export interface CreditMemosFilters {
   DocEntry?: number;
   DocEntries?: string;
@@ -38,6 +54,7 @@ export interface CreditMemosFilters {
   CardCode?: string;
   StartDate?: string;
   EndDate?: string;
+  Status?: number;
   PageSize?: number;
   Skip?: number;
 }
@@ -51,6 +68,7 @@ function buildParams(filters?: CreditMemosFilters): string {
   if (filters?.CardCode != null) params.set("CardCode", filters.CardCode);
   if (filters?.StartDate != null) params.set("StartDate", filters.StartDate);
   if (filters?.EndDate != null) params.set("EndDate", filters.EndDate);
+  if (filters?.Status != null) params.set("Status", String(filters.Status));
   if (filters?.PageSize != null) params.set("PageSize", String(filters.PageSize));
   if (filters?.Skip != null) params.set("Skip", String(filters.Skip));
   const q = params.toString();
@@ -77,6 +95,15 @@ const fetchCreditMemos = async (
   return data?.items ?? [];
 };
 
+const fetchCreditMemoDraftDetail = async (
+  docEntry: number
+): Promise<CreditMemoItem | null> => {
+  const { data } = await request.get<CreditMemoItem>(
+    `/credit-memos/drafts/${docEntry}`
+  );
+  return data ?? null;
+};
+
 export function useCreditMemosDrafts(filters?: CreditMemosFilters) {
   return useQuery({
     queryKey: ["credit-memos", "drafts", filters ?? {}],
@@ -90,5 +117,38 @@ export function useCreditMemos(filters?: CreditMemosFilters) {
     queryKey: ["credit-memos", "list", filters ?? {}],
     queryFn: () => fetchCreditMemos(filters),
     refetchOnWindowFocus: false,
+  });
+}
+
+export function useCreditMemoDraftDetail(docEntry: number | null) {
+  return useQuery({
+    queryKey: ["credit-memos", "drafts", docEntry],
+    queryFn: () => fetchCreditMemoDraftDetail(docEntry!),
+    enabled: docEntry != null,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export interface ReturnLinePayload {
+  lineNum: number;
+  reasonId: number;
+}
+
+const postReturn = async (
+  docEntry: number,
+  lines: ReturnLinePayload[]
+): Promise<unknown> => {
+  const { data } = await request.post(`/returns/${docEntry}`, lines);
+  return data;
+};
+
+export function useReturnMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ docEntry, lines }: { docEntry: number; lines: ReturnLinePayload[] }) =>
+      postReturn(docEntry, lines),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["credit-memos"] });
+    },
   });
 }

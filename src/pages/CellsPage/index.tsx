@@ -1,21 +1,33 @@
 import { useState, useMemo } from "react";
-import { Table, Tooltip } from "antd";
+import { Table, Tooltip, Select } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { ClearOutlined } from "@ant-design/icons";
 import { PageHeader } from "@/components/ui/page-header";
 import { ModuleCard } from "@/components/ui/stat-card";
 import { useTranslation } from "react-i18next";
 import { useBinLocations, type BinLocationItem, type BinLocationsFilters } from "@/entities/BinLocations/api";
+import { EZone } from "@/enums/zone";
 import { Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
+const ZONE_OPTIONS = [
+  { value: EZone.A, label: "A" },
+  { value: EZone.B, label: "B" },
+  { value: EZone.D, label: "D" },
+  { value: EZone.G, label: "G" },
+  { value: EZone.N, label: "N" },
+  { value: EZone.P, label: "P" },
+  { value: EZone.Other, label: "Other" },
+];
 
 const CellsPage = () => {
   const { t } = useTranslation();
   
   // Filter state
   const [filterBinCode, setFilterBinCode] = useState("");
+  const [filterZone, setFilterZone] = useState<number | undefined>(undefined);
   const [appliedFilters, setAppliedFilters] = useState<BinLocationsFilters>({});
   const [pageIndex, setPageIndex] = useState(0);
   
@@ -24,6 +36,7 @@ const CellsPage = () => {
   const filters: BinLocationsFilters = useMemo(() => {
     const f: BinLocationsFilters = { skip: pageIndex * pageSize };
     if (appliedFilters.BinCode) f.BinCode = appliedFilters.BinCode;
+    if (appliedFilters.Zone != null) f.Zone = appliedFilters.Zone;
     return f;
   }, [appliedFilters, pageIndex, pageSize]);
   
@@ -37,11 +50,13 @@ const CellsPage = () => {
     setPageIndex(0);
     setAppliedFilters({
       BinCode: filterBinCode.trim() || undefined,
+      Zone: filterZone,
     });
   };
 
   const handleClearFilters = () => {
     setFilterBinCode("");
+    setFilterZone(undefined);
     setAppliedFilters({});
     setPageIndex(0);
   };
@@ -112,7 +127,7 @@ const CellsPage = () => {
 
       <ModuleCard>
         {/* Filters */}
-        <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+        <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
           <div className="space-y-2">
             <Label className="text-xs">{t("cells_filter_bin_code")}</Label>
             <Input
@@ -120,6 +135,17 @@ const CellsPage = () => {
               value={filterBinCode}
               onChange={(e) => setFilterBinCode(e.target.value)}
               className="h-9"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs">{t("cells_filter_zone")}</Label>
+            <Select
+              allowClear
+              placeholder={t("cells_filter_zone")}
+              value={filterZone}
+              onChange={(val) => setFilterZone(val)}
+              options={ZONE_OPTIONS}
+              className="w-full [&_.ant-select-selector]:!h-9"
             />
           </div>
           <Button onClick={handleApplyFilters} className="h-9">

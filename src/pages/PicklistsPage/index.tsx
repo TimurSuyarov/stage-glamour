@@ -15,11 +15,18 @@ import {
   type PicklistsFilters,
 } from "@/entities/Picklists/api";
 import { EPickListStatus, EPickListLineStatus } from "@/enums/picklist";
+import { EWarehouseCheckingType } from "@/enums/warehouseChecking";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { message } from "antd";
+
+const WAREHOUSE_CHECKING_TYPE_KEYS: Record<number, string> = {
+  [EWarehouseCheckingType.WarehouseToClient]: "requiredTransfers.typeWarehouseToClient",
+  [EWarehouseCheckingType.WarehouseToWarehouse]: "requiredTransfers.typeWarehouseToWarehouse",
+  [EWarehouseCheckingType.Return]: "requiredTransfers.typeReturn",
+};
 
 const PAGE_SIZE = 20;
 
@@ -29,6 +36,8 @@ interface PicklistsPageProps {
   parentKey: string;
   /** "collect" = view only; "validation" = assign + validate actions */
   mode?: "collect" | "validation";
+  /** Hide the page header (used when parent renders its own header, e.g. HistoryPage) */
+  hideHeader?: boolean;
 }
 
 export default function PicklistsPage({
@@ -36,6 +45,7 @@ export default function PicklistsPage({
   titleKey,
   parentKey,
   mode = "collect",
+  hideHeader = false,
 }: PicklistsPageProps) {
   const { t } = useTranslation();
   const [pageIndex, setPageIndex] = useState(0);
@@ -90,14 +100,19 @@ export default function PicklistsPage({
         return key ? t(`picklistStatus.${key.toLowerCase()}`) : status;
       },
     },
-    { title: t("picklist_lines_total"), dataIndex: "linesTotalCount", key: "linesTotalCount", width: 100 },
-    { title: t("picklist_lines_picked"), dataIndex: "linesPickedCount", key: "linesPickedCount", width: 100 },
     {
-      title: t("picklist_completed_at"),
-      dataIndex: "completedAt",
-      key: "completedAt",
+      title: t("requiredTransfers.type"),
+      dataIndex: "type",
+      key: "type",
+      width: 160,
+      render: (type: number) => t(WAREHOUSE_CHECKING_TYPE_KEYS[type] ?? "common.noData"),
+    },
+    {
+      title: t("picklist_assignee"),
+      dataIndex: "assigneeName",
+      key: "assigneeName",
       width: 180,
-      render: (val: string | null) => (val ? new Date(val).toLocaleString() : "—"),
+      render: (val: string | null) => val ?? "—",
     },
     {
       title: t("common_actions"),
@@ -120,9 +135,9 @@ export default function PicklistsPage({
   ];
 
   const baseLineColumns: ColumnsType<PicklistLine> = [
-    { title: t("picklist_line_item_code"), dataIndex: "itemCode", key: "itemCode", width: 100 },
     { title: t("picklist_line_product_name"), dataIndex: "productName", key: "productName", width: 220 },
     { title: t("picklist_line_bin_code"), dataIndex: "binCode", key: "binCode", width: 120 },
+    { title: t("picklist_line_requested_qty"), dataIndex: "requestedQty", key: "requestedQty", width: 100 },
     {
       title: t("picklist_line_batch_number"),
       dataIndex: "batchNumber",
@@ -138,9 +153,6 @@ export default function PicklistsPage({
       render: (val: string | null | undefined) =>
         val ? new Date(val).toLocaleDateString() : "—",
     },
-    { title: t("picklist_line_requested_qty"), dataIndex: "requestedQty", key: "requestedQty", width: 100 },
-    { title: t("picklist_line_allocated_qty"), dataIndex: "allocatedQty", key: "allocatedQty", width: 100 },
-    { title: t("picklist_line_picked_qty"), dataIndex: "pickedQty", key: "pickedQty", width: 100 },
     {
       title: t("picklist_line_status"),
       dataIndex: "status",
@@ -210,11 +222,13 @@ export default function PicklistsPage({
   const lineColumns = isValidationMode ? validationColumn : baseLineColumns;
 
   return (
-    <div className="p-6 space-y-6">
-      <PageHeader
-        title={t(titleKey)}
-        breadcrumbs={[{ label: t(parentKey) }, { label: t(titleKey) }]}
-      />
+    <div className={hideHeader ? "space-y-6" : "p-6 space-y-6"}>
+      {!hideHeader && (
+        <PageHeader
+          title={t(titleKey)}
+          breadcrumbs={[{ label: t(parentKey) }, { label: t(titleKey) }]}
+        />
+      )}
 
       <ModuleCard>
         {isLoading ? (

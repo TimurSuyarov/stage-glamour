@@ -205,10 +205,10 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
 
   const documentLineColumns: ColumnsType<SalesOrderDocumentLine> = [
     {
-      title: t("sales_orders_line_num"),
-      dataIndex: "lineNum",
-      key: "lineNum",
-      width: 80,
+      title: t("sales_orders_warehouse_code"),
+      dataIndex: "warehouseCode",
+      key: "warehouseCode",
+      width: 120,
       align: "center" as const,
     },
     {
@@ -224,49 +224,19 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
       align: "right" as const,
     },
     {
-      title: t("sales_orders_price"),
-      dataIndex: "price",
-      key: "price",
-      width: 150,
-      align: "right" as const,
-      render: (price: number) => {
-        return new Intl.NumberFormat("uz-UZ", {
-          style: "decimal",
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0,
-        }).format(price);
-      },
+      title: t("sales_orders_batch_number"),
+      dataIndex: "batchNumber",
+      key: "batchNumber",
+      width: 160,
+      render: (val: string | null) => val ?? "—",
     },
     {
-      title: t("sales_orders_line_total"),
-      dataIndex: "lineTotal",
-      key: "lineTotal",
-      width: 150,
-      align: "right" as const,
-      render: (total: number) => {
-        return total?.toFixed(2) || "0.00";
-      },
-    },
-    {
-      title: t("sales_orders_warehouse_code"),
-      dataIndex: "warehouseCode",
-      key: "warehouseCode",
-      width: 120,
-      align: "center" as const,
-    },
-    {
-      title: t("sales_orders_total_price"),
-      key: "totalPrice",
-      width: 150,
-      align: "right" as const,
-      render: (_: any, record: SalesOrderDocumentLine) => {
-        const total = record.quantity * record.price;
-        return new Intl.NumberFormat("uz-UZ", {
-          style: "decimal",
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0,
-        }).format(total);
-      },
+      title: t("admission.expiryDate"),
+      dataIndex: "batchExpiryDate",
+      key: "batchExpiryDate",
+      width: 140,
+      render: (val: string | null) =>
+        val ? new Date(val).toLocaleDateString() : "—",
     },
   ];
 

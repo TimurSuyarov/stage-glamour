@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "react-query";
 export interface RequiredTransferItem {
   id: number;
   assignedUser: string | null;
+  assignedUserId: number | null;
+  type: number;
   name: string;
   requiredTransferQuantity: number;
   completedPercentage: number;
@@ -12,6 +14,10 @@ export interface RequiredTransferItem {
 
 export interface RequiredTransfersResponse {
   items: RequiredTransferItem[];
+}
+
+export interface RequiredTransfersFilters {
+  skip?: number;
 }
 
 export interface RequiredTransferLine {
@@ -25,18 +31,26 @@ export interface RequiredTransferLine {
   itemCode: string;
   productName: string;
   expirationDate: string | null;
+  batchNumber: string | null;
   createdAt: string;
 }
 
-const fetchRequiredTransfers = async (): Promise<RequiredTransferItem[]> => {
-  const { data } = await request.get<RequiredTransfersResponse>("/required-transfers");
+const fetchRequiredTransfers = async (
+  filters?: RequiredTransfersFilters
+): Promise<RequiredTransferItem[]> => {
+  const params = new URLSearchParams();
+  if (filters?.skip != null) params.set("skip", String(filters.skip));
+  const query = params.toString();
+  const { data } = await request.get<RequiredTransfersResponse>(
+    `/required-transfers${query ? `?${query}` : ""}`
+  );
   return data?.items ?? [];
 };
 
-export const useRequiredTransfers = () => {
+export const useRequiredTransfers = (filters?: RequiredTransfersFilters) => {
   return useQuery({
-    queryKey: ["required-transfers"],
-    queryFn: fetchRequiredTransfers,
+    queryKey: ["required-transfers", filters ?? {}],
+    queryFn: () => fetchRequiredTransfers(filters),
     refetchOnWindowFocus: false,
   });
 };

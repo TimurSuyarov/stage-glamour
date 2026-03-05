@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/ui/page-header";
 import { useTranslation } from "react-i18next";
 import {
@@ -9,7 +9,9 @@ import {
   useFinalizeMutation,
   type RequiredTransferItem,
   type RequiredTransferLine,
+  type RequiredTransfersFilters,
 } from "@/entities/RequiredTransfers/api";
+import { EWarehouseCheckingType } from "@/enums/warehouseChecking";
 import { useEmployees } from "@/entities/Employees/api";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,10 +41,18 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { Eye, Loader2, Check, ChevronDown } from "lucide-react";
+import { Eye, Loader2, Check, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { message } from "antd";
 import { useRequiredTransfersNotification } from "@/contexts/RequiredTransfersNotificationContext";
+
+const PAGE_SIZE = 20;
+
+const WAREHOUSE_CHECKING_TYPE_KEYS: Record<number, string> = {
+  [EWarehouseCheckingType.WarehouseToClient]: "requiredTransfers.typeWarehouseToClient",
+  [EWarehouseCheckingType.WarehouseToWarehouse]: "requiredTransfers.typeWarehouseToWarehouse",
+  [EWarehouseCheckingType.Return]: "requiredTransfers.typeReturn",
+};
 
 function getEmployeeId(emp: { employeeId?: number; EmployeeID?: number }): number {
   return emp.employeeId ?? emp.EmployeeID ?? 0;
@@ -54,13 +64,22 @@ function getEmployeeName(emp: { firstName?: string; lastName?: string }): string
 
 export default function RequiredTransfersPage() {
   const { t } = useTranslation();
+  const [pageIndex, setPageIndex] = useState(0);
   const [modalRequestId, setModalRequestId] = useState<number | null>(null);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null);
   const [assignPopoverOpen, setAssignPopoverOpen] = useState(false);
-  // Computed percentages by request id (from lines: transferred / total)
   const [computedPercentages, setComputedPercentages] = useState<Record<number, number>>({});
 
-  const { data: items = [], isLoading } = useRequiredTransfers();
+  const filters: RequiredTransfersFilters = useMemo(
+    () => ({ skip: pageIndex * PAGE_SIZE }),
+    [pageIndex]
+  );
+  const { data: items = [], isLoading } = useRequiredTransfers(filters);
+
+  const hasNextPage = items.length >= PAGE_SIZE;
+  const hasPrevPage = pageIndex > 0;
+  const rangeStart = pageIndex * PAGE_SIZE + 1;
+  const rangeEnd = pageIndex * PAGE_SIZE + items.length;
   const { data: lines = [], isLoading: linesLoading } = useRequiredTransferById(modalRequestId);
   const { data: employees = [] } = useEmployees({ PageSize: 500 });
   const transferMutation = useTransferMutation();
@@ -166,9 +185,11 @@ export default function RequiredTransfersPage() {
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="text-xs font-semibold uppercase">#</TableHead>
+              <TableHead className="text-xs font-semibold uppercase w-16">#</TableHead>
               <TableHead className="text-xs font-semibold uppercase">{t("common.name")}</TableHead>
-              <TableHead className="text-xs font-semibold uppercase">{t("requiredTransfers.requiredQty")}</TableHead>
+              <TableHead className="text-xs font-semibold uppercase">{t("requiredTransfers.type")}</TableHead>
+              <TableHead className="text-xs font-semibold uppercase">{t("requiredTransfers.assignedUser")}</TableHead>
+              <TableHead className="text-xs font-semibold uppercase w-28">{t("requiredTransfers.completedPercentage")}</TableHead>
               <TableHead className="text-xs font-semibold uppercase">{t("common.createdAt")}</TableHead>
               <TableHead className="text-xs font-semibold uppercase w-24">{t("common.actions")}</TableHead>
             </TableRow>
@@ -176,22 +197,28 @@ export default function RequiredTransfersPage() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-32 text-center">
+                <TableCell colSpan={7} className="h-32 text-center">
                   <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
                 </TableCell>
               </TableRow>
             ) : items.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
                   {t("common.noData")}
                 </TableCell>
               </TableRow>
             ) : (
-              items.map((request) => (
+              items.map((request, idx) => (
                 <TableRow key={request.id} className="hover:bg-muted/50">
-                  <TableCell className="font-mono text-sm">{request.id}</TableCell>
+                  <TableCell className="font-mono text-sm">
+                    {pageIndex * PAGE_SIZE + idx + 1}
+                  </TableCell>
                   <TableCell>{request.name}</TableCell>
-                  <TableCell>{request.requiredTransferQuantity}</TableCell>
+                  <TableCell>
+                    {t(WAREHOUSE_CHECKING_TYPE_KEYS[request.type] ?? "common.noData")}
+                  </TableCell>
+                  <TableCell>{request.assignedUser ?? "—"}</TableCell>
+                  <TableCell>{request.completedPercentage}%</TableCell>
                   <TableCell className="text-muted-foreground text-sm">
                     {new Date(request.createdAt).toLocaleString()}
                   </TableCell>
@@ -211,6 +238,39 @@ export default function RequiredTransfersPage() {
             )}
           </TableBody>
         </Table>
+
+        {(items.length > 0 || pageIndex > 0) && (
+          <div className="flex items-center justify-between border-t border-border px-4 py-3">
+            <div className="text-sm text-muted-foreground">
+              {rangeStart}–{rangeEnd}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setPageIndex((p) => p - 1)}
+                disabled={!hasPrevPage}
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <span className="px-3 text-sm font-medium">
+                {rangeStart} – {rangeEnd}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setPageIndex((p) => p + 1)}
+                disabled={!hasNextPage}
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Detail modal */}
@@ -307,19 +367,21 @@ export default function RequiredTransfersPage() {
                       <TableHead className="text-xs font-semibold uppercase">{t("common.quantity")}</TableHead>
                       <TableHead className="text-xs font-semibold uppercase">{t("requiredTransfers.sourceBin")}</TableHead>
                       <TableHead className="text-xs font-semibold uppercase">{t("requiredTransfers.targetBin")}</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase">{t("requiredTransfers.batchNumber")}</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase">{t("admission.expiryDate")}</TableHead>
                       <TableHead className="text-xs font-semibold uppercase w-28"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {linesLoading ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="h-24 text-center">
+                        <TableCell colSpan={7} className="h-24 text-center">
                           <Loader2 className="w-5 h-5 animate-spin mx-auto text-muted-foreground" />
                         </TableCell>
                       </TableRow>
                     ) : lines.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                        <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                           {t("common.noData")}
                         </TableCell>
                       </TableRow>
@@ -332,6 +394,12 @@ export default function RequiredTransfersPage() {
                           <TableCell>{line.quantity}</TableCell>
                           <TableCell className="font-mono text-sm">{line.sourceBinLocation}</TableCell>
                           <TableCell className="font-mono text-sm">{line.targetBinLocation}</TableCell>
+                          <TableCell>{line.batchNumber ?? "—"}</TableCell>
+                          <TableCell className="text-sm">
+                            {line.expirationDate
+                              ? new Date(line.expirationDate).toLocaleDateString()
+                              : "—"}
+                          </TableCell>
                           <TableCell>
                             <Button
                               variant="outline"

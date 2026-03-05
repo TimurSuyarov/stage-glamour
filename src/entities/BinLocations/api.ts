@@ -18,6 +18,7 @@ export interface BinLocationsResponse {
 
 export interface BinLocationsFilters {
   BinCode?: string;
+  Zone?: number;
   /** Page index: 0 = first 20 items, 1 = items 21–40, etc. */
   skip?: number;
 }
@@ -26,6 +27,7 @@ const fetchBinLocations = async (filters?: BinLocationsFilters): Promise<BinLoca
   const params = new URLSearchParams();
   
   if (filters?.BinCode) params.set("BinCode", filters.BinCode);
+  if (filters?.Zone != null) params.set("Zone", String(filters.Zone));
   if (filters?.skip != null) params.set("skip", String(filters.skip));
   
   const query = params.toString() ? `?${params.toString()}` : "";
