@@ -7,13 +7,14 @@ import {
   type BinLocationItemCountFilters,
   type BinLocationItemCount,
 } from "@/entities/BinLocations/api";
+import { useCreateInventoryCounting } from "@/entities/InventoryCountings/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Table, Tooltip, Select } from "antd";
+import { Table, Tooltip, Select, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { ClearOutlined } from "@ant-design/icons";
-import { Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 
 const PAGE_SIZE = 20;
 
@@ -37,6 +38,9 @@ export default function InventoryPage() {
   const [filterBatchNumber, setFilterBatchNumber] = useState("");
   const [appliedFilters, setAppliedFilters] = useState<BinLocationItemCountFilters>({});
   const [pageIndex, setPageIndex] = useState(0);
+  const [selectedZoneForCreate, setSelectedZoneForCreate] = useState<string | undefined>(undefined);
+
+  const createMutation = useCreateInventoryCounting();
 
   const filters: BinLocationItemCountFilters = useMemo(
     () => ({
@@ -134,7 +138,46 @@ export default function InventoryPage() {
         ]}
       />
 
+        <div className="flex items-end justify-end gap-3 mb-6 pl-2.5">
+          <div className="space-x-3">
+            <Label className="">{t("inventory.selectZoneForCreate")}</Label>
+            <Select
+              placeholder={t("inventory.selectZoneForCreate")}
+              value={selectedZoneForCreate}
+              onChange={(val) => setSelectedZoneForCreate(val)}
+              options={ZONE_OPTIONS}
+              className="w-48 [&_.ant-select-selector]:!h-9 [&_.ant-select-selection-placeholder]:!text-xs"
+            />
+          </div>
+          <Button
+            onClick={() => {
+              if (!selectedZoneForCreate) {
+                message.warning(t("inventory.selectZoneFirst"));
+                return;
+              }
+              createMutation.mutate(selectedZoneForCreate, {
+                onSuccess: () => {
+                  message.success(t("common.success"));
+                  setSelectedZoneForCreate(undefined);
+                },
+                onError: () => {
+                  message.error(t("error.somethingWentWrong"));
+                },
+              });
+            }}
+            disabled={!selectedZoneForCreate || createMutation.isLoading}
+            className="gap-2 h-9"
+          >
+            {createMutation.isLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Plus className="w-4 h-4" />
+            )}
+            {t("common_create")}
+          </Button>
+        </div>
       <ModuleCard>
+
         {/* Filters */}
         <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
           <div className="space-y-2">

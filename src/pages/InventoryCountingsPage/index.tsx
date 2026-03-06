@@ -1,46 +1,133 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { PageHeader } from "@/components/ui/page-header";
 import { ModuleCard } from "@/components/ui/stat-card";
 import { useTranslation } from "react-i18next";
 import {
   useInventoryCountings,
+  useInventoryCountingById,
+  exportInventoryCountingPdf,
+  useAssignInventoryCounting,
+  useFinalizeInventoryCounting,
   type InventoryCountingsFilters,
   type InventoryCountingItem,
   type InventoryCountingLine,
 } from "@/entities/InventoryCountings/api";
+import { useEmployees } from "@/entities/Employees/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Table, Modal, Tooltip, DatePicker } from "antd";
+import { Switch } from "@/components/ui/switch";
+import { Table, Modal, message, Tooltip, Select } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { ClearOutlined } from "@ant-design/icons";
-import { Eye, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
-import dayjs from "dayjs";
+import { Eye, Loader2, ChevronLeft, ChevronRight, FileDown } from "lucide-react";
 
 const PAGE_SIZE = 20;
+
+const INVENTORY_COUNTING_STATUS: Record<number, string> = {
+  1: "status.draft",
+  2: "status.inProgress",
+  3: "status.completed",
+};
+
+function getEmployeeId(emp: { employeeId?: number; EmployeeID?: number }): number {
+  return emp.employeeId ?? emp.EmployeeID ?? 0;
+}
+
+function getEmployeeName(emp: { firstName?: string; lastName?: string }): string {
+  return [emp.firstName, emp.lastName].filter(Boolean).join(" ") || "—";
+}
 
 export default function InventoryCountingsPage() {
   const { t } = useTranslation();
 
-  const [filterDocEntry, setFilterDocEntry] = useState("");
-  const [filterDocNum, setFilterDocNum] = useState("");
-  const [filterStartDate, setFilterStartDate] = useState("");
-  const [filterEndDate, setFilterEndDate] = useState("");
-  const [filterItemCode, setFilterItemCode] = useState("");
-  const [filterItemDesc, setFilterItemDesc] = useState("");
-  const [filterWarehouseCode, setFilterWarehouseCode] = useState("");
-  const [filterBinLocation, setFilterBinLocation] = useState("");
-  const [appliedFilters, setAppliedFilters] = useState<InventoryCountingsFilters>({});
   const [pageIndex, setPageIndex] = useState(0);
   const [selectedDoc, setSelectedDoc] = useState<InventoryCountingItem | null>(null);
+  const [downloadingId, setDownloadingId] = useState<number | null>(null);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null);
+  const [showSystemQty, setShowSystemQty] = useState(true);
+  const [lineQuantities, setLineQuantities] = useState<Record<number, number>>({});
+
+  const { data: detail, isLoading: detailLoading } = useInventoryCountingById(selectedDoc?.id ?? null);
+  const finalizeMutation = useFinalizeInventoryCounting();
+
+  useEffect(() => {
+    if (detail?.lines) {
+      const initial: Record<number, number> = {};
+      detail.lines.forEach((line) => {
+        initial[line.id] = line.actualQuantity ?? 0;
+      });
+      setLineQuantities(initial);
+    } else {
+      setLineQuantities({});
+    }
+  }, [detail?.lines]);
+  const { data: employees = [] } = useEmployees({ PageSize: 500 });
+  const assignMutation = useAssignInventoryCounting();
+
+  const handleOpenModal = (doc: InventoryCountingItem | null) => {
+    setSelectedDoc(doc);
+    setSelectedEmployeeId(null);
+    setShowSystemQty(true);
+    setLineQuantities({});
+  };
+
+  const handleFinalize = () => {
+    if (!detail?.id || !detail.lines?.length) return;
+    const quantityRequests = detail.lines.map((line) => ({
+      lineId: line.id,
+      quantity: lineQuantities[line.id] ?? 0,
+    }));
+    finalizeMutation.mutate(
+      { id: detail.id, quantityRequests },
+      {
+        onSuccess: () => {
+          message.success(t("common.success"));
+          handleOpenModal(null);
+        },
+        onError: () => {
+          message.error(t("error.somethingWentWrong"));
+        },
+      }
+    );
+  };
+
+  const handleAssign = () => {
+    if (!detail?.id || selectedEmployeeId == null) {
+      message.warning(t("inventoryCountings.selectUserFirst"));
+      return;
+    }
+    assignMutation.mutate(
+      { itemId: detail.id, userId: selectedEmployeeId },
+      {
+        onSuccess: () => {
+          message.success(t("common.success"));
+          setSelectedEmployeeId(null);
+        },
+        onError: () => {
+          message.error(t("error.somethingWentWrong"));
+        },
+      }
+    );
+  };
+
+  const handleDownloadPdf = async (id: number) => {
+    setDownloadingId(id);
+    try {
+      await exportInventoryCountingPdf(id);
+      message.success(t("common.success"));
+    } catch {
+      message.error(t("error.somethingWentWrong"));
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const filters: InventoryCountingsFilters = useMemo(
     () => ({
-      ...appliedFilters,
       PageSize: PAGE_SIZE,
       Skip: pageIndex * PAGE_SIZE,
     }),
-    [appliedFilters, pageIndex]
+    [pageIndex]
   );
 
   const { data: items = [], isLoading, error } = useInventoryCountings(filters);
@@ -49,65 +136,63 @@ export default function InventoryCountingsPage() {
   const rangeStart = pageIndex * PAGE_SIZE + 1;
   const rangeEnd = pageIndex * PAGE_SIZE + items.length;
 
-  const handleApplyFilters = () => {
-    setPageIndex(0);
-    setAppliedFilters({
-      DocEntry: filterDocEntry.trim() ? Number(filterDocEntry) : undefined,
-      DocNum: filterDocNum.trim() ? Number(filterDocNum) : undefined,
-      StartDate: filterStartDate || undefined,
-      EndDate: filterEndDate || undefined,
-      ItemCode: filterItemCode.trim() || undefined,
-      ItemDesc: filterItemDesc.trim() || undefined,
-      WarehouseCode: filterWarehouseCode.trim() || undefined,
-      binLocation: filterBinLocation.trim() || undefined,
-    });
-  };
-
-  const handleClearFilters = () => {
-    setFilterDocEntry("");
-    setFilterDocNum("");
-    setFilterStartDate("");
-    setFilterEndDate("");
-    setFilterItemCode("");
-    setFilterItemDesc("");
-    setFilterWarehouseCode("");
-    setFilterBinLocation("");
-    setAppliedFilters({});
-    setPageIndex(0);
-  };
-
   const mainColumns: ColumnsType<InventoryCountingItem> = [
     {
-      title: "DocEntry",
-      dataIndex: "docEntry",
-      key: "docEntry",
-      width: 100,
+      title: "ID",
+      dataIndex: "id",
+      key: "id",
+      width: 80,
     },
     {
-      title: t("inventoryCountings.docNum"),
-      dataIndex: "docNum",
-      key: "docNum",
+      title: t("common.name"),
+      dataIndex: "name",
+      key: "name",
+    },
+    {
+      title: t("common.status"),
+      dataIndex: "status",
+      key: "status",
       width: 120,
+      render: (val: number) => t(INVENTORY_COUNTING_STATUS[val] ?? String(val)),
     },
     {
-      title: t("inventoryCountings.countDate"),
-      dataIndex: "countDate",
-      key: "countDate",
-      width: 140,
-    },
-    {
-      title: t("inventoryCountings.remarks"),
-      dataIndex: "remarks",
-      key: "remarks",
+      title: t("picklist_assignee"),
+      dataIndex: "assigneeName",
+      key: "assigneeName",
+      width: 180,
       render: (val: string | null) => val ?? "—",
     },
     {
-      title: t("inventoryCountings.linesCount"),
-      key: "linesCount",
+      title: t("common.createdAt"),
+      dataIndex: "createdAt",
+      key: "createdAt",
+      width: 180,
+      render: (val: string) => new Date(val).toLocaleString(),
+    },
+    {
+      title: t("inventoryCountings.document"),
+      key: "document",
       width: 100,
       align: "center",
-      render: (_: unknown, record: InventoryCountingItem) =>
-        record.inventoryCountingLines?.length ?? 0,
+      render: (_: unknown, record: InventoryCountingItem) => (
+        <Tooltip title={t("inventoryCountings.downloadPdf")}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-1"
+            onClick={() => handleDownloadPdf(record.id)}
+            disabled={downloadingId === record.id}
+          >
+            {downloadingId === record.id ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <FileDown className="w-4 h-4" />
+            )}
+            {t("inventoryCountings.document")}
+          </Button>
+        </Tooltip>
+      ),
     },
     {
       title: t("common_actions"),
@@ -120,79 +205,11 @@ export default function InventoryCountingsPage() {
           variant="outline"
           size="sm"
           className="gap-1"
-          onClick={() => setSelectedDoc(record)}
+          onClick={() => handleOpenModal(record)}
         >
           <Eye className="w-4 h-4" />
           {t("common_view")}
         </Button>
-      ),
-    },
-  ];
-
-  const lineColumns: ColumnsType<InventoryCountingLine> = [
-    {
-      title: "#",
-      dataIndex: "lineNum",
-      key: "lineNum",
-      width: 60,
-      align: "center",
-    },
-    {
-      title: t("inventoryCountings.itemCode"),
-      dataIndex: "itemCode",
-      key: "itemCode",
-      width: 120,
-    },
-    {
-      title: t("inventoryCountings.itemDescription"),
-      dataIndex: "itemDescription",
-      key: "itemDescription",
-    },
-    {
-      title: t("inventoryCountings.warehouseCode"),
-      dataIndex: "warehouseCode",
-      key: "warehouseCode",
-      width: 100,
-      align: "center",
-    },
-    {
-      title: t("inventoryCountings.binLocation"),
-      dataIndex: "binLocation",
-      key: "binLocation",
-      width: 180,
-    },
-    {
-      title: t("inventoryCountings.systemQty"),
-      dataIndex: "systemQuantity",
-      key: "systemQuantity",
-      width: 110,
-      align: "right",
-    },
-    {
-      title: t("inventoryCountings.countedQty"),
-      dataIndex: "countedQuantity",
-      key: "countedQuantity",
-      width: 110,
-      align: "right",
-    },
-    {
-      title: t("inventoryCountings.difference"),
-      dataIndex: "difference",
-      key: "difference",
-      width: 100,
-      align: "right",
-      render: (val: number) => (
-        <span
-          className={
-            val > 0
-              ? "text-green-600 font-medium"
-              : val < 0
-              ? "text-red-600 font-medium"
-              : ""
-          }
-        >
-          {val > 0 ? `+${val}` : val}
-        </span>
       ),
     },
   ];
@@ -208,97 +225,6 @@ export default function InventoryCountingsPage() {
       />
 
       <ModuleCard>
-        {/* Filters */}
-        <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
-          <div className="space-y-2">
-            <Label className="text-xs">DocEntry</Label>
-            <Input
-              placeholder="—"
-              value={filterDocEntry}
-              onChange={(e) => setFilterDocEntry(e.target.value)}
-              className="h-9"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-xs">{t("inventoryCountings.docNum")}</Label>
-            <Input
-              placeholder="—"
-              value={filterDocNum}
-              onChange={(e) => setFilterDocNum(e.target.value)}
-              className="h-9"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-xs">{t("inventoryCountings.startDate")}</Label>
-            <DatePicker
-              value={filterStartDate ? dayjs(filterStartDate) : null}
-              onChange={(date) => setFilterStartDate(date ? date.format("YYYY-MM-DD") : "")}
-              placeholder={t("sales_orders_select_date")}
-              className="h-9 w-full"
-              format="YYYY-MM-DD"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-xs">{t("inventoryCountings.endDate")}</Label>
-            <DatePicker
-              value={filterEndDate ? dayjs(filterEndDate) : null}
-              onChange={(date) => setFilterEndDate(date ? date.format("YYYY-MM-DD") : "")}
-              placeholder={t("sales_orders_select_date")}
-              className="h-9 w-full"
-              format="YYYY-MM-DD"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-xs">{t("inventoryCountings.itemCode")}</Label>
-            <Input
-              placeholder={t("common.search")}
-              value={filterItemCode}
-              onChange={(e) => setFilterItemCode(e.target.value)}
-              className="h-9"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-xs">{t("inventoryCountings.itemDescription")}</Label>
-            <Input
-              placeholder={t("common.search")}
-              value={filterItemDesc}
-              onChange={(e) => setFilterItemDesc(e.target.value)}
-              className="h-9"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-xs">{t("inventoryCountings.warehouseCode")}</Label>
-            <Input
-              placeholder="—"
-              value={filterWarehouseCode}
-              onChange={(e) => setFilterWarehouseCode(e.target.value)}
-              className="h-9"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-xs">{t("inventoryCountings.binLocation")}</Label>
-            <Input
-              placeholder="—"
-              value={filterBinLocation}
-              onChange={(e) => setFilterBinLocation(e.target.value)}
-              className="h-9"
-            />
-          </div>
-          <Button onClick={handleApplyFilters} className="h-9">
-            {t("common_apply")}
-          </Button>
-          <Tooltip title={t("common_clear_filters")}>
-            <button
-              type="button"
-              onClick={handleClearFilters}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-input bg-accent text-accent-foreground"
-              aria-label={t("common_clear_filters")}
-            >
-              <ClearOutlined className="h-4 w-4" />
-            </button>
-          </Tooltip>
-        </div>
-
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -313,7 +239,7 @@ export default function InventoryCountingsPage() {
             <Table
               columns={mainColumns}
               dataSource={items}
-              rowKey="docEntry"
+              rowKey="id"
               pagination={false}
               scroll={{ x: "max-content" }}
             />
@@ -354,41 +280,152 @@ export default function InventoryCountingsPage() {
         )}
       </ModuleCard>
 
-      {/* Lines modal */}
       <Modal
-        title={`${t("inventoryCountings.detail")} — #${selectedDoc?.docEntry ?? ""}`}
+        title={`${t("inventoryCountings.detail")} — #${selectedDoc?.id ?? ""}`}
         open={selectedDoc != null}
-        onCancel={() => setSelectedDoc(null)}
-        width="100%"
-        style={{ maxWidth: "min(1200px, calc(100vw - 40px))" }}
+        onCancel={() => handleOpenModal(null)}
         footer={null}
+        width="100%"
+        style={{ maxWidth: "min(900px, calc(100vw - 40px))" }}
       >
-        {selectedDoc && (
+        {detailLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : detail ? (
           <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-4 p-4 bg-muted/30 rounded-lg">
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={() => handleDownloadPdf(detail.id)}
+                disabled={downloadingId === detail.id}
+              >
+                {downloadingId === detail.id ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <FileDown className="w-4 h-4" />
+                )}
+                {t("inventoryCountings.downloadPdf")}
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg">
               <div>
-                <p className="text-xs text-muted-foreground mb-1">{t("inventoryCountings.docNum")}</p>
-                <p className="font-medium">{selectedDoc.docNum}</p>
+                <p className="text-xs text-muted-foreground mb-1">{t("common.name")}</p>
+                <p className="font-medium">{detail.name}</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground mb-1">{t("inventoryCountings.countDate")}</p>
-                <p className="font-medium">{selectedDoc.countDate}</p>
+                <p className="text-xs text-muted-foreground mb-1">{t("common.status")}</p>
+                <p className="font-medium">{t(INVENTORY_COUNTING_STATUS[detail.status] ?? String(detail.status))}</p>
+              </div>
+              <div className="col-span-2">
+                <p className="text-xs text-muted-foreground mb-1">{t("picklist_assignee")}</p>
+                {detail.assigneeName ? (
+                  <p className="font-medium">{detail.assigneeName}</p>
+                ) : (
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Select
+                      showSearch
+                      placeholder={t("inventoryCountings.selectUser")}
+                      value={selectedEmployeeId ?? undefined}
+                      onChange={(val) => setSelectedEmployeeId(val ?? null)}
+                      options={employees.map((emp) => ({
+                        value: getEmployeeId(emp),
+                        label: getEmployeeName(emp),
+                      }))}
+                      filterOption={(input, option) =>
+                        (option?.label ?? "").toString().toLowerCase().includes(input.toLowerCase())
+                      }
+                      optionFilterProp="label"
+                      className="w-[280px] [&_.ant-select-selector]:!h-9"
+                      notFoundContent={t("common.noResults")}
+                    />
+                    <Button
+                      size="sm"
+                      onClick={handleAssign}
+                      disabled={selectedEmployeeId == null || assignMutation.isLoading}
+                    >
+                      {assignMutation.isLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        t("inventoryCountings.assign")
+                      )}
+                    </Button>
+                  </div>
+                )}
               </div>
               <div>
-                <p className="text-xs text-muted-foreground mb-1">{t("inventoryCountings.remarks")}</p>
-                <p className="font-medium">{selectedDoc.remarks ?? "—"}</p>
+                <p className="text-xs text-muted-foreground mb-1">{t("common.createdAt")}</p>
+                <p className="font-medium">{new Date(detail.createdAt).toLocaleString()}</p>
               </div>
             </div>
-            <Table
-              columns={lineColumns}
-              dataSource={selectedDoc.inventoryCountingLines}
-              rowKey="lineNum"
-              pagination={false}
-              scroll={{ x: "max-content" }}
-              size="small"
-            />
+            {detail.lines && detail.lines.length > 0 && (
+              <>
+                <div className="flex items-center gap-3 py-2">
+                  <Switch
+                    id="show-system-qty"
+                    checked={showSystemQty}
+                    onCheckedChange={setShowSystemQty}
+                  />
+                  <Label htmlFor="show-system-qty" className="text-sm font-normal cursor-pointer">
+                    {t("inventoryCountings.showSystemQty")}
+                  </Label>
+                </div>
+                <Table
+                  columns={[
+                    { title: "#", key: "idx", width: 50, align: "center", render: (_: unknown, __: InventoryCountingLine, idx: number) => idx + 1 },
+                    { title: t("inventoryCountings.itemCode"), dataIndex: "itemCode", key: "itemCode", width: 120 },
+                    { title: t("inventoryCountings.itemDescription"), dataIndex: "productName", key: "productName" },
+                    { title: t("inventoryCountings.warehouseCode"), dataIndex: "warehouseCode", key: "warehouseCode", width: 100 },
+                    { title: t("inventoryCountings.binLocation"), dataIndex: "binCode", key: "binCode", width: 180 },
+                    ...(showSystemQty ? [{ title: t("inventoryCountings.currentQty"), dataIndex: "currentQuantity", key: "currentQuantity", width: 110, align: "right" as const }] : []),
+                    {
+                      title: t("inventoryCountings.actualQty"),
+                      key: "actualQuantity",
+                      width: 120,
+                      align: "right",
+                      render: (_: unknown, record: InventoryCountingLine) => (
+                        <Input
+                          type="number"
+                          min={0}
+                          className="h-8 w-20 text-right"
+                          value={lineQuantities[record.id] ?? ""}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const num = val === "" ? 0 : parseFloat(val);
+                            setLineQuantities((prev) => ({
+                              ...prev,
+                              [record.id]: isNaN(num) ? 0 : num,
+                            }));
+                          }}
+                        />
+                      ),
+                    },
+                  ]}
+                dataSource={detail.lines}
+                rowKey="id"
+                pagination={false}
+                scroll={{ x: "max-content" }}
+                size="small"
+              />
+                <div className="flex justify-end pt-4 border-t">
+                  <Button
+                    onClick={handleFinalize}
+                    disabled={finalizeMutation.isLoading}
+                    className="gap-2"
+                  >
+                    {finalizeMutation.isLoading && (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    )}
+                    {t("inventoryCountings.finalize")}
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
-        )}
+        ) : null}
       </Modal>
     </div>
   );
