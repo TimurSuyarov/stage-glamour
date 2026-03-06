@@ -413,7 +413,7 @@ export default function InventoryCountingsPage() {
                 <div className="flex justify-end pt-4 border-t">
                   <Button
                     onClick={handleFinalize}
-                    disabled={finalizeMutation.isLoading}
+                    disabled={!detail.assigneeName || finalizeMutation.isLoading}
                     className="gap-2"
                   >
                     {finalizeMutation.isLoading && (

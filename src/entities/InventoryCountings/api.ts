@@ -119,7 +119,7 @@ export interface FinalizeRequest {
 }
 
 const postFinalize = async (body: FinalizeRequest): Promise<unknown> => {
-  const { data } = await request.post("/finalize", body, {
+  const { data } = await request.post("/inventory-countings/finalize", body, {
     headers: { "Content-Type": "application/json" },
   });
   return data;
