@@ -55,6 +55,7 @@ interface DataTableProps<T> {
   onRefresh?: () => void;
   pageSize?: number;
   className?: string;
+  headerContent?: ReactNode;
 }
 
 export function DataTable<T>({
@@ -73,6 +74,7 @@ export function DataTable<T>({
   onRefresh,
   pageSize = 10,
   className,
+  headerContent,
 }: DataTableProps<T>) {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
@@ -105,47 +107,53 @@ export function DataTable<T>({
   return (
     <div className={cn('module-card', className)}>
       {/* Toolbar */}
-      {(showSearch || showFilters || showExport || onRefresh) && (
+      {(showSearch || showFilters || showExport || onRefresh || headerContent) && (
         <div className="filter-bar">
-          {showSearch && (
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder={t('common.search')}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 h-9"
-              />
-            </div>
+          {headerContent ? (
+            headerContent
+          ) : (
+            <>
+              {showSearch && (
+                <div className="relative flex-1 max-w-sm">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder={t('common.search')}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 h-9"
+                  />
+                </div>
+              )}
+
+              <div className="flex items-center gap-2 ml-auto">
+                {showFilters && (
+                  <Button variant="outline" size="sm" className="h-9">
+                    <Filter className="w-4 h-4 mr-2" />
+                    {t('common.filter')}
+                  </Button>
+                )}
+
+                {showExport && (
+                  <Button variant="outline" size="sm" className="h-9">
+                    <Download className="w-4 h-4 mr-2" />
+                    {t('common.export')}
+                  </Button>
+                )}
+
+                {onRefresh && (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-9 w-9"
+                    onClick={onRefresh}
+                    disabled={loading}
+                  >
+                    <RefreshCw className={cn('w-4 h-4', loading && 'animate-spin')} />
+                  </Button>
+                )}
+              </div>
+            </>
           )}
-
-          <div className="flex items-center gap-2 ml-auto">
-            {showFilters && (
-              <Button variant="outline" size="sm" className="h-9">
-                <Filter className="w-4 h-4 mr-2" />
-                {t('common.filter')}
-              </Button>
-            )}
-
-            {showExport && (
-              <Button variant="outline" size="sm" className="h-9">
-                <Download className="w-4 h-4 mr-2" />
-                {t('common.export')}
-              </Button>
-            )}
-
-            {onRefresh && (
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-9 w-9"
-                onClick={onRefresh}
-                disabled={loading}
-              >
-                <RefreshCw className={cn('w-4 h-4', loading && 'animate-spin')} />
-              </Button>
-            )}
-          </div>
         </div>
       )}
 

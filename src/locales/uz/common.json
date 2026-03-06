@@ -362,5 +362,17 @@
   "common.itemsGroupCode": "Guruh kodi",
   "moveToRegion.submit": "Yuborish",
   "moveToRegion.fromWarehouse": "Ombordan",
-  "moveToRegion.toWarehouse": "Omborga"
+  "moveToRegion.toWarehouse": "Omborga",
+  "bonuses.employee": "Xodim",
+  "bonuses.dateRange": "Sana oralig'i",
+  "bonuses.type": "Turi",
+  "bonuses.amount": "Miqdor",
+  "bonuses.selectEmployee": "Xodimni tanlang",
+  "bonuses.selectType": "Turini tanlang",
+  "bonuses.typeReceiving": "Qabul",
+  "bonuses.typeSalesOrderPicking": "Buyurtma yig'ish",
+  "bonuses.typeSalesOrderValidation": "Buyurtma tekshirish",
+  "bonuses.typeStockTransfer": "Zaxira ko'chirish",
+  "bonuses.typeInventoryTransferRequestPicking": "Inventarizatsiya ko'chirish",
+  "bonuses.showing": "{{start}}–{{end}}"
 }

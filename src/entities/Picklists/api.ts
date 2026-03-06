@@ -95,6 +95,23 @@ export const useAssignPicklist = () => {
   });
 };
 
+const postPicklistAssignEmployee = async (picklistId: number, employeeId: number): Promise<unknown> => {
+  const { data } = await request.post(`/picklists/${picklistId}/assign/${employeeId}`);
+  return data;
+};
+
+export const useAssignPicklistEmployee = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ picklistId, employeeId }: { picklistId: number; employeeId: number }) =>
+      postPicklistAssignEmployee(picklistId, employeeId),
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["picklists"] });
+      queryClient.invalidateQueries({ queryKey: ["picklists", vars.picklistId] });
+    },
+  });
+};
+
 const postValidationScan = async (
   docEntry: number,
   lineId: number

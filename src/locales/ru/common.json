@@ -362,5 +362,17 @@
   "common.itemsGroupCode": "Код группы",
   "moveToRegion.submit": "Отправить",
   "moveToRegion.fromWarehouse": "Со склада",
-  "moveToRegion.toWarehouse": "На склад"
+  "moveToRegion.toWarehouse": "На склад",
+  "bonuses.employee": "Сотрудник",
+  "bonuses.dateRange": "Период",
+  "bonuses.type": "Тип",
+  "bonuses.amount": "Сумма",
+  "bonuses.selectEmployee": "Выберите сотрудника",
+  "bonuses.selectType": "Выберите тип",
+  "bonuses.typeReceiving": "Приёмка",
+  "bonuses.typeSalesOrderPicking": "Сбор заказа",
+  "bonuses.typeSalesOrderValidation": "Проверка заказа",
+  "bonuses.typeStockTransfer": "Перемещение склада",
+  "bonuses.typeInventoryTransferRequestPicking": "Сбор инвентаризации",
+  "bonuses.showing": "{{start}}–{{end}}"
 }

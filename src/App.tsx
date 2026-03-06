@@ -32,8 +32,8 @@ import {
   CellsPage,
   InventoryPage,
   ReportsPage,
-  BonusesPage,
 } from "./pages/PlaceholderPages";
+import BonusesPage from "./pages/BonusesPage";
 import NotFound from "./pages/NotFound";
 
 import PublicRoute from "./components/layout/PublicRoute";

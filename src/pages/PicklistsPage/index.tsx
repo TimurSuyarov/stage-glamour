@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Table, Modal, Button as AntButton } from "antd";
+import { Table, Modal, Button as AntButton, Select } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { PageHeader } from "@/components/ui/page-header";
 import { ModuleCard } from "@/components/ui/stat-card";
@@ -8,12 +8,14 @@ import {
   usePicklists,
   usePicklistByDocEntry,
   useAssignPicklist,
+  useAssignPicklistEmployee,
   useValidationScan,
   useValidationFinalize,
   type PicklistItem,
   type PicklistLine,
   type PicklistsFilters,
 } from "@/entities/Picklists/api";
+import { useEmployees } from "@/entities/Employees/api";
 import { EPickListStatus, EPickListLineStatus } from "@/enums/picklist";
 import { EWarehouseCheckingType } from "@/enums/warehouseChecking";
 import { Button } from "@/components/ui/button";
@@ -51,11 +53,16 @@ export default function PicklistsPage({
   const [pageIndex, setPageIndex] = useState(0);
   const [selectedDocEntry, setSelectedDocEntry] = useState<number | null>(null);
   const [deliveryPackageCount, setDeliveryPackageCount] = useState<number>(0);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null);
 
   const assignPicklist = useAssignPicklist();
+  const assignPicklistEmployee = useAssignPicklistEmployee();
   const validationScan = useValidationScan();
   const finalizeValidation = useValidationFinalize();
   const isValidationMode = mode === "validation";
+  const isCollectMode = mode === "collect";
+
+  const { data: employees = [] } = useEmployees({ PageSize: 500 });
 
   const filters: PicklistsFilters = useMemo(
     () => ({ Status: status, skip: pageIndex * PAGE_SIZE }),
@@ -83,6 +90,7 @@ export default function PicklistsPage({
   const handleCloseModal = () => {
     setSelectedDocEntry(null);
     setDeliveryPackageCount(0);
+    setSelectedEmployeeId(null);
   };
 
   const columns: ColumnsType<PicklistItem> = [
@@ -365,7 +373,58 @@ export default function PicklistsPage({
               <div className="flex flex-wrap items-center gap-3">
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">{t("picklist_assignee")}</p>
-                  <p className="font-medium">{picklistDetail.assigneeName ?? "—"}</p>
+                  {picklistDetail.assigneeName ? (
+                    <p className="font-medium">{picklistDetail.assigneeName}</p>
+                  ) : isCollectMode ? (
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                      <Select
+                        showSearch
+                        placeholder={t("inventoryCountings.selectUser")}
+                        value={selectedEmployeeId ?? undefined}
+                        onChange={(val) => setSelectedEmployeeId(val ?? null)}
+                        options={employees.map((emp) => ({
+                          value: emp.employeeId ?? (emp as any).EmployeeID ?? 0,
+                          label: [emp.firstName, emp.lastName].filter(Boolean).join(" ") || "—",
+                        }))}
+                        filterOption={(input, option) =>
+                          (option?.label ?? "").toString().toLowerCase().includes(input.toLowerCase())
+                        }
+                        optionFilterProp="label"
+                        className="w-[220px] [&_.ant-select-selector]:!h-9"
+                        notFoundContent={t("common.noResults")}
+                      />
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          if (selectedEmployeeId == null) {
+                            message.warning(t("inventoryCountings.selectUserFirst"));
+                            return;
+                          }
+                          assignPicklistEmployee.mutate(
+                            { picklistId: picklistDetail.id, employeeId: selectedEmployeeId },
+                            {
+                              onSuccess: () => {
+                                message.success(t("common.success"));
+                                setSelectedEmployeeId(null);
+                              },
+                              onError: () => {
+                                message.error(t("error.somethingWentWrong"));
+                              },
+                            }
+                          );
+                        }}
+                        disabled={selectedEmployeeId == null || assignPicklistEmployee.isLoading}
+                      >
+                        {assignPicklistEmployee.isLoading ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          t("inventoryCountings.assign")
+                        )}
+                      </Button>
+                    </div>
+                  ) : (
+                    <p className="font-medium">—</p>
+                  )}
                 </div>
                 {isValidationMode && !picklistDetail.assigneeName && (
                   <Button

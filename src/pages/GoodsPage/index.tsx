@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import {
-  Plus,
   Eye,
   MoreHorizontal,
   Edit,
@@ -145,63 +144,56 @@ export default function GoodsPage() {
     },
   ];
 
+  const tableHeader = (
+    <div className="flex flex-wrap items-end gap-4 w-full">
+      <div className="flex flex-col gap-1.5">
+        <Label className="text-xs">{t('common.itemCode')}</Label>
+        <Input
+          placeholder={t('common.search')}
+          value={filterItemCode}
+          onChange={(e) => setFilterItemCode(e.target.value)}
+          className="h-9 w-40"
+        />
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <Label className="text-xs">{t('common.itemName')}</Label>
+        <Input
+          placeholder={t('common.search')}
+          value={filterItemName}
+          onChange={(e) => setFilterItemName(e.target.value)}
+          className="h-9 w-48"
+        />
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <Label className="text-xs">{t('common.itemsGroupCode')}</Label>
+        <Input
+          placeholder="—"
+          value={filterItemsGroupCode}
+          onChange={(e) => setFilterItemsGroupCode(e.target.value)}
+          className="h-9 w-32"
+        />
+      </div>
+      <Button variant="outline" size="sm" className="h-9" onClick={handleApplyFilters}>
+        {t('common.apply')}
+      </Button>
+      <Button variant="ghost" size="sm" className="h-9" onClick={handleClearFilters}>
+        {t('common.clearFilters')}
+      </Button>
+    </div>
+  );
+
   return (
     <div className="p-6 space-y-6">
       <PageHeader
         title={t('nav.goods')}
         breadcrumbs={[{ label: t('nav.masterData') }, { label: t('nav.goods') }]}
-        actions={
-          <Button className="gap-2">
-            <Plus className="w-4 h-4" />
-            {t('common.create')}
-          </Button>
-        }
       />
-
-      {/* Filters */}
-      <div className="flex flex-wrap items-end gap-4">
-        <div className="flex flex-col gap-1.5">
-          <Label className="text-xs">{t('common.itemCode')}</Label>
-          <Input
-            placeholder={t('common.search')}
-            value={filterItemCode}
-            onChange={(e) => setFilterItemCode(e.target.value)}
-            className="h-9 w-40"
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label className="text-xs">{t('common.itemName')}</Label>
-          <Input
-            placeholder={t('common.search')}
-            value={filterItemName}
-            onChange={(e) => setFilterItemName(e.target.value)}
-            className="h-9 w-48"
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label className="text-xs">{t('common.itemsGroupCode')}</Label>
-          <Input
-            placeholder="—"
-            value={filterItemsGroupCode}
-            onChange={(e) => setFilterItemsGroupCode(e.target.value)}
-            className="h-9 w-32"
-          />
-        </div>
-        <Button variant="outline" size="sm" className="h-9" onClick={handleApplyFilters}>
-          {t('common.apply')}
-        </Button>
-        <Button variant="ghost" size="sm" className="h-9" onClick={handleClearFilters}>
-          {t('common.clearFilters')}
-        </Button>
-      </div>
 
       <DataTable
         columns={columns}
         data={goods}
         loading={isLoading}
-        showSearch
-        showFilters
-        showExport
+        headerContent={tableHeader}
         pageSize={PAGE_SIZE}
         onRowClick={(good) => setSelectedGood(good)}
       />

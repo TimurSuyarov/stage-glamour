@@ -285,8 +285,7 @@ export default function InventoryCountingsPage() {
         open={selectedDoc != null}
         onCancel={() => handleOpenModal(null)}
         footer={null}
-        width="100%"
-        style={{ maxWidth: "min(900px, calc(100vw - 40px))" }}
+        width="70%"
       >
         {detailLoading ? (
           <div className="flex items-center justify-center py-12">

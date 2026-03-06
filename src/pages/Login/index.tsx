@@ -17,7 +17,7 @@ const LoginPage = () => {
     mutateAsync(values, {
       onSuccess: (data: LoginResponse) => {
         message.success(t("login_successfully"));
-        setStoredAuth(data.token, data.employee);
+        setStoredAuth(data.token, data.refreshToken, data.employee);
         setUser(userFromEmployee(data.employee));
         navigate("/");
       },

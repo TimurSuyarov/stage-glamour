@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { ModuleCard } from "@/components/ui/stat-card";
 import { useTranslation } from "react-i18next";
 import { useEmployees, type EmployeeItem, type EmployeesFilters } from "@/entities/Employees/api";
-import { Loader2, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -105,12 +105,6 @@ export default function EmployeesPage() {
       <PageHeader
         title={t("nav.employees")}
         breadcrumbs={[{ label: t("nav.masterData") }, { label: t("nav.employees") }]}
-        actions={
-          <Button className="gap-2">
-            <Plus className="w-4 h-4" />
-            {t("common_create")}
-          </Button>
-        }
       />
 
       <ModuleCard>

@@ -5,7 +5,6 @@ import PicklistsPage from "@/pages/PicklistsPage";
 
 const STATUS_PICKED = "2";
 const STATUS_VALIDATED = "3";
-const STATUS_SHIPPED = "shipped";
 
 export default function HistoryPage() {
   const { t } = useTranslation();
@@ -27,9 +26,6 @@ export default function HistoryPage() {
           </TabsTrigger>
           <TabsTrigger value={STATUS_VALIDATED}>
             {t("history.tabValidated")}
-          </TabsTrigger>
-          <TabsTrigger value={STATUS_SHIPPED} disabled>
-            {t("history.tabShipped")}
           </TabsTrigger>
         </TabsList>
 

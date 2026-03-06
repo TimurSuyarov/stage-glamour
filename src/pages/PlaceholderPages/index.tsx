@@ -79,7 +79,3 @@ export function InventoryPage() {
 export function ReportsPage() {
   return <PlaceholderPage titleKey="nav.reports" parentKey="nav.masterData" />;
 }
-
-export function BonusesPage() {
-  return <PlaceholderPage titleKey="nav.bonuses" parentKey="nav.masterData" />;
-}
