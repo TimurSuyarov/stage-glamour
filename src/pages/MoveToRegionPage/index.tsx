@@ -287,9 +287,9 @@ const MoveToRegionPage = () => {
   ];
 
   return (
-    <div className="relative p-6 space-y-6">
+    <div className="relative min-h-full p-6 space-y-6">
       {waitingForSignalR && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-lg">
           <div className="flex flex-col items-center gap-3 rounded-lg border bg-card px-8 py-6 shadow-lg">
             <Loader2 className="w-10 h-10 animate-spin text-primary" />
             <p className="text-sm font-medium">{t("common_loading")}</p>
