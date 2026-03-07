@@ -241,7 +241,16 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
   ];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="relative p-6 space-y-6">
+      {moveNextLoading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-3 rounded-lg border bg-card px-8 py-6 shadow-lg">
+            <Loader2 className="w-10 h-10 animate-spin text-primary" />
+            <p className="text-sm font-medium">{t("common_loading")}</p>
+            <p className="text-xs text-muted-foreground">{t("signalR.waiting")}</p>
+          </div>
+        </div>
+      )}
       <PageHeader
         title={t(titleKey)}
         breadcrumbs={[{ label: t(parentKey) }, { label: t(titleKey) }]}
@@ -388,8 +397,7 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
         title={t("sales_orders_document_lines")}
         open={isModalVisible}
         onCancel={handleCloseModal}
-        width="100%"
-        style={{ maxWidth: "min(1200px, calc(100vw - 40px))" }}
+        width={1200}
         footer={[
           <AntButton key="close" onClick={handleCloseModal}>
             {t("common_close")}
@@ -428,8 +436,7 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
         title={t("sales_orders_create_relocation")}
         open={isCreateModalVisible}
         onCancel={handleCloseCreateModal}
-        width="100%"
-        style={{ maxWidth: "min(1200px, calc(100vw - 40px))" }}
+        width={1200}
         footer={[
           <AntButton key="cancel" onClick={handleCloseCreateModal}>
             {t("common_cancel")}

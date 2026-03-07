@@ -275,7 +275,7 @@ export default function RequiredTransfersPage() {
 
       {/* Detail modal */}
       <Dialog open={modalRequestId != null} onOpenChange={(open) => !open && handleCloseModal()}>
-        <DialogContent className="max-h-[90vh] flex flex-col">
+        <DialogContent className="max-w-[1200px] max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex flex-wrap items-center gap-3">
               <span className="font-mono text-muted-foreground">#{selectedRequest?.id}</span>

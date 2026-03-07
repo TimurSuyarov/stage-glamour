@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Table, Select, DatePicker } from "antd";
+import { Table, Select, DatePicker, Modal } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import type { Dayjs } from "dayjs";
 import dayjs from "dayjs";
@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next";
 import {
   useBonusRecordsGrouped,
   useBonusRecordsInfinite,
+  useBonusRecordByDoc,
   BONUS_RECORD_TYPE_LABELS,
   BONUS_RECORD_TYPE_VALUES,
   PAGE_SIZE,
@@ -32,9 +33,11 @@ const DEFAULT_FILTERS: BonusRecordsGroupedFilters = {
 function ExpandedBonusRow({
   employeeId,
   filters,
+  onRecordClick,
 }: {
   employeeId: number;
   filters: BonusRecordsGroupedFilters;
+  onRecordClick: (record: BonusRecordItem) => void;
 }) {
   const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -85,17 +88,6 @@ function ExpandedBonusRow({
       render: (val: number) => t(BONUS_RECORD_TYPE_LABELS[val] ?? String(val)),
     },
     {
-      title: "Doc Entry",
-      dataIndex: "docEntry",
-      key: "docEntry",
-      width: 110,
-      render: (val: number) => (
-        <span className="text-blue-600 cursor-pointer hover:underline font-medium">
-          {val}
-        </span>
-      ),
-    },
-    {
       title: t("bonuses.amount"),
       dataIndex: "totalPrice",
       key: "totalPrice",
@@ -141,6 +133,10 @@ function ExpandedBonusRow({
             pagination={false}
             size="small"
             scroll={{ x: "max-content" }}
+            onRow={(record) => ({
+              onClick: () => onRecordClick(record),
+              style: { cursor: "pointer" },
+            })}
           />
           {isFetchingNextPage && (
             <div className="flex justify-center py-2 border-t border-border">
@@ -170,9 +166,14 @@ export default function BonusesPage() {
   const [expandedRowKeys, setExpandedRowKeys] = useState<number[]>([]);
   const [appliedFilters, setAppliedFilters] =
     useState<BonusRecordsGroupedFilters>(DEFAULT_FILTERS);
+  const [modalDoc, setModalDoc] = useState<{ type: number; docEntry: number } | null>(null);
 
   const { data: groupedData = [], isLoading, error } =
     useBonusRecordsGrouped(appliedFilters);
+  const { data: modalData, isLoading: modalLoading } = useBonusRecordByDoc(
+    modalDoc?.type ?? null,
+    modalDoc?.docEntry ?? null
+  );
 
   const typeOptions = Object.entries(BONUS_RECORD_TYPE_VALUES).map(
     ([, val]) => ({
@@ -302,6 +303,7 @@ export default function BonusesPage() {
                 <ExpandedBonusRow
                   employeeId={record.employeeId}
                   filters={appliedFilters}
+                  onRecordClick={(r) => setModalDoc({ type: r.type, docEntry: r.docEntry })}
                 />
               ),
               rowExpandable: () => true,
@@ -309,6 +311,53 @@ export default function BonusesPage() {
           />
         )}
       </ModuleCard>
+
+      <Modal
+        title={
+          modalData
+            ? `${modalData.cardName} — №${modalData.docNum}`
+            : t("bonuses.detail")
+        }
+        open={modalDoc != null}
+        onCancel={() => setModalDoc(null)}
+        footer={null}
+        width={1200}
+        destroyOnClose
+      >
+        {modalLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : modalData ? (
+          <Table
+            size="small"
+            pagination={false}
+            rowKey={(_, i) => String(i)}
+            scroll={{ x: "max-content" }}
+            columns={[
+              {
+                title: t("inventoryCountings.itemCode"),
+                dataIndex: "itemCode",
+                key: "itemCode",
+                width: 120,
+              },
+              {
+                title: t("inventoryCountings.itemDescription"),
+                dataIndex: "itemDescription",
+                key: "itemDescription",
+              },
+              {
+                title: t("common.quantity"),
+                dataIndex: "quantity",
+                key: "quantity",
+                width: 100,
+                align: "right",
+              },
+            ]}
+            dataSource={modalData.documentLines}
+          />
+        ) : null}
+      </Modal>
     </div>
   );
 }

@@ -86,8 +86,15 @@ const navigationGroups: NavGroup[] = [
       { id: 'employees', labelKey: 'nav.employees', icon: Users, href: '/employees' },
       { id: 'cells', labelKey: 'nav.cells', icon: Grid3X3, href: '/cells' },
       { id: 'goods', labelKey: 'nav.goods', icon: Box, href: '/goods' },
-      { id: 'inventory', labelKey: 'nav.inventory', icon: ClipboardList, href: '/inventory' },
-      { id: 'inventoryCountings', labelKey: 'nav.inventoryCountings', icon: ClipboardList, href: '/inventory-countings' },
+      {
+        id: 'inventory',
+        labelKey: 'nav.inventory',
+        icon: ClipboardList,
+        children: [
+          { id: 'inventoryList', labelKey: 'nav.inventory', href: '/inventory' },
+          { id: 'inventoryCountings', labelKey: 'nav.inventoryCountings', href: '/inventory-countings' },
+        ],
+      },
       // { id: 'reports', labelKey: 'nav.reports', icon: BarChart3, href: '/reports' },
       { id: 'bonuses', labelKey: 'nav.bonuses', icon: Gift, href: '/bonuses' },
     ],
@@ -106,12 +113,14 @@ export function AppSidebar({ collapsed, onCollapsedChange }: AppSidebarProps) {
   const { hasCollectNotification } = useCollectNotification();
   const { hasRequiredTransfersNotification } = useRequiredTransfersNotification();
 
-  const [returnMenuOpen, setReturnMenuOpen] = useState(false);
+  const [openParentId, setOpenParentId] = useState<string | null>(null);
 
   const isReturnRoute = location.pathname.startsWith('/returns');
+  const isInventoryRoute = location.pathname === '/inventory' || location.pathname.startsWith('/inventory-countings');
   useEffect(() => {
-    if (isReturnRoute) setReturnMenuOpen(true);
-  }, [isReturnRoute]);
+    if (isReturnRoute) setOpenParentId((prev) => (prev === 'return' ? prev : 'return'));
+    else if (isInventoryRoute) setOpenParentId((prev) => (prev === 'inventory' ? prev : 'inventory'));
+  }, [isReturnRoute, isInventoryRoute]);
 
   // When user is null (e.g. token exists but no stored employee) show all menus (admin)
   const visibleMenus = user ? menuVisibility[user.role] : menuVisibility.admin;
@@ -205,11 +214,12 @@ export function AppSidebar({ collapsed, onCollapsedChange }: AppSidebarProps) {
                         </NavLink>
                       );
                     }
+                    const isOpen = openParentId === parent.id;
                     return (
                       <div key={parent.id} className="space-y-1">
                         <button
                           type="button"
-                          onClick={() => setReturnMenuOpen((open) => !open)}
+                          onClick={() => setOpenParentId((prev) => (prev === parent.id ? null : parent.id))}
                           className={cn(
                             'flex w-full items-center gap-3 px-3 h-10 rounded-lg text-sm font-medium transition-colors',
                             isChildActive
@@ -222,11 +232,11 @@ export function AppSidebar({ collapsed, onCollapsedChange }: AppSidebarProps) {
                           <ChevronDown
                             className={cn(
                               'w-4 h-4 flex-shrink-0 transition-transform duration-200',
-                              returnMenuOpen && 'rotate-180'
+                              isOpen && 'rotate-180'
                             )}
                           />
                         </button>
-                        {returnMenuOpen &&
+                        {isOpen &&
                           parent.children.map((child) => (
                             <NavLink
                               key={child.id}

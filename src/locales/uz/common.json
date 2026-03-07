@@ -6,7 +6,7 @@
   "nav.collect": "Buyurtmalarni yig'ish",
   "nav.validation": "Buyurtma tekshirish",
   "nav.return": "Qaytarish",
-  "nav.returnDrafts": "Qaytarish",
+  "nav.returnDrafts": "Qoralama",
   "nav.returnHistory": "Qaytgan tovarlar tarixi",
   "nav.moveToRegion": "Viloyatga ko'chirish",
   "nav.relocation": "ABGD zona to'ldirish",
@@ -42,6 +42,7 @@
   "common.status": "Holat",
   "common.date": "Sana",
   "common_loading": "Yuklanmoqda...",
+  "signalR.waiting": "Server javobini kutilmoqda...",
   "common.loading": "Yuklanmoqda...",
   "common.noData": "Ma'lumot topilmadi",
   "common.error": "Xatolik yuz berdi",
@@ -376,5 +377,6 @@
   "bonuses.typeSalesOrderValidation": "Buyurtma tekshirish",
   "bonuses.typeStockTransfer": "Zaxira ko'chirish",
   "bonuses.typeInventoryTransferRequestPicking": "Inventarizatsiya ko'chirish",
-  "bonuses.showing": "{{start}}–{{end}}"
+  "bonuses.showing": "{{start}}–{{end}}",
+  "bonuses.detail": "Bonus yozuvi"
 }

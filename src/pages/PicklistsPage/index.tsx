@@ -299,8 +299,7 @@ export default function PicklistsPage({
         title={t("picklist_detail_title", { docEntry: selectedDocEntry ?? "" })}
         open={selectedDocEntry != null}
         onCancel={handleCloseModal}
-        width="100%"
-        style={{ maxWidth: "min(1200px, calc(100vw - 40px))" }}
+        width={1200}
         footer={
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3">

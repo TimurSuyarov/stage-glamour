@@ -113,3 +113,35 @@ export const useBonusRecordsInfinite = (
     }
   );
 };
+
+// --- Bonus record by type + docEntry (for modal) ---
+export interface BonusRecordDocumentLine {
+  itemCode: string;
+  itemDescription: string;
+  quantity: number;
+}
+
+export interface BonusRecordByDocResponse {
+  cardName: string;
+  docNum: number;
+  docEntry: number;
+  documentLines: BonusRecordDocumentLine[];
+}
+
+export const fetchBonusRecordByDoc = async (
+  type: number,
+  docEntry: number
+): Promise<BonusRecordByDocResponse> => {
+  const { data } = await request.get<BonusRecordByDocResponse>(
+    `/bonus-records/${type}/${docEntry}`
+  );
+  return data;
+};
+
+export const useBonusRecordByDoc = (type: number | null, docEntry: number | null) => {
+  return useQuery({
+    queryKey: ["bonus-record-doc", type, docEntry],
+    queryFn: () => fetchBonusRecordByDoc(type!, docEntry!),
+    enabled: type != null && docEntry != null,
+  });
+};

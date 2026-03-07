@@ -153,7 +153,11 @@ export default function InventoryCountingsPage() {
       dataIndex: "status",
       key: "status",
       width: 120,
-      render: (val: number) => t(INVENTORY_COUNTING_STATUS[val] ?? String(val)),
+      render: (val: number) => (
+        <span className={val === 3 ? "font-medium text-green-600" : undefined}>
+          {t(INVENTORY_COUNTING_STATUS[val] ?? String(val))}
+        </span>
+      ),
     },
     {
       title: t("picklist_assignee"),
@@ -285,7 +289,7 @@ export default function InventoryCountingsPage() {
         open={selectedDoc != null}
         onCancel={() => handleOpenModal(null)}
         footer={null}
-        width="70%"
+        width={1200}
       >
         {detailLoading ? (
           <div className="flex items-center justify-center py-12">
@@ -317,7 +321,15 @@ export default function InventoryCountingsPage() {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground mb-1">{t("common.status")}</p>
-                <p className="font-medium">{t(INVENTORY_COUNTING_STATUS[detail.status] ?? String(detail.status))}</p>
+                <p
+                  className={
+                    detail.status === 3
+                      ? "font-medium text-green-600"
+                      : "font-medium"
+                  }
+                >
+                  {t(INVENTORY_COUNTING_STATUS[detail.status] ?? String(detail.status))}
+                </p>
               </div>
               <div className="col-span-2">
                 <p className="text-xs text-muted-foreground mb-1">{t("picklist_assignee")}</p>

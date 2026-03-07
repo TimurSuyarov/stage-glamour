@@ -109,7 +109,7 @@ export default function EmployeesPage() {
 
       <ModuleCard>
         {/* Filters */}
-        <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+        <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
           <div className="space-y-2">
             <Label className="text-xs">{t("employees_filter_first_name")}</Label>
             <Input
@@ -128,37 +128,39 @@ export default function EmployeesPage() {
               className="h-9"
             />
           </div>
-          <div className="space-y-2">
-            <Label className="text-xs">{t("employees_page_size")}</Label>
-            <Select
-              value={String(pageSize)}
-              onValueChange={handlePageSizeChange}
-            >
-              <SelectTrigger className="h-9 w-24">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PAGE_SIZE_OPTIONS.map((size) => (
-                  <SelectItem key={size} value={String(size)}>
-                    {size}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="space-y-2">
+              <Label className="text-xs">{t("employees_page_size")}</Label>
+              <Select
+                value={String(pageSize)}
+                onValueChange={handlePageSizeChange}
+              >
+                <SelectTrigger className="h-9 w-24">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PAGE_SIZE_OPTIONS.map((size) => (
+                    <SelectItem key={size} value={String(size)}>
+                      {size}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={handleApplyFilters} className="h-9">
+              {t("common_apply")}
+            </Button>
+            <Tooltip title={t("common_clear_filters")}>
+              <button
+                type="button"
+                onClick={handleClearFilters}
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-input bg-accent text-accent-foreground"
+                aria-label={t("common_clear_filters")}
+              >
+                <ClearOutlined className="h-4 w-4" />
+              </button>
+            </Tooltip>
           </div>
-          <Button onClick={handleApplyFilters} className="h-9">
-            {t("common_apply")}
-          </Button>
-          <Tooltip title={t("common_clear_filters")}>
-            <button
-              type="button"
-              onClick={handleClearFilters}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-input bg-accent text-accent-foreground"
-              aria-label={t("common_clear_filters")}
-            >
-              <ClearOutlined className="h-4 w-4" />
-            </button>
-          </Tooltip>
         </div>
 
         {isLoading ? (

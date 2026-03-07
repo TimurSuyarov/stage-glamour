@@ -6,7 +6,7 @@
   "nav.collect": "Сбор заказов",
   "nav.validation": "Проверка заказа",
   "nav.return": "Возврат",
-  "nav.returnDrafts": "Возврат",
+  "nav.returnDrafts": "Черновик",
   "nav.returnHistory": "История возвращённых товаров",
   "nav.moveToRegion": "Перемещение в регион",
   "nav.relocation": "Заполнение ABGD зоны",
@@ -42,6 +42,7 @@
   "common.status": "Статус",
   "common.date": "Дата",
   "common_loading": "Загрузка...",
+  "signalR.waiting": "Ожидание ответа сервера...",
   "common.loading": "Загрузка...",
   "common.noData": "Данные не найдены",
   "common.error": "Произошла ошибка",
@@ -376,5 +377,6 @@
   "bonuses.typeSalesOrderValidation": "Проверка заказа",
   "bonuses.typeStockTransfer": "Перемещение склада",
   "bonuses.typeInventoryTransferRequestPicking": "Сбор инвентаризации",
-  "bonuses.showing": "{{start}}–{{end}}"
+  "bonuses.showing": "{{start}}–{{end}}",
+  "bonuses.detail": "Запись бонуса"
 }

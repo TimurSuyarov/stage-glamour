@@ -598,7 +598,7 @@ const AdmissionPage = () => {
         open={!!selectedAdmission}
         onOpenChange={() => handleCloseModal()}
       >
-        <DialogContent className="w-[90vw] max-w-[90vw] max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogContent className="w-[1200px] max-w-[95vw] max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>
               {t("admission.documentTitle", { number: selectedAdmission?.documentNumber ?? "" })}

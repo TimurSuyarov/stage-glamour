@@ -179,7 +179,16 @@ export default function CreditMemosDraftsPage() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="relative p-6 space-y-6">
+      {returnLoading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-3 rounded-lg border bg-card px-8 py-6 shadow-lg">
+            <Loader2 className="w-10 h-10 animate-spin text-primary" />
+            <p className="text-sm font-medium">{t("common_loading")}</p>
+            <p className="text-xs text-muted-foreground">{t("signalR.waiting")}</p>
+          </div>
+        </div>
+      )}
       <PageHeader
         title={t("nav.returnDrafts")}
         breadcrumbs={[
@@ -347,7 +356,7 @@ export default function CreditMemosDraftsPage() {
 
       {/* Detail + Return modal */}
       <Dialog open={selectedDocEntry != null} onOpenChange={(open) => !open && handleCloseModal()}>
-        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+        <DialogContent className="max-w-[1200px] max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex flex-wrap items-center gap-3">
               {detail && (

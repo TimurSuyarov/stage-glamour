@@ -6,7 +6,7 @@ import { ClearOutlined } from "@ant-design/icons";
 import { PageHeader } from "@/components/ui/page-header";
 import { ModuleCard } from "@/components/ui/stat-card";
 import { useTranslation } from "react-i18next";
-import { Eye, Loader2 } from "lucide-react";
+import { Eye, Loader2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -87,6 +87,7 @@ const MoveToRegionPage = () => {
     useState<InventoryTransferRequestItem | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<number[]>([]);
+  const [waitingForSignalR, setWaitingForSignalR] = useState(false);
 
   const postMutation = usePostInventoryTransferRequests();
 
@@ -124,11 +125,13 @@ const MoveToRegionPage = () => {
     }
     postMutation.mutate(selectedRowKeys, {
       onSuccess: () => {
+        setWaitingForSignalR(true);
         const connection = createSalesOrdersHubConnection();
 
         const onDone = () => {
           connection.stop().catch(() => {});
           setSelectedRowKeys([]);
+          setWaitingForSignalR(false);
         };
 
         connection.on(
@@ -252,6 +255,13 @@ const MoveToRegionPage = () => {
       key: "itemDescription",
     },
     {
+      title: t("inventory.batchNumber"),
+      dataIndex: "batchNumber",
+      key: "batchNumber",
+      width: 160,
+      render: (val: string | null | undefined) => val ?? "—",
+    },
+    {
       title: t("sales_orders_quantity"),
       dataIndex: "quantity",
       key: "quantity",
@@ -277,13 +287,36 @@ const MoveToRegionPage = () => {
   ];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="relative p-6 space-y-6">
+      {waitingForSignalR && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-3 rounded-lg border bg-card px-8 py-6 shadow-lg">
+            <Loader2 className="w-10 h-10 animate-spin text-primary" />
+            <p className="text-sm font-medium">{t("common_loading")}</p>
+            <p className="text-xs text-muted-foreground">{t("signalR.waiting")}</p>
+          </div>
+        </div>
+      )}
       <PageHeader
         title={t("nav.moveToRegion")}
         breadcrumbs={[
           { label: t("nav.operational") },
           { label: t("nav.moveToRegion") },
         ]}
+        actions={
+          <Button
+            onClick={handleSubmitSelected}
+            disabled={selectedRowKeys.length === 0 || postMutation.isLoading}
+            className="gap-2"
+          >
+            {postMutation.isLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Plus className="w-4 h-4" />
+            )}
+            {t("sales_orders_move_to_next_step")}
+          </Button>
+        }
       />
 
       <ModuleCard>
@@ -401,22 +434,11 @@ const MoveToRegionPage = () => {
           </div>
         ) : (
           <>
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-              <span className="text-sm text-muted-foreground">
-                {selectedRowKeys.length > 0
-                  ? t("sales_orders_selected_count", { count: selectedRowKeys.length })
-                  : null}
-              </span>
-              <Button
-                onClick={handleSubmitSelected}
-                disabled={selectedRowKeys.length === 0 || postMutation.isLoading}
-              >
-                {postMutation.isLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin mr-2 inline" />
-                ) : null}
-                {t("moveToRegion.submit")}
-              </Button>
-            </div>
+            {selectedRowKeys.length > 0 && (
+              <p className="text-sm text-muted-foreground mb-4">
+                {t("sales_orders_selected_count", { count: selectedRowKeys.length })}
+              </p>
+            )}
             <Table
               rowSelection={rowSelection}
               columns={columns}
@@ -470,8 +492,7 @@ const MoveToRegionPage = () => {
         title={t("sales_orders_document_lines")}
         open={isModalVisible}
         onCancel={handleCloseModal}
-        width="100%"
-        style={{ maxWidth: "min(1200px, calc(100vw - 40px))" }}
+        width={1200}
         footer={
           <Button variant="outline" onClick={handleCloseModal}>
             {t("common_close")}
