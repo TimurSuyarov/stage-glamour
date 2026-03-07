@@ -6,9 +6,11 @@ import { useTranslation } from "react-i18next";
 import {
   usePurchaseInvoices,
   useFromInvoiceMutation,
+  useAssignEmployeeToPurchaseInvoice,
   type PurchaseInvoicesFilters,
   type FromInvoiceRequestBody,
 } from "@/entities/PurchaseInvoices/api";
+import { useEmployees } from "@/entities/Employees/api";
 import { useBinLocationsInfinite } from "@/entities/BinLocations/api";
 import { Admission, AdmissionItem } from "@/types/wms";
 import { Button } from "@/components/ui/button";
@@ -34,26 +36,25 @@ import {
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import {
-  Search,
-  Filter,
   Download,
   Eye,
   FileText,
   CheckCircle,
   AlertCircle,
   Clock,
-  Barcode,
   Loader2,
-  ChevronLeft,
-  ChevronRight,
   ChevronDown,
   Check,
+  X,
 } from "lucide-react";
 import { Label } from "@/components/ui/label";
-import { message, Tooltip, DatePicker, Table } from "antd";
+import { message, Tooltip, DatePicker, Table, Select } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { ClearOutlined } from "@ant-design/icons";
 import dayjs, { type Dayjs } from "dayjs";
+import utc from "dayjs/plugin/utc";
+
+dayjs.extend(utc);
 
 
 // Item status icons
@@ -188,6 +189,8 @@ const AdmissionPage = () => {
   );
   const [editedItems, setEditedItems] = useState<AdmissionItem[]>([]);
   const [showValidationErrors, setShowValidationErrors] = useState(false);
+  const [assignedEmployeeId, setAssignedEmployeeId] = useState<number | null>(null);
+  const [pendingEmployeeId, setPendingEmployeeId] = useState<number | null>(null);
 
   // API filter form state
   const [filterDocNum, setFilterDocNum] = useState<string>("");
@@ -209,11 +212,10 @@ const AdmissionPage = () => {
   }, [appliedFilters, pageIndex, pageSize]);
 
   const { data: admissionsFromApi = [], isLoading, error } = usePurchaseInvoices(filters);
+  const { data: employees = [] } = useEmployees({ PageSize: 500 });
   const fromInvoiceMutation = useFromInvoiceMutation();
+  const assignMutation = useAssignEmployeeToPurchaseInvoice();
   const hasNextPage = admissionsFromApi.length >= pageSize;
-  const hasPrevPage = pageIndex > 0;
-  const rangeStart = pageIndex * pageSize + 1;
-  const rangeEnd = (pageIndex + 1) * pageSize;
 
   const handleApplyFilters = () => {
     setPageIndex(0);
@@ -250,6 +252,9 @@ const AdmissionPage = () => {
     setSelectedAdmission(admission);
     setEditedItems([...admission.items]);
     setShowValidationErrors(false);
+    const empId = admission.assignedEmployeeId ?? null;
+    setAssignedEmployeeId(empId);
+    setPendingEmployeeId(empId);
   };
 
   // Close modal
@@ -257,6 +262,8 @@ const AdmissionPage = () => {
     setSelectedAdmission(null);
     setEditedItems([]);
     setShowValidationErrors(false);
+    setAssignedEmployeeId(null);
+    setPendingEmployeeId(null);
   };
 
   // Display items (edited or original)
@@ -269,14 +276,13 @@ const AdmissionPage = () => {
   // Required fields per item: actualQty > 0 and <= quantity (from GET), expiry, manufacturing, admission dates, cell
   const isItemValid = (item: AdmissionItem) =>
     (item.actualQty ?? 0) > 0 &&
-    (item.actualQty ?? 0) <= (item.quantity ?? 0) &&
+    (item.actualQty ?? 0) <= (item.remainingOpenQuantity ?? item.quantity ?? 0) &&
     !!item.expiryDate?.trim() &&
-    !!item.manufacturingDate?.trim() &&
-    !!item.addmisionDate?.trim() &&
-    !!item.cellLocation?.trim();    
+    !!item.cellLocation?.trim();
 
   const isFormValid =
     selectedAdmission != null &&
+    assignedEmployeeId != null &&
     displayItems.length > 0 &&
     displayItems.every(isItemValid);
 
@@ -319,18 +325,22 @@ const AdmissionPage = () => {
       ),
     },
     {
-      title: "TSD",
-      dataIndex: "tsdId",
-      key: "tsdId",
-      width: 120,
-      render: (tsdId: string | undefined) => {
-        if (tsdId) {
-          return (
-            <span className="inline-flex items-center gap-1 text-xs text-primary font-medium">
-              <FileText className="w-3 h-3" />
-              {tsdId}
-            </span>
+      title: t("admission.assignEmployee"),
+      key: "assignedEmployee",
+      width: 160,
+      render: (_: any, record: Admission) => {
+        if (record.assignedEmployeeId) {
+          const emp = employees.find(
+            (e) => (e.employeeId ?? e.EmployeeID) === record.assignedEmployeeId
           );
+          if (emp) {
+            return (
+              <span className="inline-flex items-center gap-1 text-xs text-primary font-medium">
+                <FileText className="w-3 h-3" />
+                {emp.firstName} {emp.lastName}
+              </span>
+            );
+          }
         }
         return <span className="text-muted-foreground">—</span>;
       },
@@ -380,9 +390,9 @@ const AdmissionPage = () => {
           baseEntry: docEntry,
           batchNumbers: [
             {
-              expiryDate: item.expiryDate ? new Date(item.expiryDate).toISOString() : now,
-              manufacturingDate: item.manufacturingDate ? new Date(item.manufacturingDate).toISOString() : now,
-              addmisionDate: item.addmisionDate ? new Date(item.addmisionDate).toISOString() : now,
+              expiryDate: item.expiryDate || now,
+              manufacturingDate: now,
+              addmisionDate: now,
               quantity,
             },
           ],
@@ -410,14 +420,29 @@ const AdmissionPage = () => {
     }
   };
 
+  // Assign employee
+  const handleAssignEmployee = async () => {
+    if (!pendingEmployeeId || !selectedAdmission) return;
+    try {
+      await assignMutation.mutateAsync({
+        docEntry: Number(selectedAdmission.id),
+        employeeId: pendingEmployeeId,
+      });
+      setAssignedEmployeeId(pendingEmployeeId);
+      message.success(t("common.success"));
+    } catch {
+      message.error(t("common.error"));
+    }
+  };
+
   // Update item quantity
   const handleQtyChange = (itemId: string, value: string) => {
     const qty = parseInt(value) || 0;
     setEditedItems((items) =>
       items.map((item) => {
         if (item.id === itemId) {
-          const maxQty = item.quantity;
-          const actualQty = Math.min(qty, maxQty); // Ensure it doesn't exceed quantity from GET
+          const maxQty = item.remainingOpenQuantity ?? item.quantity;
+          const actualQty = Math.min(qty, maxQty);
           return {
             ...item,
             actualQty,
@@ -434,34 +459,12 @@ const AdmissionPage = () => {
     );
   };
 
-  // Update item expiry date
+  // Update item expiry date (store as UTC ISO string)
   const handleExpiryChange = (itemId: string, date: Dayjs | null) => {
     setEditedItems((items) =>
       items.map((item) =>
         item.id === itemId
-          ? { ...item, expiryDate: date ? date.format("YYYY-MM-DD") : "" }
-          : item
-      )
-    );
-  };
-
-  // Update item manufacturing date
-  const handleManufacturingChange = (itemId: string, date: Dayjs | null) => {
-    setEditedItems((items) =>
-      items.map((item) =>
-        item.id === itemId
-          ? { ...item, manufacturingDate: date ? date.format("YYYY-MM-DD") : "" }
-          : item
-      )
-    );
-  };
-
-  // Update item admission date
-  const handleAdmissionDateChange = (itemId: string, date: Dayjs | null) => {
-    setEditedItems((items) =>
-      items.map((item) =>
-        item.id === itemId
-          ? { ...item, addmisionDate: date ? date.format("YYYY-MM-DD") : "" }
+          ? { ...item, expiryDate: date ? date.utc().startOf("day").toISOString() : "" }
           : item
       )
     );
@@ -604,35 +607,83 @@ const AdmissionPage = () => {
 
           {selectedAdmission && (
             <div className="flex-1 overflow-y-auto custom-scrollbar">
-              {/* Document info header */}
-              <div className="grid grid-cols-4 gap-4 p-4 bg-muted/30 rounded-lg mb-6">
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">
-                    {t("admission.supplier")}
-                  </p>
-                  <p className="font-medium text-sm">
-                    {selectedAdmission.supplierName}
-                  </p>
+              {/* Document info + employee assignment */}
+              <div className="p-4 bg-muted/30 rounded-lg mb-6 space-y-3">
+                {/* Row 1: document meta + status */}
+                <div className="grid grid-cols-4 gap-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">{t("admission.supplier")}</p>
+                    <p className="font-medium text-sm">{selectedAdmission.supplierName}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">{t("admission.expectedDate")}</p>
+                    <p className="font-medium text-sm">{selectedAdmission.expectedDate}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">{t("admission.totalPositions")}</p>
+                    <p className="font-medium text-sm">{selectedAdmission.items.length}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">{t("common.status")}</p>
+                    <StatusBadge status={selectedAdmission.status} />
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">
-                    {t("admission.expectedDate")}
-                  </p>
-                  <p className="font-medium text-sm">
-                    {selectedAdmission.expectedDate}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">
-                    {t("admission.totalPositions")}
-                  </p>
-                  <p className="font-medium text-sm">
-                    {selectedAdmission.items.length}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">{t("common.status")}</p>
-                  <StatusBadge status={selectedAdmission.status} />
+
+                {/* Row 2: employee assignment */}
+                <div className="flex flex-wrap items-end gap-6 pt-3 border-t border-border">
+                  <div className="flex-1 min-w-[220px]">
+                    <p className="text-xs text-muted-foreground mb-1">{t("admission.assignEmployee")}</p>
+                    {assignedEmployeeId ? (
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-sm">
+                          {(() => {
+                            const emp = employees.find(
+                              (e) => (e.employeeId ?? e.EmployeeID) === assignedEmployeeId
+                            );
+                            return emp ? `${emp.firstName} ${emp.lastName}` : "—";
+                          })()}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => { setAssignedEmployeeId(null); setPendingEmployeeId(null); }}
+                          className="text-muted-foreground hover:text-destructive"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Select
+                          className="min-w-[200px]"
+                          size="middle"
+                          placeholder={t("admission.selectEmployee")}
+                          value={pendingEmployeeId}
+                          showSearch
+                          filterOption={(input, option) =>
+                            (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
+                          }
+                          status={showValidationErrors && !assignedEmployeeId ? "error" : undefined}
+                          onChange={setPendingEmployeeId}
+                          getPopupContainer={(trigger) => trigger.parentNode as HTMLElement}
+                          options={employees.map((e) => ({
+                            value: e.employeeId ?? e.EmployeeID ?? 0,
+                            label: `${e.firstName} ${e.lastName}`,
+                          }))}
+                        />
+                        <Button
+                          size="sm"
+                          onClick={handleAssignEmployee}
+                          disabled={!pendingEmployeeId || assignMutation.isLoading}
+                        >
+                          {assignMutation.isLoading ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            t("inventoryCountings.assign")
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -643,7 +694,7 @@ const AdmissionPage = () => {
                   <table className="w-full text-sm border-collapse min-w-[900px]">
                     <thead className="bg-muted/50">
                       <tr>
-                        <th className="px-3 py-2 text-left text-xs font-medium border-r border-border">
+                        <th className="px-3 py-2 text-left text-xs font-medium border-r border-border w-44">
                           {t("admission.product")}
                         </th>
                         <th className="px-3 py-2 text-center text-xs font-medium w-16 border-r border-border">
@@ -654,12 +705,6 @@ const AdmissionPage = () => {
                         </th>
                         <th className="px-3 py-2 text-center text-xs font-medium w-32 border-r border-border">
                           {t("admission.expiryDate")}
-                        </th>
-                        <th className="px-3 py-2 text-center text-xs font-medium w-32 border-r border-border">
-                          {t("admission.manufacturingDate")}
-                        </th>
-                        <th className="px-3 py-2 text-center text-xs font-medium w-32 border-r border-border">
-                          {t("admission.admissionDate")}
                         </th>
                         <th className="px-3 py-2 text-center text-xs font-medium w-28 border-r border-border">
                           {t("admission.cell")}
@@ -674,8 +719,6 @@ const AdmissionPage = () => {
                         const showErr = showValidationErrors;
                         const qtyInvalid = showErr && (item.actualQty ?? 0) <= 0;
                         const expiryInvalid = showErr && !item.expiryDate?.trim();
-                        const manufacturingInvalid = showErr && !item.manufacturingDate?.trim();
-                        const admissionDateInvalid = showErr && !item.addmisionDate?.trim();
                         const cellInvalid = showErr && !item.cellLocation?.trim();
                         return (
                         <tr
@@ -686,8 +729,10 @@ const AdmissionPage = () => {
                               "bg-status-warning-bg/30"
                           )}
                         >
-                          <td className="px-3 py-3 border-r border-border">
-                              <p className="font-medium">{item.name || "—"}</p>
+                          <td className="px-3 py-3 border-r border-border w-44">
+                            <p className="font-medium text-xs truncate max-w-[160px]" title={item.name || "—"}>
+                              {item.name || "—"}
+                            </p>
                           </td>
                           <td className="px-3 py-3 text-center font-medium border-r border-border">
                             {item.quantity}
@@ -696,7 +741,7 @@ const AdmissionPage = () => {
                             <Input
                               type="number"
                               min={0}
-                              max={item.quantity}
+                              max={item.remainingOpenQuantity ?? item.quantity}
                               value={item.actualQty}
                               onChange={(e) =>
                                 handleQtyChange(item.id, e.target.value)
@@ -718,32 +763,7 @@ const AdmissionPage = () => {
                               )}
                               format="YYYY-MM-DD"
                               size="small"
-                            />
-                          </td>
-                          <td className="px-3 py-3 border-r border-border">
-                            <DatePicker
-                              value={item.manufacturingDate ? dayjs(item.manufacturingDate) : null}
-                              onChange={(date) => handleManufacturingChange(item.id, date)}
-                              placeholder={t("admission.selectDate")}
-                              className={cn(
-                                "w-full h-8 text-xs",
-                                manufacturingInvalid && "!border-destructive"
-                              )}
-                              format="YYYY-MM-DD"
-                              size="small"
-                            />
-                          </td>
-                          <td className="px-3 py-3 border-r border-border">
-                            <DatePicker
-                              value={item.addmisionDate ? dayjs(item.addmisionDate) : null}
-                              onChange={(date) => handleAdmissionDateChange(item.id, date)}
-                              placeholder={t("admission.selectDate")}
-                              className={cn(
-                                "w-full h-8 text-xs",
-                                admissionDateInvalid && "!border-destructive"
-                              )}
-                              format="YYYY-MM-DD"
-                              size="small"
+                              getPopupContainer={() => document.body}
                             />
                           </td>
                           <td className="px-3 py-3 border-r border-border">
@@ -773,11 +793,7 @@ const AdmissionPage = () => {
               )}
 
               {/* Footer actions */}
-              <div className="flex items-center justify-center gap-4 pt-4 border-t">
-                <Button variant="outline" className="gap-2">
-                  <FileText className="w-4 h-4" />
-                  {t("order.bindToTsd")}
-                </Button>
+              <div className="flex items-center justify-end gap-4 pt-4 border-t">
                 <Button
                   className="gap-2 bg-status-success hover:bg-status-success/90"
                   onClick={handleCompleteAdmission}

@@ -14,6 +14,7 @@ export interface Admission {
   status: AdmissionStatus;
   items: AdmissionItem[];
   tsdId?: string;
+  assignedEmployeeId?: number | null;
   container?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -25,6 +26,7 @@ export interface AdmissionItem {
   itemCode?: string;
   name: string;
   quantity: number;
+  remainingOpenQuantity?: number;
   actualQty: number;
   unitPrice?: number;
   lineTotal?: number;

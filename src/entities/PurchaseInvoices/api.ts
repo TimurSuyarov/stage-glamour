@@ -8,6 +8,7 @@ export interface PurchaseInvoiceDocumentLine {
   itemCode: string | null;
   itemDescription: string | null;
   quantity: number;
+  remainingOpenQuantity?: number;
   unitPrice: number;
   lineTotal: number;
   lineStatus: string;
@@ -28,6 +29,7 @@ export interface PurchaseInvoiceItem {
   salesPersonCode: number;
   U_IsVisible: string;
   U_Container: string | null;
+  assignedEmployeeId?: number | null;
   documentLines: PurchaseInvoiceDocumentLine[];
 }
 
@@ -58,12 +60,14 @@ function mapDocumentLineToAdmissionItem(
   line: PurchaseInvoiceDocumentLine,
   docEntry: number
 ): AdmissionItem {
+  const remaining = line.remainingOpenQuantity ?? line.quantity;
   return {
-    id: `${docEntry}-${line.lineNum}`, 
+    id: `${docEntry}-${line.lineNum}`,
     itemCode: line.itemCode ?? "",
     name: line.itemDescription ?? "",
     quantity: line.quantity,
-    actualQty: line.quantity,
+    remainingOpenQuantity: remaining,
+    actualQty: remaining,
     unitPrice: line.unitPrice,
     lineTotal: line.lineTotal,
     lineNum: line.lineNum,
@@ -83,6 +87,7 @@ function mapPurchaseInvoiceToAdmission(item: PurchaseInvoiceItem): Admission {
     supplierName: item.cardName,
     expectedDate: item.docDueDate?.slice(0, 10) ?? "",
     status: mapDocumentStatusToAdmissionStatus(item.documentStatus),
+    assignedEmployeeId: item.assignedEmployeeId ?? null,
     container: item.U_Container ?? undefined,
     items: (item.documentLines ?? []).map((line) =>
       mapDocumentLineToAdmissionItem(line, item.docEntry)
@@ -167,3 +172,11 @@ export const useFromInvoiceMutation = () => {
     },
   });
 };
+
+export const useAssignEmployeeToPurchaseInvoice = () =>
+  useMutation(
+    ({ docEntry, employeeId }: { docEntry: number; employeeId: number }) =>
+      request.patch(`/purchase-invoices/${docEntry}/assign-employee`, {
+        employeeId,
+      })
+  );
