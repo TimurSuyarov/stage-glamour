@@ -1,5 +1,7 @@
 import request from "@/services";
-import { useQuery } from "react-query";
+import { useQuery, useInfiniteQuery } from "react-query";
+
+export const BIN_LOCATIONS_PAGE_SIZE = 20;
 
 export interface BinLocationItem {
   id: number;
@@ -43,6 +45,20 @@ export const useBinLocations = (filters?: BinLocationsFilters) => {
     enabled: true,
   });
 };
+
+export const useBinLocationsInfinite = (search?: string) =>
+  useInfiniteQuery(
+    ["bin-locations-infinite", search ?? ""],
+    ({ pageParam = 0 }) =>
+      fetchBinLocations({ BinCode: search || undefined, skip: pageParam }),
+    {
+      getNextPageParam: (lastPage, allPages) =>
+        lastPage.length >= BIN_LOCATIONS_PAGE_SIZE
+          ? allPages.length * BIN_LOCATIONS_PAGE_SIZE
+          : undefined,
+      refetchOnWindowFocus: false,
+    }
+  );
 
 // Item count by bin (inventory page)
 export interface BinLocationItemCount {

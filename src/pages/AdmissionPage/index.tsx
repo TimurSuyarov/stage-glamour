@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { PageHeader } from "@/components/ui/page-header";
 import { ModuleCard } from "@/components/ui/stat-card";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -9,7 +9,7 @@ import {
   type PurchaseInvoicesFilters,
   type FromInvoiceRequestBody,
 } from "@/entities/PurchaseInvoices/api";
-import { useBinLocations } from "@/entities/BinLocations/api";
+import { useBinLocationsInfinite } from "@/entities/BinLocations/api";
 import { Admission, AdmissionItem } from "@/types/wms";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,6 +63,123 @@ const itemStatusIcon = {
   mismatch: <AlertCircle className="w-4 h-4 text-status-warning" />,
 };
 
+// ─── BinLocation dropdown with infinite scroll + debounced search ────────────
+function BinLocationSelect({
+  value,
+  onChange,
+  hasError,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  hasError: boolean;
+}) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  // Debounce: wait 400 ms after last keystroke before firing API
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 400);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+  } = useBinLocationsInfinite(debouncedSearch || undefined);
+
+  const items = useMemo(() => data?.pages.flat() ?? [], [data]);
+  const selectedBin = items.find((b) => String(b.absEntry) === value);
+
+  return (
+    <Popover
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (!o) setSearch("");
+      }}
+    >
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          className={cn(
+            "w-full h-8 text-xs justify-between font-normal",
+            hasError && "border-destructive ring-1 ring-destructive"
+          )}
+        >
+          <span className="truncate">
+            {value ? (selectedBin?.binCode ?? value) : t("common.select")}
+          </span>
+          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[320px] p-0" align="start">
+        <Command shouldFilter={false}>
+          <CommandInput
+            placeholder={t("common.search")}
+            className="h-9"
+            value={search}
+            onValueChange={setSearch}
+          />
+          <CommandList
+            className="max-h-[280px] overflow-y-auto"
+            onWheel={(e) => e.stopPropagation()}
+            onScroll={(e) => {
+              const el = e.currentTarget;
+              if (isFetchingNextPage || !hasNextPage) return;
+              if (el.scrollHeight - el.scrollTop - el.clientHeight < 60) {
+                fetchNextPage();
+              }
+            }}
+          >
+            {isLoading ? (
+              <div className="flex items-center justify-center py-6">
+                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+              </div>
+            ) : items.length === 0 ? (
+              <CommandEmpty>{t("common.noResults")}</CommandEmpty>
+            ) : (
+              <CommandGroup>
+                {items.map((bin) => (
+                  <CommandItem
+                    key={bin.id}
+                    value={String(bin.absEntry)}
+                    onSelect={() => {
+                      onChange(String(bin.absEntry));
+                      setOpen(false);
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4 shrink-0",
+                        value === String(bin.absEntry)
+                          ? "opacity-100"
+                          : "opacity-0"
+                      )}
+                    />
+                    {bin.binCode}
+                  </CommandItem>
+                ))}
+                {isFetchingNextPage && (
+                  <div className="flex justify-center py-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                  </div>
+                )}
+              </CommandGroup>
+            )}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// ─── Main page ────────────────────────────────────────────────────────────────
 const AdmissionPage = () => {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
@@ -71,7 +188,6 @@ const AdmissionPage = () => {
   );
   const [editedItems, setEditedItems] = useState<AdmissionItem[]>([]);
   const [showValidationErrors, setShowValidationErrors] = useState(false);
-  const [openCellPopoverId, setOpenCellPopoverId] = useState<string | null>(null);
 
   // API filter form state
   const [filterDocNum, setFilterDocNum] = useState<string>("");
@@ -93,7 +209,6 @@ const AdmissionPage = () => {
   }, [appliedFilters, pageIndex, pageSize]);
 
   const { data: admissionsFromApi = [], isLoading, error } = usePurchaseInvoices(filters);
-  const { data: binLocations = [] } = useBinLocations();
   const fromInvoiceMutation = useFromInvoiceMutation();
   const hasNextPage = admissionsFromApi.length >= pageSize;
   const hasPrevPage = pageIndex > 0;
@@ -480,7 +595,7 @@ const AdmissionPage = () => {
         open={!!selectedAdmission}
         onOpenChange={() => handleCloseModal()}
       >
-        <DialogContent className="max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogContent className="w-[90vw] max-w-[90vw] max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>
               {t("admission.documentTitle", { number: selectedAdmission?.documentNumber ?? "" })}
@@ -632,77 +747,11 @@ const AdmissionPage = () => {
                             />
                           </td>
                           <td className="px-3 py-3 border-r border-border">
-                            <Popover
-                              open={openCellPopoverId === item.id}
-                              onOpenChange={(open) =>
-                                setOpenCellPopoverId(open ? item.id : null)
-                              }
-                            >
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  role="combobox"
-                                  className={cn(
-                                    "w-full h-8 text-xs justify-between font-normal",
-                                    cellInvalid &&
-                                      "border-destructive ring-1 ring-destructive"
-                                  )}
-                                >
-                                  <span className="truncate">
-                                    {item.cellLocation
-                                      ? binLocations.find(
-                                          (b) =>
-                                            String(b.absEntry) ===
-                                            item.cellLocation
-                                        )?.binCode ?? item.cellLocation
-                                      : t("common.select")}
-                                  </span>
-                                  <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent
-                                className="w-[var(--radix-popover-trigger-width)] p-0"
-                                align="start"
-                              >
-                                <Command>
-                                  <CommandInput
-                                    placeholder={t("common.search")}
-                                    className="h-9"
-                                  />
-                                  <CommandList className="max-h-[280px]">
-                                    <CommandEmpty>
-                                      {t("common.noResults")}
-                                    </CommandEmpty>
-                                    <CommandGroup>
-                                      {binLocations.map((bin) => (
-                                        <CommandItem
-                                          key={bin.id}
-                                          value={bin.binCode}
-                                          onSelect={() => {
-                                            handleCellChange(
-                                              item.id,
-                                              String(bin.absEntry)
-                                            );
-                                            setOpenCellPopoverId(null);
-                                          }}
-                                        >
-                                          <Check
-                                            className={cn(
-                                              "mr-2 h-4 w-4 shrink-0",
-                                              item.cellLocation ===
-                                                String(bin.absEntry)
-                                                ? "opacity-100"
-                                                : "opacity-0"
-                                            )}
-                                          />
-                                          {bin.binCode}
-                                        </CommandItem>
-                                      ))}
-                                    </CommandGroup>
-                                  </CommandList>
-                                </Command>
-                              </PopoverContent>
-                            </Popover>
+                            <BinLocationSelect
+                              value={item.cellLocation ?? ""}
+                              onChange={(val) => handleCellChange(item.id, val)}
+                              hasError={cellInvalid}
+                            />
                           </td>
                           <td className="px-3 py-3 text-center border-r border-border last:border-r-0">
                             {itemStatusIcon[item.status]}

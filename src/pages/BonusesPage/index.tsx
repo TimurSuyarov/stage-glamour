@@ -89,6 +89,11 @@ function ExpandedBonusRow({
       dataIndex: "docEntry",
       key: "docEntry",
       width: 110,
+      render: (val: number) => (
+        <span className="text-blue-600 cursor-pointer hover:underline font-medium">
+          {val}
+        </span>
+      ),
     },
     {
       title: t("bonuses.amount"),
@@ -97,7 +102,13 @@ function ExpandedBonusRow({
       width: 140,
       align: "right",
       render: (val: number) =>
-        val != null ? val.toLocaleString() : "—",
+        val != null ? (
+          <span className="text-green-600 font-semibold">
+            +{val.toLocaleString()}
+          </span>
+        ) : (
+          "—"
+        ),
     },
     {
       title: t("common.createdAt"),
@@ -170,20 +181,20 @@ export default function BonusesPage() {
     })
   );
 
-  const handleApply = () => {
+  // Auto-apply filters when dateRange or type changes
+  useEffect(() => {
     setExpandedRowKeys([]);
     setAppliedFilters({
       From: dateRange[0].toISOString(),
       To: dateRange[1].toISOString(),
       Type: type ?? undefined,
     });
-  };
+  }, [dateRange, type]);
 
   const handleClear = () => {
     setDateRange([DEFAULT_FROM, DEFAULT_TO]);
     setType(null);
     setExpandedRowKeys([]);
-    setAppliedFilters(DEFAULT_FILTERS);
   };
 
   const mainColumns: ColumnsType<BonusRecordGroupedItem> = [
@@ -253,15 +264,7 @@ export default function BonusesPage() {
             />
           </div>
 
-          <div className="flex items-end gap-2 ml-auto">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-9"
-              onClick={handleApply}
-            >
-              {t("common_apply")}
-            </Button>
+          <div className="ml-auto">
             <Button
               variant="ghost"
               size="sm"
