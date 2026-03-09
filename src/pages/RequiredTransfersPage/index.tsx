@@ -54,12 +54,40 @@ const WAREHOUSE_CHECKING_TYPE_KEYS: Record<number, string> = {
   [EWarehouseCheckingType.Return]: "requiredTransfers.typeReturn",
 };
 
+const TYPE_BADGE_COLORS: Record<number, { bg: string; text: string; border: string }> = {
+  [EWarehouseCheckingType.WarehouseToClient]: {
+    bg: "bg-blue-100",
+    text: "text-blue-900",
+    border: "border-blue-300",
+  },
+  [EWarehouseCheckingType.WarehouseToWarehouse]: {
+    bg: "bg-purple-100",
+    text: "text-purple-900",
+    border: "border-purple-300",
+  },
+  [EWarehouseCheckingType.Return]: {
+    bg: "bg-amber-100",
+    text: "text-amber-900",
+    border: "border-amber-300",
+  },
+};
+
 function getEmployeeId(emp: { employeeId?: number; EmployeeID?: number }): number {
   return emp.employeeId ?? emp.EmployeeID ?? 0;
 }
 
 function getEmployeeName(emp: { firstName?: string; lastName?: string }): string {
   return [emp.firstName, emp.lastName].filter(Boolean).join(" ") || "—";
+}
+
+function getPercentageColor(percentage: number): string {
+  if (percentage === 100) {
+    return "text-green-600 font-semibold";
+  } else if (percentage === 0) {
+    return "text-amber-600";
+  } else {
+    return "text-amber-600 font-medium";
+  }
 }
 
 export default function RequiredTransfersPage() {
@@ -215,10 +243,19 @@ export default function RequiredTransfersPage() {
                   </TableCell>
                   <TableCell>{request.name}</TableCell>
                   <TableCell>
-                    {t(WAREHOUSE_CHECKING_TYPE_KEYS[request.type] ?? "common.noData")}
+                    {(() => {
+                      const colors = TYPE_BADGE_COLORS[request.type];
+                      return (
+                        <span className={cn("inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium border", colors.bg, colors.text, colors.border)}>
+                          {t(WAREHOUSE_CHECKING_TYPE_KEYS[request.type] ?? "common.noData")}
+                        </span>
+                      );
+                    })()}
                   </TableCell>
                   <TableCell>{request.assignedUser ?? "—"}</TableCell>
-                  <TableCell>{request.completedPercentage}%</TableCell>
+                  <TableCell className={getPercentageColor(request.completedPercentage)}>
+                    {request.completedPercentage}%
+                  </TableCell>
                   <TableCell className="text-muted-foreground text-sm">
                     {new Date(request.createdAt).toLocaleString()}
                   </TableCell>

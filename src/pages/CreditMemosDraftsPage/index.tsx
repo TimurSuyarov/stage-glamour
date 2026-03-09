@@ -1,5 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { PageHeader } from "@/components/ui/page-header";
+import { ModuleCard } from "@/components/ui/stat-card";
 import { useTranslation } from "react-i18next";
 import {
   useCreditMemosDrafts,
@@ -10,7 +11,7 @@ import {
   type ReturnLinePayload,
 } from "@/entities/CreditMemos/api";
 import { EReturnReasonType } from "@/enums/returnReason";
-import { createReturnsHubConnection } from "@/lib/returnsHub";
+import { createReturnsHubConnection, type ReturnCompletedPayload } from "@/lib/returnsHub";
 import { useRequiredTransfersNotification } from "@/contexts/RequiredTransfersNotificationContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,7 +32,9 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Eye, Loader2, ChevronLeft, ChevronRight, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
-import { DatePicker, message } from "antd";
+import { Table as AntTable, DatePicker, message, Tooltip } from "antd";
+import type { ColumnsType } from "antd/es/table";
+import { ClearOutlined } from "@ant-design/icons";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "react-query";
 import dayjs from "dayjs";
@@ -66,7 +69,6 @@ export default function CreditMemosDraftsPage() {
 
   const [selectedDocEntry, setSelectedDocEntry] = useState<number | null>(null);
   const [pageIndex, setPageIndex] = useState(0);
-  const [filterDocEntry, setFilterDocEntry] = useState("");
   const [filterDocNum, setFilterDocNum] = useState("");
   const [filterCardCode, setFilterCardCode] = useState("");
   const [filterCardName, setFilterCardName] = useState("");
@@ -78,6 +80,19 @@ export default function CreditMemosDraftsPage() {
   const [returnLoading, setReturnLoading] = useState(false);
 
   const returnMutation = useReturnMutation();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPageIndex(0);
+      setAppliedFilters((prev) => ({
+        ...prev,
+        DocNum: filterDocNum.trim() ? Number(filterDocNum) : undefined,
+        CardCode: filterCardCode.trim() || undefined,
+        CardName: filterCardName.trim() || undefined,
+      }));
+    }, 750);
+    return () => clearTimeout(timer);
+  }, [filterDocNum, filterCardCode, filterCardName]);
 
   const filters: CreditMemosFilters = useMemo(
     () => ({
@@ -94,20 +109,7 @@ export default function CreditMemosDraftsPage() {
   const hasNextPage = items.length >= PAGE_SIZE;
   const hasPrevPage = pageIndex > 0;
 
-  const handleApplyFilters = () => {
-    setPageIndex(0);
-    setAppliedFilters({
-      DocEntry: filterDocEntry.trim() ? Number(filterDocEntry) : undefined,
-      DocNum: filterDocNum.trim() ? Number(filterDocNum) : undefined,
-      CardCode: filterCardCode.trim() || undefined,
-      CardName: filterCardName.trim() || undefined,
-      StartDate: filterStartDate || undefined,
-      EndDate: filterEndDate || undefined,
-    });
-  };
-
   const handleClearFilters = () => {
-    setFilterDocEntry("");
     setFilterDocNum("");
     setFilterCardCode("");
     setFilterCardName("");
@@ -161,10 +163,16 @@ export default function CreditMemosDraftsPage() {
       setReturnLoading(false);
     };
 
-    connection.on("ProcessingCompleted", () => {
+    connection.on("ProcessingCompleted", (payload: ReturnCompletedPayload) => {
+      if (!payload?.isSuccess) {
+        message.error(payload?.message);
+        onDone();
+        return;
+      }
+
       setRequiredTransfersNotification(true);
       queryClient.invalidateQueries({ queryKey: ["credit-memos"] });
-      message.success(t("common.success"));
+      message.success(payload.message);
       onDone();
     });
     connection.onclose(onDone);
@@ -177,6 +185,68 @@ export default function CreditMemosDraftsPage() {
       onDone();
     }
   };
+
+  const columns: ColumnsType<CreditMemoItem> = [
+    {
+      title: "DocEntry",
+      dataIndex: "docEntry",
+      key: "docEntry",
+      width: 100,
+      render: (val: number) => <span className="font-mono text-sm">{val}</span>,
+    },
+    {
+      title: t("creditMemos.docNum"),
+      dataIndex: "docNum",
+      key: "docNum",
+      width: 120,
+      render: (val: number) => <span className="font-mono text-sm">{val}</span>,
+    },
+    {
+      title: t("common.date"),
+      dataIndex: "docDate",
+      key: "docDate",
+      width: 130,
+      render: (val: string) => new Date(val).toLocaleDateString(),
+    },
+    {
+      title: t("creditMemos.cardCode"),
+      dataIndex: "cardCode",
+      key: "cardCode",
+      width: 130,
+      render: (val: string) => <span className="font-mono text-sm">{val}</span>,
+    },
+    {
+      title: t("creditMemos.cardName"),
+      dataIndex: "cardName",
+      key: "cardName",
+    },
+    {
+      title: t("creditMemos.documentStatus"),
+      dataIndex: "documentStatus",
+      key: "documentStatus",
+      width: 140,
+    },
+    {
+      title: t("common.actions"),
+      key: "actions",
+      width: 100,
+      align: "center" as const,
+      render: (_: unknown, record: CreditMemoItem) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-1.5"
+          onClick={() => handleOpenModal(record)}
+        >
+          <Eye className="w-4 h-4" />
+          {t("common.see")}
+        </Button>
+      ),
+    },
+  ];
+
+  const rangeStart = pageIndex * PAGE_SIZE + 1;
+  const rangeEnd = pageIndex * PAGE_SIZE + items.length;
 
   return (
     <div className="relative min-h-full p-6 space-y-6">
@@ -198,161 +268,134 @@ export default function CreditMemosDraftsPage() {
         ]}
       />
 
-      {/* Filters */}
-      <div className="flex flex-wrap items-end gap-4 p-4 rounded-lg border bg-card">
-        <div className="flex flex-col gap-1.5">
-          <Label className="text-xs">{t("creditMemos.docEntry")}</Label>
-          <Input
-            placeholder="—"
-            value={filterDocEntry}
-            onChange={(e) => setFilterDocEntry(e.target.value)}
-            className="h-9 w-28"
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label className="text-xs">{t("creditMemos.docNum")}</Label>
-          <Input
-            placeholder="—"
-            value={filterDocNum}
-            onChange={(e) => setFilterDocNum(e.target.value)}
-            className="h-9 w-28"
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label className="text-xs">{t("creditMemos.cardCode")}</Label>
-          <Input
-            placeholder={t("common.search")}
-            value={filterCardCode}
-            onChange={(e) => setFilterCardCode(e.target.value)}
-            className="h-9 w-36"
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label className="text-xs">{t("creditMemos.cardName")}</Label>
-          <Input
-            placeholder={t("common.search")}
-            value={filterCardName}
-            onChange={(e) => setFilterCardName(e.target.value)}
-            className="h-9 w-48"
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label className="text-xs">{t("creditMemos.startDate")}</Label>
-          <DatePicker
-            value={filterStartDate ? dayjs(filterStartDate) : null}
-            onChange={(date) =>
-              setFilterStartDate(date ? date.format("YYYY-MM-DD") : "")
-            }
-            className="h-9 w-36"
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label className="text-xs">{t("creditMemos.endDate")}</Label>
-          <DatePicker
-            value={filterEndDate ? dayjs(filterEndDate) : null}
-            onChange={(date) =>
-              setFilterEndDate(date ? date.format("YYYY-MM-DD") : "")
-            }
-            className="h-9 w-36"
-          />
-        </div>
-        <Button variant="outline" size="sm" className="h-9" onClick={handleApplyFilters}>
-          {t("common.apply")}
-        </Button>
-        <Button variant="ghost" size="sm" className="h-9" onClick={handleClearFilters}>
-          {t("common.clearFilters")}
-        </Button>
-      </div>
-
-      {/* Table */}
-      <div className="rounded-lg border bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="text-xs font-semibold uppercase">DocEntry</TableHead>
-              <TableHead className="text-xs font-semibold uppercase">{t("creditMemos.docNum")}</TableHead>
-              <TableHead className="text-xs font-semibold uppercase">{t("common.date")}</TableHead>
-              <TableHead className="text-xs font-semibold uppercase">{t("creditMemos.cardCode")}</TableHead>
-              <TableHead className="text-xs font-semibold uppercase">{t("creditMemos.cardName")}</TableHead>
-              <TableHead className="text-xs font-semibold uppercase">{t("creditMemos.documentStatus")}</TableHead>
-              <TableHead className="text-xs font-semibold uppercase w-24">{t("common.actions")}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={7} className="h-32 text-center">
-                  <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
-                </TableCell>
-              </TableRow>
-            ) : items.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
-                  {t("common.noData")}
-                </TableCell>
-              </TableRow>
-            ) : (
-              items.map((doc) => (
-                <TableRow key={doc.docEntry} className="hover:bg-muted/50">
-                  <TableCell className="font-mono text-sm">{doc.docEntry}</TableCell>
-                  <TableCell className="font-mono text-sm">{doc.docNum}</TableCell>
-                  <TableCell className="text-muted-foreground text-sm">
-                    {new Date(doc.docDate).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell className="font-mono text-sm">{doc.cardCode}</TableCell>
-                  <TableCell className="max-w-[200px] truncate" title={doc.cardName}>
-                    {doc.cardName}
-                  </TableCell>
-                  <TableCell className="text-sm">{doc.documentStatus}</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-2 h-8"
-                      onClick={() => handleOpenModal(doc)}
-                    >
-                      <Eye className="w-4 h-4" />
-                      {t("common.see")}
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      {/* Pagination */}
-      {(hasPrevPage || hasNextPage) && (
-        <div className="flex items-center justify-between px-4 py-2 border rounded-md bg-card">
-          <p className="text-sm text-muted-foreground">
-            {pageIndex * PAGE_SIZE + 1}–{pageIndex * PAGE_SIZE + items.length}
-          </p>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8"
-              onClick={() => setPageIndex((p) => p - 1)}
-              disabled={!hasPrevPage || isLoading}
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <span className="px-2 text-sm text-muted-foreground">
-              {pageIndex + 1}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8"
-              onClick={() => setPageIndex((p) => p + 1)}
-              disabled={!hasNextPage || isLoading}
-            >
-              <ChevronRight className="w-4 h-4" />
-            </Button>
+      <ModuleCard>
+        {/* Filters */}
+        <div className="mb-8 flex items-end justify-between gap-4">
+          <div className="flex items-end gap-3 overflow-x-auto pb-2">
+            <div className="space-y-2 flex-shrink-0">
+              <Label className="text-xs">{t("creditMemos.docNum")}</Label>
+              <Input
+                placeholder="—"
+                value={filterDocNum}
+                onChange={(e) => setFilterDocNum(e.target.value)}
+                className="h-9 w-32"
+              />
+            </div>
+            <div className="space-y-2 flex-shrink-0">
+              <Label className="text-xs">{t("creditMemos.cardCode")}</Label>
+              <Input
+                placeholder={t("common.search")}
+                value={filterCardCode}
+                onChange={(e) => setFilterCardCode(e.target.value)}
+                className="h-9 w-40"
+              />
+            </div>
+            <div className="space-y-2 flex-shrink-0">
+              <Label className="text-xs">{t("creditMemos.cardName")}</Label>
+              <Input
+                placeholder={t("common.search")}
+                value={filterCardName}
+                onChange={(e) => setFilterCardName(e.target.value)}
+                className="h-9 w-52"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5 flex-shrink-0">
+              <Label className="text-xs">{t("creditMemos.startDate")}</Label>
+              <DatePicker
+                value={filterStartDate ? dayjs(filterStartDate) : null}
+                onChange={(date) => {
+                  setPageIndex(0);
+                  setFilterStartDate(date ? date.format("YYYY-MM-DD") : "");
+                  setAppliedFilters((prev) => ({
+                    ...prev,
+                    StartDate: date ? date.format("YYYY-MM-DD") : undefined,
+                  }));
+                }}
+                placeholder={t("sales_orders_select_date")}
+                className="h-9 w-40"
+                format="YYYY-MM-DD"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5 flex-shrink-0">
+              <Label className="text-xs">{t("creditMemos.endDate")}</Label>
+              <DatePicker
+                value={filterEndDate ? dayjs(filterEndDate) : null}
+                onChange={(date) => {
+                  setPageIndex(0);
+                  setFilterEndDate(date ? date.format("YYYY-MM-DD") : "");
+                  setAppliedFilters((prev) => ({
+                    ...prev,
+                    EndDate: date ? date.format("YYYY-MM-DD") : undefined,
+                  }));
+                }}
+                placeholder={t("sales_orders_select_date")}
+                className="h-9 w-40"
+                format="YYYY-MM-DD"
+              />
+            </div>
           </div>
+          <Tooltip title={t("common.clearFilters")}>
+            <button
+              type="button"
+              onClick={handleClearFilters}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground flex-shrink-0"
+              aria-label={t("common.clearFilters")}
+            >
+              <ClearOutlined className="h-4 w-4" />
+            </button>
+          </Tooltip>
         </div>
-      )}
+
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            <span className="ml-2 text-muted-foreground">{t("common_loading")}</span>
+          </div>
+        ) : (
+          <>
+            <AntTable
+              columns={columns}
+              dataSource={items}
+              rowKey="docEntry"
+              pagination={false}
+              scroll={{ x: "max-content" }}
+            />
+
+            {(items.length > 0 || pageIndex > 0) && (
+              <div className="flex items-center justify-between border-t border-border px-4 py-3 mt-0">
+                <div className="text-sm text-muted-foreground">
+                  {rangeStart}–{rangeEnd}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => setPageIndex((p) => Math.max(p - 1, 0))}
+                    disabled={!hasPrevPage || isLoading}
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <span className="px-3 text-sm font-medium">
+                    {rangeStart} – {rangeEnd}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => setPageIndex((p) => p + 1)}
+                    disabled={!hasNextPage || isLoading}
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </ModuleCard>
 
       {/* Detail + Return modal */}
       <Dialog open={selectedDocEntry != null} onOpenChange={(open) => !open && handleCloseModal()}>

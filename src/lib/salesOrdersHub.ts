@@ -12,9 +12,10 @@ function getHubUrl(): string {
 }
 
 export interface ProcessingCompletedPayload {
-  message?: string;
+  isSuccess: boolean;
+  hasRequiredTransferExist: boolean;
+  message: string;
   totalItemsRetrieved?: number;
-  hasRequiredTransferExist?: boolean;
   timestamp?: string;
 }
 

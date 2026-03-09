@@ -23,11 +23,53 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { message } from "antd";
+import { cn } from "@/lib/utils";
 
 const WAREHOUSE_CHECKING_TYPE_KEYS: Record<number, string> = {
   [EWarehouseCheckingType.WarehouseToClient]: "requiredTransfers.typeWarehouseToClient",
   [EWarehouseCheckingType.WarehouseToWarehouse]: "requiredTransfers.typeWarehouseToWarehouse",
   [EWarehouseCheckingType.Return]: "requiredTransfers.typeReturn",
+};
+
+const TYPE_BADGE_COLORS: Record<number, { bg: string; text: string; border: string }> = {
+  [EWarehouseCheckingType.WarehouseToClient]: {
+    bg: "bg-blue-100",
+    text: "text-blue-900",
+    border: "border-blue-300",
+  },
+  [EWarehouseCheckingType.WarehouseToWarehouse]: {
+    bg: "bg-purple-100",
+    text: "text-purple-900",
+    border: "border-purple-300",
+  },
+  [EWarehouseCheckingType.Return]: {
+    bg: "bg-amber-100",
+    text: "text-amber-900",
+    border: "border-amber-300",
+  },
+};
+
+const STATUS_BADGE_COLORS: Record<number, { bg: string; text: string; border: string }> = {
+  [EPickListStatus.Draft]: {
+    bg: "bg-slate-100",
+    text: "text-slate-900",
+    border: "border-slate-300",
+  },
+  [EPickListStatus.InProgress]: {
+    bg: "bg-amber-100",
+    text: "text-amber-900",
+    border: "border-amber-300",
+  },
+  [EPickListStatus.Picked]: {
+    bg: "bg-blue-100",
+    text: "text-blue-900",
+    border: "border-blue-300",
+  },
+  [EPickListStatus.Validated]: {
+    bg: "bg-green-100",
+    text: "text-green-900",
+    border: "border-green-300",
+  },
 };
 
 const PAGE_SIZE = 20;
@@ -105,7 +147,18 @@ export default function PicklistsPage({
       width: 120,
       render: (status: number) => {
         const key = EPickListStatus[status];
-        return key ? t(`picklistStatus.${key.toLowerCase()}`) : status;
+        const colors = STATUS_BADGE_COLORS[status];
+        const statusText = key ? t(`picklistStatus.${key.toLowerCase()}`) : status;
+
+        if (!colors) {
+          return statusText;
+        }
+
+        return (
+          <span className={cn("inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border", colors.bg, colors.text, colors.border)}>
+            {statusText}
+          </span>
+        );
       },
     },
     {
@@ -113,7 +166,17 @@ export default function PicklistsPage({
       dataIndex: "type",
       key: "type",
       width: 160,
-      render: (type: number) => t(WAREHOUSE_CHECKING_TYPE_KEYS[type] ?? "common.noData"),
+      render: (type: number) => {
+        const colors = TYPE_BADGE_COLORS[type];
+        if (!colors) {
+          return t(WAREHOUSE_CHECKING_TYPE_KEYS[type] ?? "common.noData");
+        }
+        return (
+          <span className={cn("inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium border", colors.bg, colors.text, colors.border)}>
+            {t(WAREHOUSE_CHECKING_TYPE_KEYS[type] ?? "common.noData")}
+          </span>
+        );
+      },
     },
     {
       title: t("picklist_assignee"),

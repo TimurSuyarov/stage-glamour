@@ -1,5 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { PageHeader } from "@/components/ui/page-header";
+import { ModuleCard } from "@/components/ui/stat-card";
 import { useTranslation } from "react-i18next";
 import {
   useCreditMemos,
@@ -26,7 +27,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Eye, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
-import { DatePicker } from "antd";
+import { DatePicker, Tooltip } from "antd";
+import { ClearOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 
 const PAGE_SIZE = 20;
@@ -48,6 +50,20 @@ export default function CreditMemosHistoryPage() {
   const [filterEndDate, setFilterEndDate] = useState("");
   const [appliedFilters, setAppliedFilters] = useState<CreditMemosFilters>({});
 
+  // Debounced apply for text fields
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPageIndex(0);
+      setAppliedFilters((prev) => ({
+        ...prev,
+        DocNum: filterDocNum.trim() ? Number(filterDocNum) : undefined,
+        CardCode: filterCardCode.trim() || undefined,
+        CardName: filterCardName.trim() || undefined,
+      }));
+    }, 750);
+    return () => clearTimeout(timer);
+  }, [filterDocNum, filterCardCode, filterCardName]);
+
   const filters: CreditMemosFilters = useMemo(
     () => ({
       ...appliedFilters,
@@ -61,17 +77,6 @@ export default function CreditMemosHistoryPage() {
   const hasNextPage = items.length >= PAGE_SIZE;
   const hasPrevPage = pageIndex > 0;
 
-  const handleApplyFilters = () => {
-    setPageIndex(0);
-    setAppliedFilters({
-      DocNum: filterDocNum.trim() ? Number(filterDocNum) : undefined,
-      CardCode: filterCardCode.trim() || undefined,
-      CardName: filterCardName.trim() || undefined,
-      StartDate: filterStartDate || undefined,
-      EndDate: filterEndDate || undefined,
-    });
-  };
-
   const handleClearFilters = () => {
     setFilterDocNum("");
     setFilterCardCode("");
@@ -84,6 +89,9 @@ export default function CreditMemosHistoryPage() {
 
   const lines = selectedDoc?.stockTransferLines ?? [];
 
+  const rangeStart = pageIndex * PAGE_SIZE + 1;
+  const rangeEnd = pageIndex * PAGE_SIZE + items.length;
+
   return (
     <div className="p-6 space-y-6">
       <PageHeader
@@ -95,146 +103,173 @@ export default function CreditMemosHistoryPage() {
         ]}
       />
 
-      {/* Filters */}
-      <div className="flex flex-wrap items-end gap-4 p-4 rounded-lg border bg-card">
-        <div className="flex flex-col gap-1.5">
-          <Label className="text-xs">{t("creditMemos.docNum")}</Label>
-          <Input
-            placeholder="—"
-            value={filterDocNum}
-            onChange={(e) => setFilterDocNum(e.target.value)}
-            className="h-9 w-28"
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label className="text-xs">{t("creditMemos.cardCode")}</Label>
-          <Input
-            placeholder={t("common.search")}
-            value={filterCardCode}
-            onChange={(e) => setFilterCardCode(e.target.value)}
-            className="h-9 w-36"
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label className="text-xs">{t("creditMemos.cardName")}</Label>
-          <Input
-            placeholder={t("common.search")}
-            value={filterCardName}
-            onChange={(e) => setFilterCardName(e.target.value)}
-            className="h-9 w-48"
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label className="text-xs">{t("creditMemos.startDate")}</Label>
-          <DatePicker
-            value={filterStartDate ? dayjs(filterStartDate) : null}
-            onChange={(date) =>
-              setFilterStartDate(date ? date.format("YYYY-MM-DD") : "")
-            }
-            className="h-9 w-36"
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label className="text-xs">{t("creditMemos.endDate")}</Label>
-          <DatePicker
-            value={filterEndDate ? dayjs(filterEndDate) : null}
-            onChange={(date) =>
-              setFilterEndDate(date ? date.format("YYYY-MM-DD") : "")
-            }
-            className="h-9 w-36"
-          />
-        </div>
-        <Button variant="outline" size="sm" className="h-9" onClick={handleApplyFilters}>
-          {t("common.apply")}
-        </Button>
-        <Button variant="ghost" size="sm" className="h-9" onClick={handleClearFilters}>
-          {t("common.clearFilters")}
-        </Button>
-      </div>
-
-      {/* Main table */}
-      <div className="rounded-lg border bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="text-xs font-semibold uppercase">{t("creditMemos.docNum")}</TableHead>
-              <TableHead className="text-xs font-semibold uppercase">{t("creditMemos.cardName")}</TableHead>
-              <TableHead className="text-xs font-semibold uppercase">{t("creditMemos.cardCode")}</TableHead>
-              <TableHead className="text-xs font-semibold uppercase">{t("common.date")}</TableHead>
-              <TableHead className="text-xs font-semibold uppercase w-24">{t("common.actions")}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={5} className="h-32 text-center">
-                  <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
-                </TableCell>
-              </TableRow>
-            ) : items.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
-                  {t("common.noData")}
-                </TableCell>
-              </TableRow>
-            ) : (
-              items.map((doc) => (
-                <TableRow key={doc.docEntry} className="hover:bg-muted/50">
-                  <TableCell className="font-mono text-sm">{doc.docNum}</TableCell>
-                  <TableCell className="max-w-[200px] truncate" title={doc.cardName}>
-                    {doc.cardName}
-                  </TableCell>
-                  <TableCell className="font-mono text-sm">{doc.cardCode}</TableCell>
-                  <TableCell className="text-muted-foreground text-sm">{doc.docDate}</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-2 h-8"
-                      onClick={() => setSelectedDoc(doc)}
-                    >
-                      <Eye className="w-4 h-4" />
-                      {t("common.see")}
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      {/* Pagination */}
-      {(hasPrevPage || hasNextPage) && (
-        <div className="flex items-center justify-between px-4 py-2 border rounded-md bg-card">
-          <p className="text-sm text-muted-foreground">
-            {pageIndex * PAGE_SIZE + 1}–{pageIndex * PAGE_SIZE + items.length}
-          </p>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8"
-              onClick={() => setPageIndex((p) => p - 1)}
-              disabled={!hasPrevPage || isLoading}
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <span className="px-2 text-sm text-muted-foreground">
-              {pageIndex + 1}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8"
-              onClick={() => setPageIndex((p) => p + 1)}
-              disabled={!hasNextPage || isLoading}
-            >
-              <ChevronRight className="w-4 h-4" />
-            </Button>
+      <ModuleCard>
+        {/* Filters */}
+        <div className="mb-8 flex items-end justify-between gap-4">
+          <div className="flex items-end gap-3 overflow-x-auto pb-2">
+            <div className="space-y-2 flex-shrink-0">
+              <Label className="text-xs">{t("creditMemos.docNum")}</Label>
+              <Input
+                placeholder="—"
+                value={filterDocNum}
+                onChange={(e) => setFilterDocNum(e.target.value)}
+                className="h-9 w-32"
+              />
+            </div>
+            <div className="space-y-2 flex-shrink-0">
+              <Label className="text-xs">{t("creditMemos.cardCode")}</Label>
+              <Input
+                placeholder={t("common.search")}
+                value={filterCardCode}
+                onChange={(e) => setFilterCardCode(e.target.value)}
+                className="h-9 w-40"
+              />
+            </div>
+            <div className="space-y-2 flex-shrink-0">
+              <Label className="text-xs">{t("creditMemos.cardName")}</Label>
+              <Input
+                placeholder={t("common.search")}
+                value={filterCardName}
+                onChange={(e) => setFilterCardName(e.target.value)}
+                className="h-9 w-52"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5 flex-shrink-0">
+              <Label className="text-xs">{t("creditMemos.startDate")}</Label>
+              <DatePicker
+                value={filterStartDate ? dayjs(filterStartDate) : null}
+                onChange={(date) => {
+                  setPageIndex(0);
+                  setFilterStartDate(date ? date.format("YYYY-MM-DD") : "");
+                  setAppliedFilters((prev) => ({
+                    ...prev,
+                    StartDate: date ? date.format("YYYY-MM-DD") : undefined,
+                  }));
+                }}
+                placeholder={t("sales_orders_select_date")}
+                className="h-9 w-40"
+                format="YYYY-MM-DD"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5 flex-shrink-0">
+              <Label className="text-xs">{t("creditMemos.endDate")}</Label>
+              <DatePicker
+                value={filterEndDate ? dayjs(filterEndDate) : null}
+                onChange={(date) => {
+                  setPageIndex(0);
+                  setFilterEndDate(date ? date.format("YYYY-MM-DD") : "");
+                  setAppliedFilters((prev) => ({
+                    ...prev,
+                    EndDate: date ? date.format("YYYY-MM-DD") : undefined,
+                  }));
+                }}
+                placeholder={t("sales_orders_select_date")}
+                className="h-9 w-40"
+                format="YYYY-MM-DD"
+              />
+            </div>
           </div>
+          <Tooltip title={t("common.clearFilters")}>
+            <button
+              type="button"
+              onClick={handleClearFilters}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground flex-shrink-0"
+              aria-label={t("common.clearFilters")}
+            >
+              <ClearOutlined className="h-4 w-4" />
+            </button>
+          </Tooltip>
         </div>
-      )}
+
+        {/* Main table */}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            <span className="ml-2 text-muted-foreground">{t("common_loading")}</span>
+          </div>
+        ) : (
+          <>
+            <div className="rounded-lg border">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="text-xs font-semibold uppercase">{t("creditMemos.docNum")}</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase">{t("creditMemos.cardName")}</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase">{t("creditMemos.cardCode")}</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase">{t("common.date")}</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase w-24">{t("common.actions")}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {items.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
+                        {t("common.noData")}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    items.map((doc) => (
+                      <TableRow key={doc.docEntry} className="hover:bg-muted/50">
+                        <TableCell className="font-mono text-sm">{doc.docNum}</TableCell>
+                        <TableCell className="max-w-[200px] truncate" title={doc.cardName}>
+                          {doc.cardName}
+                        </TableCell>
+                        <TableCell className="font-mono text-sm">{doc.cardCode}</TableCell>
+                        <TableCell className="text-muted-foreground text-sm">{doc.docDate}</TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1.5"
+                            onClick={() => setSelectedDoc(doc)}
+                          >
+                            <Eye className="w-4 h-4" />
+                            {t("common.see")}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Pagination */}
+            {(items.length > 0 || pageIndex > 0) && (
+              <div className="flex items-center justify-between border-t border-border px-4 py-3 mt-0">
+                <div className="text-sm text-muted-foreground">
+                  {rangeStart}–{rangeEnd}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => setPageIndex((p) => Math.max(p - 1, 0))}
+                    disabled={!hasPrevPage || isLoading}
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <span className="px-2 text-sm text-muted-foreground">
+                    {pageIndex + 1}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => setPageIndex((p) => p + 1)}
+                    disabled={!hasNextPage || isLoading}
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </ModuleCard>
 
       {/* Lines modal */}
       <Dialog open={selectedDoc != null} onOpenChange={(open) => !open && setSelectedDoc(null)}>

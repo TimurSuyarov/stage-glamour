@@ -210,6 +210,7 @@
   "admission.assignEmployee": "Ответственный",
   "admission.selectEmployee": "Выберите сотрудника",
   "admission.filterDocNum": "Номер документа",
+  "admission.filterSupplier": "Поставщик",
   "admission.filterCardName": "Название карты",
   "admission.filterEndDate": "Дата окончания",
   "admission.filterStartDate": "Дата начала",

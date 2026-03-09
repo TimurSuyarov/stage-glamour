@@ -36,7 +36,6 @@ import {
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import {
-  Download,
   Eye,
   FileText,
   CheckCircle,
@@ -217,14 +216,38 @@ const AdmissionPage = () => {
   const assignMutation = useAssignEmployeeToPurchaseInvoice();
   const hasNextPage = admissionsFromApi.length >= pageSize;
 
-  const handleApplyFilters = () => {
+  // Debounce text inputs (DocNum, CardName)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPageIndex(0);
+      setAppliedFilters((prev) => ({
+        ...prev,
+        DocNum: filterDocNum.trim() ? Number(filterDocNum) : undefined,
+        CardName: filterCardName.trim() || undefined,
+      }));
+    }, 750);
+    return () => clearTimeout(timer);
+  }, [filterDocNum, filterCardName]);
+
+  // Apply date filters immediately on change
+  const handleStartDateChange = (date: Dayjs | null) => {
+    const dateStr = date ? date.format("YYYY-MM-DD") : "";
+    setFilterStartDate(dateStr);
     setPageIndex(0);
-    setAppliedFilters({
-      DocNum: filterDocNum.trim() ? Number(filterDocNum) : undefined,
-      CardName: filterCardName.trim() || undefined,
-      StartDate: filterStartDate || undefined,
-      EndDate: filterEndDate || undefined,
-    });
+    setAppliedFilters((prev) => ({
+      ...prev,
+      StartDate: dateStr || undefined,
+    }));
+  };
+
+  const handleEndDateChange = (date: Dayjs | null) => {
+    const dateStr = date ? date.format("YYYY-MM-DD") : "";
+    setFilterEndDate(dateStr);
+    setPageIndex(0);
+    setAppliedFilters((prev) => ({
+      ...prev,
+      EndDate: dateStr || undefined,
+    }));
   };
 
   const handleClearFilters = () => {
@@ -484,18 +507,12 @@ const AdmissionPage = () => {
       <PageHeader
         title={t("admission.title")}
         description={
-          t("admission.description") 
+          t("admission.description")
         }
         breadcrumbs={[
           { label: t("nav.operational") },
           { label: t("nav.admission") },
         ]}
-        actions={
-            <Button variant="outline" size="sm" className="gap-2">
-              <Download className="w-4 h-4" />
-              {t("common.export")}
-            </Button>
-        }
       />
 
       <ModuleCard>
@@ -512,9 +529,9 @@ const AdmissionPage = () => {
             />
           </div>
           <div className="space-y-2">
-            <Label className="text-xs">{t("admission.filterCardName")}</Label>
+            <Label className="text-xs">{t("admission.filterSupplier")}</Label>
             <Input
-              placeholder={t("admission.filterCardName")}
+              placeholder={t("admission.filterSupplier")}
               value={filterCardName}
               onChange={(e) => setFilterCardName(e.target.value)}
               className="h-9"
@@ -524,7 +541,7 @@ const AdmissionPage = () => {
             <Label className="text-xs">{t("admission.filterStartDate")}</Label>
             <DatePicker
               value={filterStartDate ? dayjs(filterStartDate) : null}
-              onChange={(date) => setFilterStartDate(date ? date.format("YYYY-MM-DD") : "")}
+              onChange={handleStartDateChange}
               placeholder={t("admission.selectDate")}
               className="h-9 w-full"
               format="YYYY-MM-DD"
@@ -534,25 +551,25 @@ const AdmissionPage = () => {
             <Label className="text-xs">{t("admission.filterEndDate")}</Label>
             <DatePicker
               value={filterEndDate ? dayjs(filterEndDate) : null}
-              onChange={(date) => setFilterEndDate(date ? date.format("YYYY-MM-DD") : "")}
+              onChange={handleEndDateChange}
               placeholder={t("admission.selectDate")}
               className="h-9 w-full"
               format="YYYY-MM-DD"
             />
           </div>
-          <Button onClick={handleApplyFilters} className="h-9">
-            {t("common.apply")}
-          </Button>
-          <Tooltip title={t("common.clearFilters")}>
-            <button
-              type="button"
-              onClick={handleClearFilters}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-input bg-accent text-accent-foreground"
-              aria-label={t("common.clearFilters")}
-            >
-              <ClearOutlined className="h-4 w-4" />
-            </button>
-          </Tooltip>
+          <div className="lg:col-span-2 flex justify-end">
+            <Tooltip title={t("common.clearFilters")}>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleClearFilters}
+                className="h-9 w-9"
+                aria-label={t("common.clearFilters")}
+              >
+                <ClearOutlined className="h-4 w-4" />
+              </Button>
+            </Tooltip>
+          </div>
         </div>
 
 

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Table, Modal, Button as AntButton, Tooltip, DatePicker, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { ClearOutlined } from "@ant-design/icons";
@@ -15,7 +15,7 @@ import { Eye, Loader2, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import dayjs from "dayjs";
+import dayjs, { type Dayjs } from "dayjs";
 
 interface SalesOrdersPageProps {
   status: ESalesOrderStatus;
@@ -63,14 +63,38 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const [moveNextLoading, setMoveNextLoading] = useState(false);
   
-  const handleApplyFilters = () => {
+  // Debounce text inputs (DocNum, CardName)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPageIndex(0);
+      setAppliedFilters((prev) => ({
+        ...prev,
+        DocNum: filterDocNum.trim() ? Number(filterDocNum) : undefined,
+        CardName: filterCardName.trim() || undefined,
+      }));
+    }, 750);
+    return () => clearTimeout(timer);
+  }, [filterDocNum, filterCardName]);
+
+  // Apply date filters immediately on change
+  const handleStartDateChange = (date: Dayjs | null) => {
+    const dateStr = date ? date.format("YYYY-MM-DD") : "";
+    setFilterStartDate(dateStr);
     setPageIndex(0);
-    setAppliedFilters({
-      DocNum: filterDocNum.trim() ? Number(filterDocNum) : undefined,
-      CardName: filterCardName.trim() || undefined,
-      StartDate: filterStartDate || undefined,
-      EndDate: filterEndDate || undefined,
-    });
+    setAppliedFilters((prev) => ({
+      ...prev,
+      StartDate: dateStr || undefined,
+    }));
+  };
+
+  const handleEndDateChange = (date: Dayjs | null) => {
+    const dateStr = date ? date.format("YYYY-MM-DD") : "";
+    setFilterEndDate(dateStr);
+    setPageIndex(0);
+    setAppliedFilters((prev) => ({
+      ...prev,
+      EndDate: dateStr || undefined,
+    }));
   };
 
   const handleClearFilters = () => {
@@ -123,7 +147,13 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
       setMoveNextLoading(false);
     };
     connection.on("ProcessingCompleted", (payload: ProcessingCompletedPayload) => {
-      if (payload?.hasRequiredTransferExist) {
+      if (!payload?.isSuccess) {
+        message.error(payload?.message);
+        onDone();
+        return;
+      }
+
+      if (payload.hasRequiredTransferExist) {
         setRequiredTransfersNotification(true);
         setCollectNotification(false);
       } else {
@@ -132,7 +162,7 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
       }
 
       queryClient.invalidateQueries({ queryKey: ["sales-orders"] });
-      message.success(payload?.message ?? t("sales_orders_move_to_next_step"));
+      message.success(payload.message);
       onDone();
     });
     connection.onclose(onDone);
@@ -292,7 +322,7 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
             <Label className="text-xs">{t("sales_orders_filter_start_date")}</Label>
             <DatePicker
               value={filterStartDate ? dayjs(filterStartDate) : null}
-              onChange={(date) => setFilterStartDate(date ? date.format("YYYY-MM-DD") : "")}
+              onChange={handleStartDateChange}
               placeholder={t("sales_orders_select_date")}
               className="h-9 w-full"
               format="YYYY-MM-DD"
@@ -302,25 +332,25 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
             <Label className="text-xs">{t("sales_orders_filter_end_date")}</Label>
             <DatePicker
               value={filterEndDate ? dayjs(filterEndDate) : null}
-              onChange={(date) => setFilterEndDate(date ? date.format("YYYY-MM-DD") : "")}
+              onChange={handleEndDateChange}
               placeholder={t("sales_orders_select_date")}
               className="h-9 w-full"
               format="YYYY-MM-DD"
             />
           </div>
-          <Button onClick={handleApplyFilters} className="h-9">
-            {t("common_apply")}
-          </Button>
-          <Tooltip title={t("common_clear_filters")}>
-            <button
-              type="button"
-              onClick={handleClearFilters}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-input bg-accent text-accent-foreground"
-              aria-label={t("common_clear_filters")}
-            >
-              <ClearOutlined className="h-4 w-4" />
-            </button>
-          </Tooltip>
+          <div className="lg:col-span-2 flex justify-end">
+            <Tooltip title={t("common_clear_filters")}>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleClearFilters}
+                className="h-9 w-9"
+                aria-label={t("common_clear_filters")}
+              >
+                <ClearOutlined className="h-4 w-4" />
+              </Button>
+            </Tooltip>
+          </div>
         </div>
 
         {isLoading ? (

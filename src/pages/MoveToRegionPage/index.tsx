@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Table, Modal, Tooltip, message } from "antd";
 import { useQueryClient } from "react-query";
 import type { ColumnsType } from "antd/es/table";
@@ -42,13 +42,25 @@ const MoveToRegionPage = () => {
   const [filterEndDate, setFilterEndDate] = useState("");
   const [filterFromWarehouse, setFilterFromWarehouse] = useState("");
   const [filterToWarehouse, setFilterToWarehouse] = useState("");
-  const [filterStatus, setFilterStatus] = useState<string>("");
-  const [filterDocEntry, setFilterDocEntry] = useState<string>("");
   const [appliedFilters, setAppliedFilters] =
     useState<InventoryTransferRequestsFilters>({});
   const [pageIndex, setPageIndex] = useState(0);
 
   const pageSize = 20;
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPageIndex(0);
+      setAppliedFilters((prev) => ({
+        ...prev,
+        DocNum: filterDocNum.trim() ? Number(filterDocNum) : undefined,
+        CardName: filterCardName.trim() || undefined,
+        FromWarehouseCode: filterFromWarehouse.trim() || undefined,
+        ToWarehouseCode: filterToWarehouse.trim() || undefined,
+      }));
+    }, 750);
+    return () => clearTimeout(timer);
+  }, [filterDocNum, filterCardName, filterFromWarehouse, filterToWarehouse]);
 
   const filters: InventoryTransferRequestsFilters = useMemo(() => {
     const f: InventoryTransferRequestsFilters = {
@@ -91,24 +103,8 @@ const MoveToRegionPage = () => {
 
   const postMutation = usePostInventoryTransferRequests();
 
-  const handleApplyFilters = () => {
-    setPageIndex(0);
-    setAppliedFilters({
-      DocEntry: filterDocEntry.trim() ? Number(filterDocEntry) : undefined,
-      DocNum: filterDocNum.trim() ? Number(filterDocNum) : undefined,
-      Status: filterStatus.trim() ? Number(filterStatus) : undefined,
-      CardName: filterCardName.trim() || undefined,
-      StartDate: filterStartDate || undefined,
-      EndDate: filterEndDate || undefined,
-      FromWarehouseCode: filterFromWarehouse.trim() || undefined,
-      ToWarehouseCode: filterToWarehouse.trim() || undefined,
-    });
-  };
-
   const handleClearFilters = () => {
-    setFilterDocEntry("");
     setFilterDocNum("");
-    setFilterStatus("");
     setFilterCardName("");
     setFilterStartDate("");
     setFilterEndDate("");
@@ -137,7 +133,13 @@ const MoveToRegionPage = () => {
         connection.on(
           "ProcessingCompleted",
           (payload: ProcessingCompletedPayload) => {
-            if (payload?.hasRequiredTransferExist) {
+            if (!payload?.isSuccess) {
+              message.error(payload?.message);
+              onDone();
+              return;
+            }
+
+            if (payload.hasRequiredTransferExist) {
               setRequiredTransfersNotification(true);
               setCollectNotification(false);
             } else {
@@ -148,9 +150,7 @@ const MoveToRegionPage = () => {
             queryClient.invalidateQueries({
               queryKey: ["inventory-transfer-requests"],
             });
-            message.success(
-              payload?.message ?? t("moveToRegion.submit")
-            );
+            message.success(payload.message);
             onDone();
           }
         );
@@ -321,99 +321,85 @@ const MoveToRegionPage = () => {
 
       <ModuleCard>
         {/* Filters */}
-        <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-8 gap-4 items-end">
-          <div className="space-y-2">
-            <Label className="text-xs">{t("creditMemos.docEntry")}</Label>
-            <Input
-              type="number"
-              placeholder="—"
-              value={filterDocEntry}
-              onChange={(e) => setFilterDocEntry(e.target.value)}
-              className="h-9"
-            />
+        <div className="mb-8 flex items-end justify-between gap-4">
+          <div className="flex items-end gap-3 overflow-x-auto pb-2">
+            <div className="space-y-2 flex-shrink-0">
+              <Label className="text-xs">{t("sales_orders_filter_doc_num")}</Label>
+              <Input
+                type="number"
+                placeholder={t("sales_orders_filter_doc_num")}
+                value={filterDocNum}
+                onChange={(e) => setFilterDocNum(e.target.value)}
+                className="h-9 w-32"
+              />
+            </div>
+            <div className="space-y-2 flex-shrink-0">
+              <Label className="text-xs">{t("sales_orders_filter_card_name")}</Label>
+              <Input
+                placeholder={t("sales_orders_filter_card_name")}
+                value={filterCardName}
+                onChange={(e) => setFilterCardName(e.target.value)}
+                className="h-9 w-52"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5 flex-shrink-0">
+              <Label className="text-xs">{t("sales_orders_filter_start_date")}</Label>
+              <DatePicker
+                value={filterStartDate ? dayjs(filterStartDate) : null}
+                onChange={(date) => {
+                  setPageIndex(0);
+                  setFilterStartDate(date ? date.format("YYYY-MM-DD") : "");
+                  setAppliedFilters((prev) => ({
+                    ...prev,
+                    StartDate: date ? date.format("YYYY-MM-DD") : undefined,
+                  }));
+                }}
+                placeholder={t("sales_orders_select_date")}
+                className="h-9 w-40"
+                format="YYYY-MM-DD"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5 flex-shrink-0">
+              <Label className="text-xs">{t("sales_orders_filter_end_date")}</Label>
+              <DatePicker
+                value={filterEndDate ? dayjs(filterEndDate) : null}
+                onChange={(date) => {
+                  setPageIndex(0);
+                  setFilterEndDate(date ? date.format("YYYY-MM-DD") : "");
+                  setAppliedFilters((prev) => ({
+                    ...prev,
+                    EndDate: date ? date.format("YYYY-MM-DD") : undefined,
+                  }));
+                }}
+                placeholder={t("sales_orders_select_date")}
+                className="h-9 w-40"
+                format="YYYY-MM-DD"
+              />
+            </div>
+            <div className="space-y-2 flex-shrink-0">
+              <Label className="text-xs">{t("moveToRegion.fromWarehouse")}</Label>
+              <Input
+                placeholder={t("moveToRegion.fromWarehouse")}
+                value={filterFromWarehouse}
+                onChange={(e) => setFilterFromWarehouse(e.target.value)}
+                className="h-9 w-36"
+              />
+            </div>
+            <div className="space-y-2 flex-shrink-0">
+              <Label className="text-xs">{t("moveToRegion.toWarehouse")}</Label>
+              <Input
+                placeholder={t("moveToRegion.toWarehouse")}
+                value={filterToWarehouse}
+                onChange={(e) => setFilterToWarehouse(e.target.value)}
+                className="h-9 w-36"
+              />
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label className="text-xs">{t("sales_orders_filter_doc_num")}</Label>
-            <Input
-              type="number"
-              placeholder={t("sales_orders_filter_doc_num")}
-              value={filterDocNum}
-              onChange={(e) => setFilterDocNum(e.target.value)}
-              className="h-9"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-xs">{t("creditMemos.documentStatus")}</Label>
-            <Input
-              type="number"
-              placeholder="—"
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="h-9"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-xs">{t("sales_orders_filter_card_name")}</Label>
-            <Input
-              placeholder={t("sales_orders_filter_card_name")}
-              value={filterCardName}
-              onChange={(e) => setFilterCardName(e.target.value)}
-              className="h-9"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-xs">{t("sales_orders_filter_start_date")}</Label>
-            <DatePicker
-              value={filterStartDate ? dayjs(filterStartDate) : null}
-              onChange={(date) =>
-                setFilterStartDate(date ? date.format("YYYY-MM-DD") : "")
-              }
-              placeholder={t("sales_orders_select_date")}
-              className="h-9 w-full"
-              format="YYYY-MM-DD"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-xs">{t("sales_orders_filter_end_date")}</Label>
-            <DatePicker
-              value={filterEndDate ? dayjs(filterEndDate) : null}
-              onChange={(date) =>
-                setFilterEndDate(date ? date.format("YYYY-MM-DD") : "")
-              }
-              placeholder={t("sales_orders_select_date")}
-              className="h-9 w-full"
-              format="YYYY-MM-DD"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-xs">{t("moveToRegion.fromWarehouse")}</Label>
-            <Input
-              placeholder={t("moveToRegion.fromWarehouse")}
-              value={filterFromWarehouse}
-              onChange={(e) => setFilterFromWarehouse(e.target.value)}
-              className="h-9"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-xs">{t("moveToRegion.toWarehouse")}</Label>
-            <Input
-              placeholder={t("moveToRegion.toWarehouse")}
-              value={filterToWarehouse}
-              onChange={(e) => setFilterToWarehouse(e.target.value)}
-              className="h-9"
-            />
-          </div>
-        </div>
-
-        <div className="mb-6 flex items-center gap-2">
-          <Button onClick={handleApplyFilters} className="h-9">
-            {t("common_apply")}
-          </Button>
           <Tooltip title={t("common_clear_filters")}>
             <button
               type="button"
               onClick={handleClearFilters}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-input bg-accent text-accent-foreground"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground flex-shrink-0"
               aria-label={t("common_clear_filters")}
             >
               <ClearOutlined className="h-4 w-4" />
