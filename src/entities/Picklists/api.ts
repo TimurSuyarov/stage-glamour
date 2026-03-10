@@ -153,3 +153,56 @@ export const useValidationFinalize = () => {
     },
   });
 };
+
+const postPicklistDetach = async (picklistId: number): Promise<unknown> => {
+  const { data } = await request.post(`/picklists/${picklistId}/detach`);
+  return data;
+};
+
+export const useDetachPicklist = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (picklistId: number) => postPicklistDetach(picklistId),
+    onSuccess: (_, picklistId) => {
+      queryClient.invalidateQueries({ queryKey: ["picklists"] });
+      queryClient.invalidateQueries({ queryKey: ["picklists", picklistId] });
+    },
+  });
+};
+
+// Validation mutations
+const postValidationAssignValidator = async (
+  picklistId: number,
+  validatorId: number
+): Promise<unknown> => {
+  const { data } = await request.post(`/validation/${picklistId}/assign/${validatorId}`);
+  return data;
+};
+
+export const useAssignValidationValidator = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ picklistId, validatorId }: { picklistId: number; validatorId: number }) =>
+      postValidationAssignValidator(picklistId, validatorId),
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["picklists"] });
+      queryClient.invalidateQueries({ queryKey: ["picklists", vars.picklistId] });
+    },
+  });
+};
+
+const postValidationDetach = async (picklistId: number): Promise<unknown> => {
+  const { data } = await request.post(`/validation/${picklistId}/detach`);
+  return data;
+};
+
+export const useDetachValidation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (picklistId: number) => postValidationDetach(picklistId),
+    onSuccess: (_, picklistId) => {
+      queryClient.invalidateQueries({ queryKey: ["picklists"] });
+      queryClient.invalidateQueries({ queryKey: ["picklists", picklistId] });
+    },
+  });
+};

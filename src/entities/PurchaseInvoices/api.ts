@@ -173,10 +173,28 @@ export const useFromInvoiceMutation = () => {
   });
 };
 
-export const useAssignEmployeeToPurchaseInvoice = () =>
-  useMutation(
-    ({ docEntry, employeeId }: { docEntry: number; employeeId: number }) =>
+export const useAssignEmployeeToPurchaseInvoice = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ docEntry, employeeId }: { docEntry: number; employeeId: number }) =>
       request.patch(`/purchase-invoices/${docEntry}/assign-employee`, {
         employeeId,
-      })
-  );
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["purchase-invoices"] });
+    },
+  });
+};
+
+export const useDetachAdmissionEmployee = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (docEntry: number) =>
+      request.patch(`/purchase-invoices/${docEntry}/assign-employee`, {
+        employeeId: null,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["purchase-invoices"] });
+    },
+  });
+};

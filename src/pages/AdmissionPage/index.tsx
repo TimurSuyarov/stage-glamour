@@ -7,6 +7,7 @@ import {
   usePurchaseInvoices,
   useFromInvoiceMutation,
   useAssignEmployeeToPurchaseInvoice,
+  useDetachAdmissionEmployee,
   type PurchaseInvoicesFilters,
   type FromInvoiceRequestBody,
 } from "@/entities/PurchaseInvoices/api";
@@ -214,6 +215,7 @@ const AdmissionPage = () => {
   const { data: employees = [] } = useEmployees({ PageSize: 500 });
   const fromInvoiceMutation = useFromInvoiceMutation();
   const assignMutation = useAssignEmployeeToPurchaseInvoice();
+  const detachMutation = useDetachAdmissionEmployee();
   const hasNextPage = admissionsFromApi.length >= pageSize;
 
   // Debounce text inputs (DocNum, CardName)
@@ -458,6 +460,19 @@ const AdmissionPage = () => {
     }
   };
 
+  // Detach employee
+  const handleDetachEmployee = async () => {
+    if (!selectedAdmission) return;
+    try {
+      await detachMutation.mutateAsync(Number(selectedAdmission.id));
+      setAssignedEmployeeId(null);
+      setPendingEmployeeId(null);
+      message.success(t("common.success"));
+    } catch {
+      message.error(t("common.error"));
+    }
+  };
+
   // Update item quantity
   const handleQtyChange = (itemId: string, value: string) => {
     const qty = parseInt(value) || 0;
@@ -662,10 +677,16 @@ const AdmissionPage = () => {
                         </p>
                         <button
                           type="button"
-                          onClick={() => { setAssignedEmployeeId(null); setPendingEmployeeId(null); }}
-                          className="text-muted-foreground hover:text-destructive"
+                          onClick={handleDetachEmployee}
+                          disabled={detachMutation.isLoading}
+                          className="inline-flex h-6 w-6 items-center justify-center rounded-md text-red-600 hover:text-red-700 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                          aria-label={t("common.remove")}
                         >
-                          <X className="w-3.5 h-3.5" />
+                          {detachMutation.isLoading ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <X className="w-3.5 h-3.5" />
+                          )}
                         </button>
                       </div>
                     ) : (
