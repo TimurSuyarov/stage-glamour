@@ -208,7 +208,19 @@ export default function PicklistsPage({
   const baseLineColumns: ColumnsType<PicklistLine> = [
     { title: t("picklist_line_product_name"), dataIndex: "productName", key: "productName", width: 220 },
     { title: t("picklist_line_bin_code"), dataIndex: "binCode", key: "binCode", width: 120 },
-    { title: t("picklist_line_requested_qty"), dataIndex: "requestedQty", key: "requestedQty", width: 100 },
+    {
+      title: t("picklist_line_requested_qty"),
+      dataIndex: "requestedQty",
+      key: "requestedQty",
+      width: 100,
+      render: (val: number, record: PicklistLine) => {
+        if (record.isWholePack && record.quantityInPack) {
+          const boxes = val / record.quantityInPack;
+          return `${val} (📦 ${boxes})`;
+        }
+        return val;
+      },
+    },
     {
       title: t("picklist_line_batch_number"),
       dataIndex: "batchNumber",

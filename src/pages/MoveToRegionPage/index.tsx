@@ -133,25 +133,27 @@ const MoveToRegionPage = () => {
         connection.on(
           "ProcessingCompleted",
           (payload: ProcessingCompletedPayload) => {
-            if (!payload?.isSuccess) {
-              message.error(payload?.message);
+            try {
+              if (!payload?.isSuccess) {
+                message.error(payload?.message);
+                return;
+              }
+
+              if (payload.hasRequiredTransferExist) {
+                setRequiredTransfersNotification(true);
+                setCollectNotification(false);
+              } else {
+                setCollectNotification(true);
+                clearRequiredTransfersNotification();
+              }
+
+              queryClient.invalidateQueries({
+                queryKey: ["inventory-transfer-requests"],
+              });
+              message.success(payload.message);
+            } finally {
               onDone();
-              return;
             }
-
-            if (payload.hasRequiredTransferExist) {
-              setRequiredTransfersNotification(true);
-              setCollectNotification(false);
-            } else {
-              setCollectNotification(true);
-              clearRequiredTransfersNotification();
-            }
-
-            queryClient.invalidateQueries({
-              queryKey: ["inventory-transfer-requests"],
-            });
-            message.success(payload.message);
-            onDone();
           }
         );
 

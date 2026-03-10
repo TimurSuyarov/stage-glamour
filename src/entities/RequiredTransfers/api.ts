@@ -122,3 +122,19 @@ export const useFinalizeMutation = () => {
     },
   });
 };
+
+const postDetach = async (requestId: number): Promise<unknown> => {
+  const { data } = await request.post(`/required-transfers/${requestId}/detach`);
+  return data;
+};
+
+export const useDetachMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ requestId }: { requestId: number }) => postDetach(requestId),
+    onSuccess: (_, { requestId }) => {
+      queryClient.invalidateQueries({ queryKey: ["required-transfers"] });
+      queryClient.invalidateQueries({ queryKey: ["required-transfers", requestId] });
+    },
+  });
+};
