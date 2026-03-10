@@ -11,6 +11,9 @@ import {
   useAssignPicklistEmployee,
   useValidationScan,
   useValidationFinalize,
+  useDetachPicklist,
+  useAssignValidationValidator,
+  useDetachValidation,
   type PicklistItem,
   type PicklistLine,
   type PicklistsFilters,
@@ -21,7 +24,7 @@ import { EWarehouseCheckingType } from "@/enums/warehouseChecking";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Eye, Loader2, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { message } from "antd";
 import { cn } from "@/lib/utils";
 
@@ -101,6 +104,9 @@ export default function PicklistsPage({
   const assignPicklistEmployee = useAssignPicklistEmployee();
   const validationScan = useValidationScan();
   const finalizeValidation = useValidationFinalize();
+  const detachPicklist = useDetachPicklist();
+  const assignValidationValidator = useAssignValidationValidator();
+  const detachValidation = useDetachValidation();
   const isValidationMode = mode === "validation";
   const isCollectMode = mode === "collect";
 
@@ -208,7 +214,19 @@ export default function PicklistsPage({
   const baseLineColumns: ColumnsType<PicklistLine> = [
     { title: t("picklist_line_product_name"), dataIndex: "productName", key: "productName", width: 220 },
     { title: t("picklist_line_bin_code"), dataIndex: "binCode", key: "binCode", width: 120 },
-    { title: t("picklist_line_requested_qty"), dataIndex: "requestedQty", key: "requestedQty", width: 100 },
+    {
+      title: t("picklist_line_requested_qty"),
+      dataIndex: "requestedQty",
+      key: "requestedQty",
+      width: 100,
+      render: (val: number, record: PicklistLine) => {
+        if (record.isWholePack && record.quantityInPack) {
+          const boxes = val / record.quantityInPack;
+          return `${val} (📦 ${boxes})`;
+        }
+        return val;
+      },
+    },
     {
       title: t("picklist_line_batch_number"),
       dataIndex: "batchNumber",
@@ -436,8 +454,36 @@ export default function PicklistsPage({
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">{t("picklist_assignee")}</p>
                   {picklistDetail.assigneeName ? (
-                    <p className="font-medium">{picklistDetail.assigneeName}</p>
-                  ) : isCollectMode ? (
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium">{picklistDetail.assigneeName}</p>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => {
+                          const detachMutation = isValidationMode ? detachValidation : detachPicklist;
+                          detachMutation.mutate(picklistDetail.id, {
+                            onSuccess: () => {
+                              message.success(t("common.success"));
+                            },
+                            onError: () => {
+                              message.error(t("error.somethingWentWrong"));
+                            },
+                          });
+                        }}
+                        disabled={
+                          isValidationMode ? detachValidation.isLoading : detachPicklist.isLoading
+                        }
+                        className="h-6 w-6 text-red-600 hover:text-red-700 hover:bg-red-100"
+                        title={t("picklist.detach")}
+                      >
+                        {(isValidationMode ? detachValidation.isLoading : detachPicklist.isLoading) ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <X className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </div>
+                  ) : isCollectMode || isValidationMode ? (
                     <div className="flex flex-wrap items-center gap-2 mt-1">
                       <Select
                         showSearch
@@ -462,22 +508,44 @@ export default function PicklistsPage({
                             message.warning(t("inventoryCountings.selectUserFirst"));
                             return;
                           }
-                          assignPicklistEmployee.mutate(
-                            { picklistId: picklistDetail.id, employeeId: selectedEmployeeId },
-                            {
-                              onSuccess: () => {
-                                message.success(t("common.success"));
-                                setSelectedEmployeeId(null);
-                              },
-                              onError: () => {
-                                message.error(t("error.somethingWentWrong"));
-                              },
-                            }
-                          );
+                          if (isValidationMode) {
+                            assignValidationValidator.mutate(
+                              { picklistId: picklistDetail.id, validatorId: selectedEmployeeId },
+                              {
+                                onSuccess: () => {
+                                  message.success(t("common.success"));
+                                  setSelectedEmployeeId(null);
+                                },
+                                onError: () => {
+                                  message.error(t("error.somethingWentWrong"));
+                                },
+                              }
+                            );
+                          } else {
+                            assignPicklistEmployee.mutate(
+                              { picklistId: picklistDetail.id, employeeId: selectedEmployeeId },
+                              {
+                                onSuccess: () => {
+                                  message.success(t("common.success"));
+                                  setSelectedEmployeeId(null);
+                                },
+                                onError: () => {
+                                  message.error(t("error.somethingWentWrong"));
+                                },
+                              }
+                            );
+                          }
                         }}
-                        disabled={selectedEmployeeId == null || assignPicklistEmployee.isLoading}
+                        disabled={
+                          selectedEmployeeId == null ||
+                          (isValidationMode
+                            ? assignValidationValidator.isLoading
+                            : assignPicklistEmployee.isLoading)
+                        }
                       >
-                        {assignPicklistEmployee.isLoading ? (
+                        {(isValidationMode
+                          ? assignValidationValidator.isLoading
+                          : assignPicklistEmployee.isLoading) ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
                           t("inventoryCountings.assign")
@@ -488,28 +556,6 @@ export default function PicklistsPage({
                     <p className="font-medium">—</p>
                   )}
                 </div>
-                {isValidationMode && !picklistDetail.assigneeName && (
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      assignPicklist.mutate(picklistDetail.id, {
-                        onSuccess: () => {
-                          message.success(t("common.success"));
-                        },
-                        onError: () => {
-                          message.error(t("error.somethingWentWrong"));
-                        },
-                      });
-                    }}
-                    disabled={assignPicklist.isLoading}
-                  >
-                    {assignPicklist.isLoading ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      t("validation.assignMe")
-                    )}
-                  </Button>
-                )}
               </div>
               <div>
                 <p className="text-xs text-muted-foreground mb-1">{t("picklist_warehouse_code")}</p>

@@ -164,16 +164,18 @@ export default function CreditMemosDraftsPage() {
     };
 
     connection.on("ProcessingCompleted", (payload: ReturnCompletedPayload) => {
-      if (!payload?.isSuccess) {
-        message.error(payload?.message);
-        onDone();
-        return;
-      }
+      try {
+        if (!payload?.isSuccess) {
+          message.error(payload?.message);
+          return;
+        }
 
-      setRequiredTransfersNotification(true);
-      queryClient.invalidateQueries({ queryKey: ["credit-memos"] });
-      message.success(payload.message);
-      onDone();
+        setRequiredTransfersNotification(true);
+        queryClient.invalidateQueries({ queryKey: ["credit-memos"] });
+        message.success(payload.message);
+      } finally {
+        onDone();
+      }
     });
     connection.onclose(onDone);
 
@@ -181,7 +183,6 @@ export default function CreditMemosDraftsPage() {
       await connection.start();
     } catch {
       message.error(t("error.couldNotConnect"));
-      setRequiredTransfersNotification(true);
       onDone();
     }
   };

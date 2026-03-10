@@ -147,23 +147,25 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
       setMoveNextLoading(false);
     };
     connection.on("ProcessingCompleted", (payload: ProcessingCompletedPayload) => {
-      if (!payload?.isSuccess) {
-        message.error(payload?.message);
+      try {
+        if (!payload?.isSuccess) {
+          message.error(payload?.message);
+          return;
+        }
+
+        if (payload.hasRequiredTransferExist) {
+          setRequiredTransfersNotification(true);
+          setCollectNotification(false);
+        } else {
+          setCollectNotification(true);
+          clearRequiredTransfersNotification();
+        }
+
+        queryClient.invalidateQueries({ queryKey: ["sales-orders"] });
+        message.success(payload.message);
+      } finally {
         onDone();
-        return;
       }
-
-      if (payload.hasRequiredTransferExist) {
-        setRequiredTransfersNotification(true);
-        setCollectNotification(false);
-      } else {
-        setCollectNotification(true);
-        clearRequiredTransfersNotification();
-      }
-
-      queryClient.invalidateQueries({ queryKey: ["sales-orders"] });
-      message.success(payload.message);
-      onDone();
     });
     connection.onclose(onDone);
     connection.on("reconnecting", () => {});

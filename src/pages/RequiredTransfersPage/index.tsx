@@ -7,6 +7,7 @@ import {
   useTransferMutation,
   useAssignMutation,
   useFinalizeMutation,
+  useDetachMutation,
   type RequiredTransferItem,
   type RequiredTransferLine,
   type RequiredTransfersFilters,
@@ -41,7 +42,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { Eye, Loader2, Check, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Eye, Loader2, Check, ChevronDown, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { message } from "antd";
 import { useRequiredTransfersNotification } from "@/contexts/RequiredTransfersNotificationContext";
@@ -113,6 +114,7 @@ export default function RequiredTransfersPage() {
   const transferMutation = useTransferMutation();
   const assignMutation = useAssignMutation();
   const finalizeMutation = useFinalizeMutation();
+  const detachMutation = useDetachMutation();
   const { clearRequiredTransfersNotification } = useRequiredTransfersNotification();
 
   useEffect(() => {
@@ -331,7 +333,35 @@ export default function RequiredTransfersPage() {
               <div className="flex flex-wrap items-center gap-3 p-3 rounded-lg border bg-muted/30">
                 <span className="text-sm font-medium">{t("requiredTransfers.assignedUser")}:</span>
                 {selectedRequest.assignedUser ? (
-                  <span className="text-sm text-muted-foreground">{selectedRequest.assignedUser}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">{selectedRequest.assignedUser}</span>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => {
+                        detachMutation.mutate(
+                          { requestId: selectedRequest.id },
+                          {
+                            onSuccess: () => {
+                              message.success(t("common.success"));
+                            },
+                            onError: () => {
+                              message.error(t("error.somethingWentWrong"));
+                            },
+                          }
+                        );
+                      }}
+                      disabled={detachMutation.isLoading}
+                      className="h-6 w-6 text-red-600 hover:text-red-700 hover:bg-red-100"
+                      title={t("requiredTransfers.detach")}
+                    >
+                      {detachMutation.isLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <X className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </div>
                 ) : (
                   <>
                     <Popover open={assignPopoverOpen} onOpenChange={setAssignPopoverOpen}>
@@ -428,7 +458,11 @@ export default function RequiredTransfersPage() {
                           <TableCell className="max-w-[200px] truncate" title={line.productName}>
                             {line.productName}
                           </TableCell>
-                          <TableCell>{line.quantity}</TableCell>
+                          <TableCell>
+                            {line.quantityPerBox && line.quantity % line.quantityPerBox === 0
+                              ? `${line.quantity} (📦 ${line.quantity / line.quantityPerBox})`
+                              : line.quantity}
+                          </TableCell>
                           <TableCell className="font-mono text-sm">{line.sourceBinLocation}</TableCell>
                           <TableCell className="font-mono text-sm">{line.targetBinLocation}</TableCell>
                           <TableCell>{line.batchNumber ?? "—"}</TableCell>
