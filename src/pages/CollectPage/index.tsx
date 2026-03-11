@@ -11,7 +11,7 @@ export default function CollectPage() {
 
   return (
     <PicklistsPage
-      status={EPickListStatus.Draft}
+      statuses={[EPickListStatus.Draft, EPickListStatus.InProgress]}
       titleKey="nav.collect"
       parentKey="nav.operational"
       mode="collect"

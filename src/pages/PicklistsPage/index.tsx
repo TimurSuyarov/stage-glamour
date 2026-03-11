@@ -78,7 +78,8 @@ const STATUS_BADGE_COLORS: Record<number, { bg: string; text: string; border: st
 const PAGE_SIZE = 20;
 
 interface PicklistsPageProps {
-  status: number;
+  /** Array of statuses to filter picklists (e.g. [1, 2] for collect, [3] for validation) */
+  statuses: number[];
   titleKey: string;
   parentKey: string;
   /** "collect" = view only; "validation" = assign + validate actions */
@@ -88,7 +89,7 @@ interface PicklistsPageProps {
 }
 
 export default function PicklistsPage({
-  status,
+  statuses,
   titleKey,
   parentKey,
   mode = "collect",
@@ -113,8 +114,8 @@ export default function PicklistsPage({
   const { data: employees = [] } = useEmployees({ PageSize: 500 });
 
   const filters: PicklistsFilters = useMemo(
-    () => ({ Status: status, skip: pageIndex * PAGE_SIZE }),
-    [status, pageIndex]
+    () => ({ Statuses: statuses, skip: pageIndex * PAGE_SIZE }),
+    [statuses, pageIndex]
   );
   const { data: picklists = [], isLoading, error } = usePicklists(filters);
   const { data: picklistDetail, isLoading: detailLoading } = usePicklistByDocEntry(selectedDocEntry);

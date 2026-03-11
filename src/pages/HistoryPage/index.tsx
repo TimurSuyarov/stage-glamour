@@ -31,7 +31,7 @@ export default function HistoryPage() {
 
         <TabsContent value={STATUS_PICKED}>
           <PicklistsPage
-            status={2}
+            statuses={[3]}
             titleKey="nav.history"
             parentKey="nav.operational"
             mode="collect"
@@ -41,7 +41,7 @@ export default function HistoryPage() {
 
         <TabsContent value={STATUS_VALIDATED}>
           <PicklistsPage
-            status={3}
+            statuses={[4]}
             titleKey="nav.history"
             parentKey="nav.operational"
             mode="collect"

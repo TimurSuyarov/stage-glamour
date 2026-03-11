@@ -41,14 +41,17 @@ export interface PicklistDetail extends PicklistItem {
 }
 
 export interface PicklistsFilters {
-  Status?: number;
+  /** Array of statuses (e.g. [1, 2] for collect, [3] for validation) */
+  Statuses?: number[];
   /** skip = pageIndex * pageSize (e.g. 0, 20, 40) */
   skip?: number;
 }
 
 const fetchPicklists = async (filters?: PicklistsFilters): Promise<PicklistItem[]> => {
   const params = new URLSearchParams();
-  if (filters?.Status != null) params.set("Status", String(filters.Status));
+  if (filters?.Statuses?.length) {
+    filters.Statuses.forEach((s) => params.append("Statuses", String(s)));
+  }
   if (filters?.skip != null) params.set("skip", String(filters.skip));
   const query = params.toString() ? `?${params.toString()}` : "";
   const { data } = await request.get<PicklistItem[]>(`/picklists${query}`);

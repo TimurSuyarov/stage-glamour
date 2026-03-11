@@ -4,7 +4,7 @@ import { EPickListStatus } from "@/enums/picklist";
 export default function ValidationPage() {
   return (
     <PicklistsPage
-      status={EPickListStatus.InProgress}
+      statuses={[EPickListStatus.Picked]}
       titleKey="nav.validation"
       parentKey="nav.operational"
       mode="validation"
