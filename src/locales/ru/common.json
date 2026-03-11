@@ -203,6 +203,7 @@
   "admission.documentPositions": "Позиции документа",
   "admission.product": "Товар",
   "admission.plan": "План",
+  "admission.boxCount": "Кол-во коробок",
   "admission.actual": "Факт",
   "admission.unitPrice": "Цена за ед.",
   "admission.lineTotal": "Сумма",

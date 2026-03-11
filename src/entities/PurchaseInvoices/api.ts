@@ -14,6 +14,7 @@ export interface PurchaseInvoiceDocumentLine {
   lineStatus: string;
   warehouseCode: string | null;
   measureUnit: string | null;
+  quantityPerPackage?: number | null;
 }
 
 export interface PurchaseInvoiceItem {
@@ -72,6 +73,7 @@ function mapDocumentLineToAdmissionItem(
     lineTotal: line.lineTotal,
     lineNum: line.lineNum,
     warehouseCode: line.warehouseCode ?? undefined,
+    quantityPerPackage: line.quantityPerPackage ?? undefined,
     barcode: "",
     status: "pending",
   };

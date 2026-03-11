@@ -32,6 +32,7 @@ export interface AdmissionItem {
   lineTotal?: number;
   lineNum?: number;
   warehouseCode?: string | null;
+  quantityPerPackage?: number;
   expiryDate?: string;
   manufacturingDate?: string;
   addmisionDate?: string;

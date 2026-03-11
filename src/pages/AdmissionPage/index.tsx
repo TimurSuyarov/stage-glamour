@@ -736,11 +736,17 @@ const AdmissionPage = () => {
                   <table className="w-full text-sm border-collapse min-w-[900px]">
                     <thead className="bg-muted/50">
                       <tr>
+                        <th className="px-3 py-2 text-left text-xs font-medium border-r border-border w-28">
+                          {t("common.itemCode")}
+                        </th>
                         <th className="px-3 py-2 text-left text-xs font-medium border-r border-border w-44">
                           {t("admission.product")}
                         </th>
                         <th className="px-3 py-2 text-center text-xs font-medium w-16 border-r border-border">
                           {t("admission.plan")}
+                        </th>
+                        <th className="px-3 py-2 text-center text-xs font-medium w-24 border-r border-border">
+                          {t("admission.boxCount")}
                         </th>
                         <th className="px-3 py-2 text-center text-xs font-medium w-28 border-r border-border">
                           {t("admission.actual")}
@@ -771,6 +777,11 @@ const AdmissionPage = () => {
                               "bg-status-warning-bg/30"
                           )}
                         >
+                          <td className="px-3 py-3 border-r border-border w-28">
+                            <span className="font-mono text-xs text-muted-foreground">
+                              {item.itemCode ?? "—"}
+                            </span>
+                          </td>
                           <td className="px-3 py-3 border-r border-border w-44">
                             <p className="font-medium text-xs truncate max-w-[160px]" title={item.name || "—"}>
                               {item.name || "—"}
@@ -778,6 +789,11 @@ const AdmissionPage = () => {
                           </td>
                           <td className="px-3 py-3 text-center font-medium border-r border-border">
                             {item.quantity}
+                          </td>
+                          <td className="px-3 py-3 text-center border-r border-border tabular-nums">
+                            {item.quantityPerPackage != null && item.quantityPerPackage > 0
+                              ? Math.floor(item.quantity / item.quantityPerPackage)
+                              : "—"}
                           </td>
                           <td className="px-3 py-3 border-r border-border">
                             <Input

@@ -125,6 +125,17 @@ export default function CreditMemosDraftsPage() {
     setLineReasons({});
   };
 
+  // When detail is loaded, default all lines to Valid (Yaroqli)
+  useEffect(() => {
+    const lines = detail?.documentLines ?? [];
+    if (!selectedDocEntry || lines.length === 0) return;
+    setLineReasons((prev) => {
+      const hasAny = lines.some((line) => prev[line.lineNum] != null);
+      if (hasAny) return prev;
+      return Object.fromEntries(lines.map((line) => [line.lineNum, EReturnReasonType.Valid]));
+    });
+  }, [selectedDocEntry, detail?.documentLines]);
+
   const handleCloseModal = () => {
     setSelectedDocEntry(null);
     setLineReasons({});
