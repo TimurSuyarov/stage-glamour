@@ -21,6 +21,7 @@ import {
 } from "@/entities/InventoryTransferRequests/api";
 import { useCollectNotification } from "@/contexts/CollectNotificationContext";
 import { useRequiredTransfersNotification } from "@/contexts/RequiredTransfersNotificationContext";
+import { useSignalRWaiting } from "@/contexts/SignalRWaitingContext";
 import {
   createSalesOrdersHubConnection,
   type ProcessingCompletedPayload,
@@ -99,7 +100,7 @@ const MoveToRegionPage = () => {
     useState<InventoryTransferRequestItem | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<number[]>([]);
-  const [waitingForSignalR, setWaitingForSignalR] = useState(false);
+  const [waitingForSignalR, setWaitingForSignalR] = useSignalRWaiting("moveToRegion");
 
   const postMutation = usePostInventoryTransferRequests();
 
@@ -244,6 +245,13 @@ const MoveToRegionPage = () => {
   ];
 
   const documentLineColumns: ColumnsType<InventoryTransferRequestLine> = [
+    {
+      title: "#",
+      key: "index",
+      width: 60,
+      align: "center",
+      render: (_: unknown, __: InventoryTransferRequestLine, idx: number) => idx + 1,
+    },
     {
       title: t("creditMemos.itemCode"),
       dataIndex: "itemCode",

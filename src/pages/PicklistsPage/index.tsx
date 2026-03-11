@@ -212,6 +212,7 @@ export default function PicklistsPage({
   ];
 
   const baseLineColumns: ColumnsType<PicklistLine> = [
+    { title: "#", key: "index", width: 60, align: "center", render: (_: unknown, __: PicklistLine, idx: number) => idx + 1 },
     { title: t("picklist_line_product_name"), dataIndex: "productName", key: "productName", width: 220 },
     { title: t("picklist_line_bin_code"), dataIndex: "binCode", key: "binCode", width: 120 },
     {

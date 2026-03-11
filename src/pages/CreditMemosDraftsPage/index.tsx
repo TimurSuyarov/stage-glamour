@@ -11,6 +11,7 @@ import {
   type ReturnLinePayload,
 } from "@/entities/CreditMemos/api";
 import { EReturnReasonType } from "@/enums/returnReason";
+import { useSignalRWaiting } from "@/contexts/SignalRWaitingContext";
 import { createReturnsHubConnection, type ReturnCompletedPayload } from "@/lib/returnsHub";
 import { useRequiredTransfersNotification } from "@/contexts/RequiredTransfersNotificationContext";
 import { Button } from "@/components/ui/button";
@@ -77,7 +78,7 @@ export default function CreditMemosDraftsPage() {
   const [appliedFilters, setAppliedFilters] = useState<CreditMemosFilters>({});
 
   const [lineReasons, setLineReasons] = useState<Record<number, number>>({});
-  const [returnLoading, setReturnLoading] = useState(false);
+  const [returnLoading, setReturnLoading] = useSignalRWaiting("returnDrafts");
 
   const returnMutation = useReturnMutation();
 

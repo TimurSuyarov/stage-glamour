@@ -10,6 +10,7 @@ import { useSalesOrders, postSalesOrdersMoveNext, type SalesOrder, type SalesOrd
 import { ESalesOrderStatus } from "@/enums/salesOrder";
 import { useCollectNotification } from "@/contexts/CollectNotificationContext";
 import { useRequiredTransfersNotification } from "@/contexts/RequiredTransfersNotificationContext";
+import { useSignalRWaiting } from "@/contexts/SignalRWaitingContext";
 import { createSalesOrdersHubConnection, type ProcessingCompletedPayload } from "@/lib/salesOrdersHub";
 import { Eye, Loader2, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -61,8 +62,8 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
   const [selectedOrder, setSelectedOrder] = useState<SalesOrder | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
-  const [moveNextLoading, setMoveNextLoading] = useState(false);
-  
+  const [moveNextLoading, setMoveNextLoading] = useSignalRWaiting("salesOrders");
+
   // Debounce text inputs (DocNum, CardName)
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -236,6 +237,13 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
   ];
 
   const documentLineColumns: ColumnsType<SalesOrderDocumentLine> = [
+    {
+      title: "#",
+      key: "index",
+      width: 60,
+      align: "center" as const,
+      render: (_: unknown, __: SalesOrderDocumentLine, idx: number) => idx + 1,
+    },
     {
       title: t("sales_orders_warehouse_code"),
       dataIndex: "warehouseCode",

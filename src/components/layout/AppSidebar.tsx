@@ -61,12 +61,28 @@ const navigationGroups: NavGroup[] = [
   {
     id: 'operational',
     items: [
-      { id: 'admission', labelKey: 'nav.admission', icon: PackageOpen, href: '/admission' },
+      {
+        id: 'admission',
+        labelKey: 'nav.admission',
+        icon: PackageOpen,
+        children: [
+          { id: 'admissionList', labelKey: 'nav.admission', href: '/admission' },
+          { id: 'admissionHistory', labelKey: 'nav.admissionHistory', href: '/admission/history' },
+        ],
+      },
       { id: 'relocation', labelKey: 'nav.relocation', icon:  PackageSearch, href: '/relocation' },
       { id: 'requiredStockTransfer', labelKey: 'nav.requiredStockTransfer', icon:ArrowRightLeft, href: '/required-transfers' },
       { id: 'collect', labelKey: 'nav.collect', icon:  PackageCheck, href: '/collect' },
       { id: 'validation', labelKey: 'nav.validation', icon: ClipboardCheck, href: '/validation' },
-      { id: 'moveToRegion', labelKey: 'nav.moveToRegion', icon: Truck, href: '/move-to-region' },
+      {
+        id: 'moveToRegion',
+        labelKey: 'nav.moveToRegion',
+        icon: Truck,
+        children: [
+          { id: 'moveToRegionList', labelKey: 'nav.moveToRegion', href: '/move-to-region' },
+          { id: 'moveToRegionHistory', labelKey: 'nav.moveToRegionHistory', href: '/move-to-region/history' },
+        ],
+      },
       {
         id: 'return',
         labelKey: 'nav.return',
@@ -117,10 +133,14 @@ export function AppSidebar({ collapsed, onCollapsedChange }: AppSidebarProps) {
 
   const isReturnRoute = location.pathname.startsWith('/returns');
   const isInventoryRoute = location.pathname === '/inventory' || location.pathname.startsWith('/inventory-countings');
+  const isAdmissionRoute = location.pathname === '/admission' || location.pathname.startsWith('/admission/');
+  const isMoveToRegionRoute = location.pathname === '/move-to-region' || location.pathname.startsWith('/move-to-region/');
   useEffect(() => {
     if (isReturnRoute) setOpenParentId((prev) => (prev === 'return' ? prev : 'return'));
     else if (isInventoryRoute) setOpenParentId((prev) => (prev === 'inventory' ? prev : 'inventory'));
-  }, [isReturnRoute, isInventoryRoute]);
+    else if (isAdmissionRoute) setOpenParentId((prev) => (prev === 'admission' ? prev : 'admission'));
+    else if (isMoveToRegionRoute) setOpenParentId((prev) => (prev === 'moveToRegion' ? prev : 'moveToRegion'));
+  }, [isReturnRoute, isInventoryRoute, isAdmissionRoute, isMoveToRegionRoute]);
 
   // When user is null (e.g. token exists but no stored employee) show all menus (admin)
   const visibleMenus = user ? menuVisibility[user.role] : menuVisibility.admin;
@@ -132,8 +152,9 @@ export function AppSidebar({ collapsed, onCollapsedChange }: AppSidebarProps) {
 
   const isActive = (href: string) => {
     if (href === '/') return location.pathname === '/';
-    // /inventory must not match /inventory-countings
     if (href === '/inventory') return location.pathname === '/inventory';
+    if (href === '/admission') return location.pathname === '/admission';
+    if (href === '/move-to-region') return location.pathname === '/move-to-region';
     return location.pathname.startsWith(href);
   };
 

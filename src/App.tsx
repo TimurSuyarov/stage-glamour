@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CollectNotificationProvider } from "@/contexts/CollectNotificationContext";
 import { RequiredTransfersNotificationProvider } from "@/contexts/RequiredTransfersNotificationContext";
+import { SignalRWaitingProvider } from "@/contexts/SignalRWaitingContext";
 import { Provider } from "react-redux";
 import store from "./redux/store/store";
 
@@ -22,6 +23,7 @@ import HistoryPage from "./pages/HistoryPage";
 import GoodsPage from "./pages/GoodsPage";
 import EmployeesPage from "./pages/EmployeesPage";
 import AdmissionPage from "./pages/AdmissionPage";
+import AdmissionHistoryPage from "./pages/AdmissionHistoryPage";
 import RequiredTransfersPage from "./pages/RequiredTransfersPage";
 import InventoryCountingsPage from "./pages/InventoryCountingsPage";
 import {
@@ -33,6 +35,7 @@ import {
   InventoryPage,
   ReportsPage,
 } from "./pages/PlaceholderPages";
+import MoveToRegionHistoryPage from "./pages/MoveToRegionHistoryPage";
 import BonusesPage from "./pages/BonusesPage";
 import NotFound from "./pages/NotFound";
 
@@ -48,7 +51,8 @@ const App = () => (
       <AuthProvider>
         <CollectNotificationProvider>
           <RequiredTransfersNotificationProvider>
-            <TooltipProvider>
+            <SignalRWaitingProvider>
+              <TooltipProvider>
               <Toaster />
               <Sonner />
               <BrowserRouter>
@@ -68,16 +72,15 @@ const App = () => (
                     <Route element={<AppShell />}>
                       <Route path="/" element={<WelcomePage />} />
                       <Route path="/admission" element={<AdmissionPage />} />
+                      <Route path="/admission/history" element={<AdmissionHistoryPage />} />
                       <Route path="/orders" element={<OrdersPage />} />
                       <Route path="/collect" element={<CollectPage />} />
                       <Route path="/validation" element={<ValidationPage />} />
                       <Route path="/returns" element={<Navigate to="/returns/drafts" replace />} />
                       <Route path="/returns/drafts" element={<CreditMemosDraftsPage />} />
                       <Route path="/returns/history" element={<CreditMemosHistoryPage />} />
-                      <Route
-                        path="/move-to-region"
-                        element={<MoveToRegionPage />}
-                      />
+                      <Route path="/move-to-region" element={<MoveToRegionPage />} />
+                      <Route path="/move-to-region/history" element={<MoveToRegionHistoryPage />} />
                       <Route path="/relocation" element={<RelocationPage />} />
                       <Route path="/required-transfers" element={<RequiredTransfersPage />} />
                       <Route path="/history" element={<HistoryPage />} />
@@ -96,7 +99,8 @@ const App = () => (
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </BrowserRouter>
-            </TooltipProvider>
+              </TooltipProvider>
+            </SignalRWaitingProvider>
           </RequiredTransfersNotificationProvider>
         </CollectNotificationProvider>
       </AuthProvider>

@@ -336,6 +336,13 @@ export default function BonusesPage() {
             scroll={{ x: "max-content" }}
             columns={[
               {
+                title: "#",
+                key: "index",
+                width: 60,
+                align: "center",
+                render: (_: unknown, __: unknown, idx: number) => idx + 1,
+              },
+              {
                 title: t("inventoryCountings.itemCode"),
                 dataIndex: "itemCode",
                 key: "itemCode",
