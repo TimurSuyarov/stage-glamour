@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { Table, Modal, Tooltip, message } from "antd";
+import { toast } from "@/components/ui/sonner";
 import { useQueryClient } from "react-query";
 import type { ColumnsType } from "antd/es/table";
 import { ClearOutlined } from "@ant-design/icons";
@@ -136,7 +137,7 @@ const MoveToRegionPage = () => {
           (payload: ProcessingCompletedPayload) => {
             try {
               if (!payload?.isSuccess) {
-                message.error(payload?.message);
+                toast.error(payload?.message ?? t("error.somethingWentWrong"));
                 return;
               }
 
@@ -151,7 +152,7 @@ const MoveToRegionPage = () => {
               queryClient.invalidateQueries({
                 queryKey: ["inventory-transfer-requests"],
               });
-              message.success(payload.message);
+              toast.success(payload.message);
             } finally {
               onDone();
             }
@@ -163,7 +164,7 @@ const MoveToRegionPage = () => {
         connection
           .start()
           .catch(() => {
-            message.error(t("error.couldNotConnect"));
+            toast.error(t("error.couldNotConnect"));
             onDone();
           });
       },

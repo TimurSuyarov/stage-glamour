@@ -36,6 +36,7 @@ import { Eye, Loader2, ChevronLeft, ChevronRight, CheckCircle2, XCircle, AlertTr
 import { Table as AntTable, DatePicker, message, Tooltip } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { ClearOutlined } from "@ant-design/icons";
+import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "react-query";
 import dayjs from "dayjs";
@@ -178,13 +179,13 @@ export default function CreditMemosDraftsPage() {
     connection.on("ProcessingCompleted", (payload: ReturnCompletedPayload) => {
       try {
         if (!payload?.isSuccess) {
-          message.error(payload?.message);
+          toast.error(payload?.message ?? t("error.somethingWentWrong"));
           return;
         }
 
         setRequiredTransfersNotification(true);
         queryClient.invalidateQueries({ queryKey: ["credit-memos"] });
-        message.success(payload.message);
+        toast.success(payload.message);
       } finally {
         onDone();
       }
@@ -194,7 +195,7 @@ export default function CreditMemosDraftsPage() {
     try {
       await connection.start();
     } catch {
-      message.error(t("error.couldNotConnect"));
+      toast.error(t("error.couldNotConnect"));
       onDone();
     }
   };

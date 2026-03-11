@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { Table, Modal, Button as AntButton, Tooltip, DatePicker, message } from "antd";
+import { toast } from "@/components/ui/sonner";
 import type { ColumnsType } from "antd/es/table";
 import { ClearOutlined } from "@ant-design/icons";
 import { PageHeader } from "@/components/ui/page-header";
@@ -150,7 +151,7 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
     connection.on("ProcessingCompleted", (payload: ProcessingCompletedPayload) => {
       try {
         if (!payload?.isSuccess) {
-          message.error(payload?.message);
+          toast.error(payload?.message ?? t("error.somethingWentWrong"));
           return;
         }
 
@@ -163,7 +164,7 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
         }
 
         queryClient.invalidateQueries({ queryKey: ["sales-orders"] });
-        message.success(payload.message);
+        toast.success(payload.message);
       } finally {
         onDone();
       }
@@ -173,7 +174,7 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
     try {
       await connection.start();
     } catch {
-      message.error(t("error.couldNotConnect"));
+      toast.error(t("error.couldNotConnect"));
       onDone();
     }
   };
