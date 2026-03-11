@@ -5,7 +5,7 @@ import { AppSidebar } from "./AppSidebar";
 import { TopBar } from "./TopBar";
 import { clearStoredAuth } from "@/lib/authStorage";
 
-const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes inactivity → logout
+const SESSION_TIMEOUT_MS = 240 * 60 * 60 * 1000; // 240 hours inactivity → logout (matches token expiry)
 const CHECK_INTERVAL_MS = 60 * 1000; // check every minute
 
 function useSessionTimeout() {
