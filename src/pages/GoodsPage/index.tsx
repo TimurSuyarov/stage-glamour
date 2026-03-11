@@ -119,6 +119,47 @@ export default function GoodsPage() {
       ),
     },
     {
+      key: 'totalOnHand',
+      header: t('goods.totalOnHand'),
+      cell: (good) => (
+        <span className="font-mono text-sm tabular-nums text-right inline-block w-full">
+          {good.totalOnHand}
+        </span>
+      ),
+    },
+    {
+      key: 'totalCommitted',
+      header: t('goods.totalCommitted'),
+      cell: (good) => (
+        <span className="font-mono text-sm tabular-nums text-right inline-block w-full">
+          {good.totalCommitted}
+        </span>
+      ),
+    },
+    {
+      key: 'totalOnOrder',
+      header: t('goods.totalOnOrder'),
+      cell: (good) => (
+        <span className="font-mono text-sm tabular-nums text-right inline-block w-full">
+          {good.totalOnOrder}
+        </span>
+      ),
+    },
+    {
+      key: 'totalAvailable',
+      header: t('goods.totalAvailable'),
+      cell: (good) => (
+        <span
+          className={cn(
+            "font-mono text-sm tabular-nums text-right inline-block w-full font-medium",
+            good.totalAvailable < 0 && "text-destructive"
+          )}
+        >
+          {good.totalAvailable}
+        </span>
+      ),
+    },
+    {
       key: 'actions',
       header: t('common.actions'),
       cell: (good) => (
@@ -270,6 +311,24 @@ export default function GoodsPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">SAP ID</p>
                   <p className="font-mono">{selectedGood.syncInfo.sapId}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">{t('goods.totalOnHand')}</p>
+                  <p className="font-mono tabular-nums">{selectedGood.totalOnHand}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">{t('goods.totalCommitted')}</p>
+                  <p className="font-mono tabular-nums">{selectedGood.totalCommitted}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">{t('goods.totalOnOrder')}</p>
+                  <p className="font-mono tabular-nums">{selectedGood.totalOnOrder}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">{t('goods.totalAvailable')}</p>
+                  <p className={cn("font-mono tabular-nums font-medium", selectedGood.totalAvailable < 0 && "text-destructive")}>
+                    {selectedGood.totalAvailable}
+                  </p>
                 </div>
               </div>
               

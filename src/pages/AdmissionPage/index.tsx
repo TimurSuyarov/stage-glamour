@@ -405,8 +405,12 @@ const AdmissionPage = () => {
     const body: FromInvoiceRequestBody = {
       cardCode: selectedAdmission.supplierId,
       container: selectedAdmission.container ?? null,
-      documentLines: items.map((item) => {
+          documentLines: items.map((item) => {
         const quantity = item.actualQty;
+        const expiryIso =
+          item.expiryDate?.trim() ?
+            (item.expiryDate.includes("T") ? item.expiryDate : `${item.expiryDate}T00:00:00.000Z`)
+            : now;
         return {
           itemCode: item.itemCode,
           quantity,
@@ -415,7 +419,7 @@ const AdmissionPage = () => {
           baseEntry: docEntry,
           batchNumbers: [
             {
-              expiryDate: item.expiryDate || now,
+              expiryDate: expiryIso,
               manufacturingDate: now,
               addmisionDate: now,
               quantity,
@@ -497,12 +501,12 @@ const AdmissionPage = () => {
     );
   };
 
-  // Update item expiry date (store as UTC ISO string)
+  // Update item expiry date (store as YYYY-MM-DD so selected calendar date is preserved, no timezone shift)
   const handleExpiryChange = (itemId: string, date: Dayjs | null) => {
     setEditedItems((items) =>
       items.map((item) =>
         item.id === itemId
-          ? { ...item, expiryDate: date ? date.utc().startOf("day").toISOString() : "" }
+          ? { ...item, expiryDate: date ? date.format("YYYY-MM-DD") : "" }
           : item
       )
     );
@@ -738,7 +742,7 @@ const AdmissionPage = () => {
                         <th className="px-3 py-2 text-center text-xs font-medium w-16 border-r border-border">
                           {t("admission.plan")}
                         </th>
-                        <th className="px-3 py-2 text-center text-xs font-medium w-20 border-r border-border">
+                        <th className="px-3 py-2 text-center text-xs font-medium w-28 border-r border-border">
                           {t("admission.actual")}
                         </th>
                         <th className="px-3 py-2 text-center text-xs font-medium w-32 border-r border-border">
@@ -785,7 +789,7 @@ const AdmissionPage = () => {
                                 handleQtyChange(item.id, e.target.value)
                               }
                               className={cn(
-                                "w-16 h-8 text-center mx-auto",
+                                "min-w-[5.5rem] w-24 h-8 text-center mx-auto tabular-nums",
                                 qtyInvalid && "border-destructive ring-1 ring-destructive"
                               )}
                             />

@@ -121,12 +121,12 @@ export const mockEmployees: Employee[] = [
 
 // Mock Goods
 export const mockGoods: Good[] = [
-  { id: 'G001', sku: 'GLM-LIP-001', barcode: '4820000001234', name: 'Glamour Lipstick Red Velvet', category: 'Lips', isActive: true, syncInfo: { synced: true, lastSyncAt: '2025-02-08T08:00:00Z', sapId: 'MAT-001' } },
-  { id: 'G002', sku: 'GLM-MSC-002', barcode: '4820000001235', name: 'Glamour Mascara Volume', category: 'Eyes', isActive: true, syncInfo: { synced: true, lastSyncAt: '2025-02-08T08:00:00Z', sapId: 'MAT-002' } },
-  { id: 'G003', sku: 'GLM-FND-003', barcode: '4820000001236', name: 'Glamour Foundation Natural', category: 'Face', isActive: true, syncInfo: { synced: true, lastSyncAt: '2025-02-08T08:00:00Z', sapId: 'MAT-003' } },
-  { id: 'G004', sku: 'GLM-EYE-004', barcode: '4820000001237', name: 'Glamour Eyeshadow Palette', category: 'Eyes', isActive: true, syncInfo: { synced: true, lastSyncAt: '2025-02-08T08:00:00Z', sapId: 'MAT-004' } },
-  { id: 'G005', sku: 'GLM-BLS-005', barcode: '4820000001238', name: 'Glamour Blush Rose', category: 'Face', isActive: true, syncInfo: { synced: true, lastSyncAt: '2025-02-08T08:00:00Z', sapId: 'MAT-005' } },
-  { id: 'G006', sku: 'GLM-OLD-099', barcode: '4820000009999', name: 'Glamour Legacy Product', category: 'Discontinued', isActive: false, syncInfo: { synced: true, lastSyncAt: '2024-12-01T08:00:00Z', sapId: 'MAT-099' } },
+  { id: 'G001', sku: 'GLM-LIP-001', barcode: '4820000001234', name: 'Glamour Lipstick Red Velvet', category: 'Lips', batchNumber: '', isActive: true, syncInfo: { synced: true, lastSyncAt: '2025-02-08T08:00:00Z', sapId: 'MAT-001' }, totalOnHand: 120, totalCommitted: 15, totalOnOrder: 50, totalAvailable: 105 },
+  { id: 'G002', sku: 'GLM-MSC-002', barcode: '4820000001235', name: 'Glamour Mascara Volume', category: 'Eyes', batchNumber: '', isActive: true, syncInfo: { synced: true, lastSyncAt: '2025-02-08T08:00:00Z', sapId: 'MAT-002' }, totalOnHand: 85, totalCommitted: 10, totalOnOrder: 20, totalAvailable: 75 },
+  { id: 'G003', sku: 'GLM-FND-003', barcode: '4820000001236', name: 'Glamour Foundation Natural', category: 'Face', batchNumber: '', isActive: true, syncInfo: { synced: true, lastSyncAt: '2025-02-08T08:00:00Z', sapId: 'MAT-003' }, totalOnHand: 60, totalCommitted: 8, totalOnOrder: 30, totalAvailable: 52 },
+  { id: 'G004', sku: 'GLM-EYE-004', barcode: '4820000001237', name: 'Glamour Eyeshadow Palette', category: 'Eyes', batchNumber: '', isActive: true, syncInfo: { synced: true, lastSyncAt: '2025-02-08T08:00:00Z', sapId: 'MAT-004' }, totalOnHand: 45, totalCommitted: 5, totalOnOrder: 25, totalAvailable: 40 },
+  { id: 'G005', sku: 'GLM-BLS-005', barcode: '4820000001238', name: 'Glamour Blush Rose', category: 'Face', batchNumber: '', isActive: true, syncInfo: { synced: true, lastSyncAt: '2025-02-08T08:00:00Z', sapId: 'MAT-005' }, totalOnHand: 90, totalCommitted: 12, totalOnOrder: 0, totalAvailable: 78 },
+  { id: 'G006', sku: 'GLM-OLD-099', barcode: '4820000009999', name: 'Glamour Legacy Product', category: 'Discontinued', batchNumber: '', isActive: false, syncInfo: { synced: true, lastSyncAt: '2024-12-01T08:00:00Z', sapId: 'MAT-099' }, totalOnHand: 0, totalCommitted: 0, totalOnOrder: 0, totalAvailable: 0 },
 ];
 
 // Mock Audit Logs

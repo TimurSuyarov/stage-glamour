@@ -155,11 +155,7 @@ export interface FromInvoiceRequestBody {
 }
 
 const postFromInvoice = async (body: FromInvoiceRequestBody): Promise<unknown> => {
-  // Backend serves from-invoice at root (no /api prefix); other endpoints use /api
-  const baseUrl = import.meta.env.VITE_BASE_URL ?? "";
-  const rootUrl = baseUrl.replace(/\/api\/?$/, "") || baseUrl;
-  const url = `${rootUrl}/from-invoice`;
-  const { data } = await request.post(url, body);
+  const { data } = await request.post("/purchase-deliveries/from-invoice", body);
   return data;
 };
 

@@ -163,6 +163,14 @@ export interface Good {
   batchNumber: string;
   isActive: boolean;
   syncInfo: SAPSyncInfo;
+  /** Items physically in the warehouse (SAP: OnHand) */
+  totalOnHand: number;
+  /** Items reserved for open sales orders — in warehouse but promised to customers (SAP: IsCommited) */
+  totalCommitted: number;
+  /** Items ordered from supplier but not yet received, in transit (SAP: OnOrder) */
+  totalOnOrder: number;
+  /** Items you can actually sell/use right now (SAP: calculated) */
+  totalAvailable: number;
 }
 
 export interface InventorySession {

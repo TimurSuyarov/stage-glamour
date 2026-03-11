@@ -28,6 +28,14 @@ export interface ItemDto {
   batches: ItemBatchDto[];
   prices?: ItemPriceDto[];
   U_Shelf: string | null;
+  /** Items physically in the warehouse (SAP: OnHand) */
+  totalOnHand?: number;
+  /** Items reserved for open sales orders — in warehouse but promised to customers (SAP: IsCommited) */
+  totalCommitted?: number;
+  /** Items ordered from supplier but not yet received, in transit (SAP: OnOrder) */
+  totalOnOrder?: number;
+  /** Items you can actually sell/use right now (SAP: calculated) */
+  totalAvailable?: number;
 }
 
 export interface ItemsResponse {
@@ -63,6 +71,10 @@ function mapItemToGood(dto: ItemDto): Good {
     batchNumber: dto.batches?.[0]?.batchNumber ?? "",
     isActive: true,
     syncInfo,
+    totalOnHand: dto.totalOnHand ?? 0,
+    totalCommitted: dto.totalCommitted ?? 0,
+    totalOnOrder: dto.totalOnOrder ?? 0,
+    totalAvailable: dto.totalAvailable ?? 0,
   };
 }
 
