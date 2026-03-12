@@ -1,46 +1,28 @@
 import request from "@/services";
 import { useMutation, useQuery, useQueryClient } from "react-query";
 
-export interface InventoryCountingItem {
-  id: number;
-  name: string;
-  status: number;
-  assignedUserId: number | null;
-  assigneeName: string | null;
-  createdAt: string;
-}
-
 export interface InventoryCountingLine {
-  id: number;
+  lineNum: number;
   itemCode: string;
-  productName: string;
-  binCode: string;
+  itemDescription: string;
   warehouseCode: string;
-  currentQuantity: number;
-  actualQuantity: number | null;
+  binLocation: string;
+  systemQuantity: number;
+  countedQuantity: number;
+  difference: number;
 }
 
-export interface InventoryCountingDetail extends InventoryCountingItem {
-  lines: InventoryCountingLine[];
+export interface InventoryCountingItem {
+  docEntry: number;
+  docNum: number;
+  countDate: string;
+  remarks: string | null;
+  employeeId: number | null;
+  employeeFullName: string | null;
+  documentStatus: string;
+  documentStatusName: string;
+  inventoryCountingLines: InventoryCountingLine[];
 }
-
-const fetchInventoryCountingById = async (
-  id: number
-): Promise<InventoryCountingDetail | null> => {
-  const { data } = await request.get<InventoryCountingDetail>(
-    `/inventory-countings/${id}`
-  );
-  return data ?? null;
-};
-
-export const useInventoryCountingById = (id: number | null) => {
-  return useQuery({
-    queryKey: ["inventory-countings", id],
-    queryFn: () => fetchInventoryCountingById(id!),
-    enabled: id != null,
-    refetchOnWindowFocus: false,
-  });
-};
 
 export interface InventoryCountingsResponse {
   items: InventoryCountingItem[];
@@ -72,8 +54,14 @@ export const useInventoryCountings = (filters?: InventoryCountingsFilters) => {
   });
 };
 
-const postInventoryCounting = async (zone: string): Promise<unknown> => {
-  const { data } = await request.post("/inventory-countings", JSON.stringify(zone), {
+export interface CreateInventoryCountingBody {
+  zone: string;
+  employeeId: number | null;
+  countDate: string;
+}
+
+const postInventoryCounting = async (body: CreateInventoryCountingBody): Promise<unknown> => {
+  const { data } = await request.post("/inventory-countings", body, {
     headers: { "Content-Type": "application/json" },
   });
   return data;
@@ -82,69 +70,50 @@ const postInventoryCounting = async (zone: string): Promise<unknown> => {
 export const useCreateInventoryCounting = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (zone: string) => postInventoryCounting(zone),
+    mutationFn: (body: CreateInventoryCountingBody) => postInventoryCounting(body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inventory-countings"] });
     },
   });
 };
 
-const assignInventoryCounting = async (
-  itemId: number,
-  userId: number
-): Promise<unknown> => {
-  const { data } = await request.post(
-    `/inventory-countings/${itemId}/assign/${userId}`,
-    undefined,
-    { headers: { "Content-Type": "application/json" } }
-  );
-  return data;
-};
-
-export const useAssignInventoryCounting = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ itemId, userId }: { itemId: number; userId: number }) =>
-      assignInventoryCounting(itemId, userId),
-    onSuccess: (_, { itemId }) => {
-      queryClient.invalidateQueries({ queryKey: ["inventory-countings"] });
-      queryClient.invalidateQueries({ queryKey: ["inventory-countings", itemId] });
-    },
-  });
-};
-
-export interface FinalizeRequest {
-  id: number;
-  quantityRequests: { lineId: number; quantity: number }[];
+export interface PatchInventoryCountingBody {
+  U_EmployeeId: number | null;
+  inventoryCountingLines: { lineNumber: number; countedQuantity: number }[];
 }
 
-const postFinalize = async (body: FinalizeRequest): Promise<unknown> => {
-  const { data } = await request.post("/inventory-countings/finalize", body, {
+const patchInventoryCounting = async (
+  docEntry: number,
+  body: PatchInventoryCountingBody
+): Promise<unknown> => {
+  const { data } = await request.patch(`/inventory-countings/${docEntry}`, body, {
     headers: { "Content-Type": "application/json" },
   });
   return data;
 };
 
-export const useFinalizeInventoryCounting = () => {
+export const usePatchInventoryCounting = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: FinalizeRequest) => postFinalize(body),
-    onSuccess: (_, variables) => {
+    mutationFn: ({ docEntry, body }: { docEntry: number; body: PatchInventoryCountingBody }) =>
+      patchInventoryCounting(docEntry, body),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inventory-countings"] });
-      queryClient.invalidateQueries({ queryKey: ["inventory-countings", variables.id] });
     },
   });
 };
 
-export const exportInventoryCountingPdf = async (id: number): Promise<void> => {
+export const exportInventoryCountingPdf = async (docEntry: number): Promise<void> => {
   const { data, headers } = await request.get<Blob>(
-    `/inventory-countings/${id}/export-pdf`,
+    `/inventory-countings/${docEntry}/export-pdf`,
     { responseType: "blob" }
   );
   const contentDisposition = headers?.["content-disposition"] as string | undefined;
-  let filename = `inventory-counting-${id}.pdf`;
+  let filename = `inventory-counting-${docEntry}.pdf`;
   if (contentDisposition) {
-    const match = contentDisposition.match(/filename\*?=(?:UTF-8'')?([^;]+)/i) ?? contentDisposition.match(/filename="?([^";]+)"?/i);
+    const match =
+      contentDisposition.match(/filename\*?=(?:UTF-8'')?([^;]+)/i) ??
+      contentDisposition.match(/filename="?([^";]+)"?/i);
     if (match?.[1]) filename = match[1].trim().replace(/^["']|["']$/g, "");
   }
   const url = URL.createObjectURL(data);

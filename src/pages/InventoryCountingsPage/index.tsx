@@ -4,10 +4,8 @@ import { ModuleCard } from "@/components/ui/stat-card";
 import { useTranslation } from "react-i18next";
 import {
   useInventoryCountings,
-  useInventoryCountingById,
+  usePatchInventoryCounting,
   exportInventoryCountingPdf,
-  useAssignInventoryCounting,
-  useFinalizeInventoryCounting,
   type InventoryCountingsFilters,
   type InventoryCountingItem,
   type InventoryCountingLine,
@@ -16,26 +14,11 @@ import { useEmployees } from "@/entities/Employees/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Table, Modal, message, Tooltip, Select } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { Eye, Loader2, ChevronLeft, ChevronRight, FileDown } from "lucide-react";
+import { Eye, Loader2, ChevronLeft, ChevronRight, FileDown, Save, UserMinus } from "lucide-react";
 
 const PAGE_SIZE = 20;
-
-const INVENTORY_COUNTING_STATUS: Record<number, string> = {
-  1: "status.draft",
-  2: "status.inProgress",
-  3: "status.completed",
-};
-
-function getEmployeeId(emp: { employeeId?: number; EmployeeID?: number }): number {
-  return emp.employeeId ?? emp.EmployeeID ?? 0;
-}
-
-function getEmployeeName(emp: { firstName?: string; lastName?: string }): string {
-  return [emp.firstName, emp.lastName].filter(Boolean).join(" ") || "—";
-}
 
 export default function InventoryCountingsPage() {
   const { t } = useTranslation();
@@ -43,42 +26,38 @@ export default function InventoryCountingsPage() {
   const [pageIndex, setPageIndex] = useState(0);
   const [selectedDoc, setSelectedDoc] = useState<InventoryCountingItem | null>(null);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null);
-  const [showSystemQty, setShowSystemQty] = useState(true);
   const [lineQuantities, setLineQuantities] = useState<Record<number, number>>({});
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null | undefined>(undefined);
 
-  const { data: detail, isLoading: detailLoading } = useInventoryCountingById(selectedDoc?.id ?? null);
-  const finalizeMutation = useFinalizeInventoryCounting();
+  const patchMutation = usePatchInventoryCounting();
+  const { data: employees = [], isLoading: employeesLoading } = useEmployees({ PageSize: 500 });
 
   useEffect(() => {
-    if (detail?.lines) {
-      const initial: Record<number, number> = {};
-      detail.lines.forEach((line) => {
-        initial[line.id] = line.actualQuantity ?? 0;
-      });
-      setLineQuantities(initial);
-    } else {
-      setLineQuantities({});
-    }
-  }, [detail?.lines]);
-  const { data: employees = [] } = useEmployees({ PageSize: 500 });
-  const assignMutation = useAssignInventoryCounting();
+    setLineQuantities({});
+    setSelectedEmployeeId(undefined);
+  }, [selectedDoc]);
 
   const handleOpenModal = (doc: InventoryCountingItem | null) => {
     setSelectedDoc(doc);
-    setSelectedEmployeeId(null);
-    setShowSystemQty(true);
     setLineQuantities({});
+    setSelectedEmployeeId(undefined);
   };
 
-  const handleFinalize = () => {
-    if (!detail?.id || !detail.lines?.length) return;
-    const quantityRequests = detail.lines.map((line) => ({
-      lineId: line.id,
-      quantity: lineQuantities[line.id] ?? 0,
+  const handleSave = () => {
+    if (!selectedDoc) return;
+    // Only send lines where user actually typed a value
+    const inventoryCountingLines = Object.entries(lineQuantities).map(([lineNum, countedQuantity]) => ({
+      lineNumber: Number(lineNum),
+      countedQuantity,
     }));
-    finalizeMutation.mutate(
-      { id: detail.id, quantityRequests },
+
+    // Always send U_EmployeeId: if changed use new value, otherwise use existing
+    const U_EmployeeId = selectedEmployeeId !== undefined
+      ? selectedEmployeeId
+      : (selectedDoc.employeeId ?? null);
+
+    patchMutation.mutate(
+      { docEntry: selectedDoc.docEntry, body: { U_EmployeeId, inventoryCountingLines } },
       {
         onSuccess: () => {
           message.success(t("common.success"));
@@ -91,29 +70,10 @@ export default function InventoryCountingsPage() {
     );
   };
 
-  const handleAssign = () => {
-    if (!detail?.id || selectedEmployeeId == null) {
-      message.warning(t("inventoryCountings.selectUserFirst"));
-      return;
-    }
-    assignMutation.mutate(
-      { itemId: detail.id, userId: selectedEmployeeId },
-      {
-        onSuccess: () => {
-          message.success(t("common.success"));
-          setSelectedEmployeeId(null);
-        },
-        onError: () => {
-          message.error(t("error.somethingWentWrong"));
-        },
-      }
-    );
-  };
-
-  const handleDownloadPdf = async (id: number) => {
-    setDownloadingId(id);
+  const handleDownloadPdf = async (docEntry: number) => {
+    setDownloadingId(docEntry);
     try {
-      await exportInventoryCountingPdf(id);
+      await exportInventoryCountingPdf(docEntry);
       message.success(t("common.success"));
     } catch {
       message.error(t("error.somethingWentWrong"));
@@ -139,44 +99,61 @@ export default function InventoryCountingsPage() {
   const mainColumns: ColumnsType<InventoryCountingItem> = [
     {
       title: "ID",
-      dataIndex: "id",
-      key: "id",
+      dataIndex: "docEntry",
+      key: "docEntry",
       width: 80,
     },
     {
-      title: t("common.name"),
-      dataIndex: "name",
-      key: "name",
-    },
-    {
-      title: t("common.status"),
-      dataIndex: "status",
-      key: "status",
+      title: t("inventoryCountings.docNum"),
+      dataIndex: "docNum",
+      key: "docNum",
       width: 120,
-      render: (val: number) => (
-        <span className={val === 3 ? "font-medium text-green-600" : undefined}>
-          {t(INVENTORY_COUNTING_STATUS[val] ?? String(val))}
-        </span>
-      ),
     },
     {
-      title: t("picklist_assignee"),
-      dataIndex: "assigneeName",
-      key: "assigneeName",
-      width: 180,
+      title: t("inventoryCountings.countDate"),
+      dataIndex: "countDate",
+      key: "countDate",
+      width: 160,
+      render: (val: string) => val ?? "—",
+    },
+    {
+      title: t("admission.assignEmployee"),
+      dataIndex: "employeeFullName",
+      key: "employeeFullName",
+      width: 200,
       render: (val: string | null) => val ?? "—",
     },
+    // {
+    //   title: t("inventoryCountings.remarks"),
+    //   dataIndex: "remarks",
+    //   key: "remarks",
+    //   render: (val: string | null) => val ?? "—",
+    // },
     {
-      title: t("common.createdAt"),
-      dataIndex: "createdAt",
-      key: "createdAt",
-      width: 180,
-      render: (val: string) => new Date(val).toLocaleString(),
+      title: t("common.status"),
+      key: "documentStatusName",
+      width: 100,
+      render: (_: unknown, record: InventoryCountingItem) => {
+        const isOpen = record.documentStatusName?.toLowerCase() === "open";
+        return (
+          <span className={isOpen ? "text-green-600 font-medium" : "text-muted-foreground"}>
+            {record.documentStatusName ?? "—"}
+          </span>
+        );
+      },
+    },
+    {
+      title: t("inventoryCountings.linesCount"),
+      key: "linesCount",
+      width: 100,
+      align: "center",
+      render: (_: unknown, record: InventoryCountingItem) =>
+        record.inventoryCountingLines?.length ?? 0,
     },
     {
       title: t("inventoryCountings.document"),
       key: "document",
-      width: 100,
+      width: 110,
       align: "center",
       render: (_: unknown, record: InventoryCountingItem) => (
         <Tooltip title={t("inventoryCountings.downloadPdf")}>
@@ -185,10 +162,10 @@ export default function InventoryCountingsPage() {
             variant="outline"
             size="sm"
             className="gap-1"
-            onClick={() => handleDownloadPdf(record.id)}
-            disabled={downloadingId === record.id}
+            onClick={() => handleDownloadPdf(record.docEntry)}
+            disabled={downloadingId === record.docEntry}
           >
-            {downloadingId === record.id ? (
+            {downloadingId === record.docEntry ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <FileDown className="w-4 h-4" />
@@ -218,6 +195,99 @@ export default function InventoryCountingsPage() {
     },
   ];
 
+  const lineColumns: ColumnsType<InventoryCountingLine> = [
+    {
+      title: "#",
+      key: "idx",
+      width: 50,
+      align: "center",
+      render: (_: unknown, __: InventoryCountingLine, idx: number) => idx + 1,
+    },
+    {
+      title: t("inventoryCountings.itemCode"),
+      dataIndex: "itemCode",
+      key: "itemCode",
+      width: 120,
+    },
+    {
+      title: t("inventoryCountings.itemDescription"),
+      dataIndex: "itemDescription",
+      key: "itemDescription",
+      ellipsis: true,
+    },
+    {
+      title: t("inventoryCountings.warehouseCode"),
+      dataIndex: "warehouseCode",
+      key: "warehouseCode",
+      width: 100,
+    },
+    {
+      title: t("inventoryCountings.binLocation"),
+      dataIndex: "binLocation",
+      key: "binLocation",
+      width: 180,
+    },
+    {
+      title: t("inventoryCountings.currentQty"),
+      dataIndex: "systemQuantity",
+      key: "systemQuantity",
+      width: 110,
+      align: "right",
+    },
+    {
+      title: t("inventoryCountings.actualQty"),
+      key: "countedQuantity",
+      width: 130,
+      align: "right",
+      render: (_: unknown, record: InventoryCountingLine) => (
+        <Input
+          type="number"
+          min={0}
+          className="h-8 w-24 text-right"
+          placeholder={String(record.countedQuantity ?? 0)}
+          value={lineQuantities[record.lineNum] ?? ""}
+          onFocus={(e) => e.target.select()}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val === "") {
+              setLineQuantities((prev) => {
+                const next = { ...prev };
+                delete next[record.lineNum];
+                return next;
+              });
+            } else {
+              const num = parseFloat(val);
+              if (!isNaN(num)) {
+                setLineQuantities((prev) => ({ ...prev, [record.lineNum]: num }));
+              }
+            }
+          }}
+        />
+      ),
+    },
+    {
+      title: t("inventoryCountings.difference"),
+      key: "difference",
+      width: 100,
+      align: "right",
+      render: (_: unknown, record: InventoryCountingLine) => {
+        const counted = lineQuantities[record.lineNum] ?? record.countedQuantity ?? 0;
+        const diff = counted - record.systemQuantity;
+        return (
+          <span className={diff < 0 ? "text-red-500" : diff > 0 ? "text-green-600" : undefined}>
+            {diff}
+          </span>
+        );
+      },
+    },
+  ];
+
+  // Effective employee: if changed in modal use new value, else use doc's current value
+  const currentEmployee = selectedDoc?.employeeFullName ?? null;
+  const currentEmployeeId = selectedDoc?.employeeId ?? null;
+  const effectiveEmployeeId = selectedEmployeeId !== undefined ? selectedEmployeeId : currentEmployeeId;
+  const isOpen = selectedDoc?.documentStatusName?.toLowerCase() === "open";
+
   return (
     <div className="p-6 space-y-6">
       <PageHeader
@@ -243,9 +313,14 @@ export default function InventoryCountingsPage() {
             <Table
               columns={mainColumns}
               dataSource={items}
-              rowKey="id"
+              rowKey="docEntry"
               pagination={false}
               scroll={{ x: "max-content" }}
+              rowClassName={(record) =>
+                record.documentStatusName?.toLowerCase() !== "open"
+                  ? "opacity-50 bg-muted/40"
+                  : ""
+              }
             />
 
             {(items.length > 0 || pageIndex > 0) && (
@@ -285,28 +360,36 @@ export default function InventoryCountingsPage() {
       </ModuleCard>
 
       <Modal
-        title={`${t("inventoryCountings.detail")} — #${selectedDoc?.id ?? ""}`}
+        title={`${t("inventoryCountings.detail")} — #${selectedDoc?.docNum ?? ""}`}
         open={selectedDoc != null}
         onCancel={() => handleOpenModal(null)}
         footer={null}
-        width={1200}
+        width={1100}
       >
-        {detailLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : detail ? (
+        {selectedDoc && (
           <div className="space-y-4">
-            <div className="flex justify-end">
+            {/* Header info + PDF */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                <span>
+                  <strong>{t("inventoryCountings.docNum")}:</strong> {selectedDoc.docNum}
+                </span>
+                <span>
+                  <strong>{t("inventoryCountings.countDate")}:</strong> {selectedDoc.countDate ?? "—"}
+                </span>
+                <span className={`px-2 py-0.5 rounded text-xs font-medium ${isOpen ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                  {selectedDoc.documentStatusName ?? "—"}
+                </span>
+              </div>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                className="gap-2"
-                onClick={() => handleDownloadPdf(detail.id)}
-                disabled={downloadingId === detail.id}
+                className="gap-1"
+                onClick={() => handleDownloadPdf(selectedDoc.docEntry)}
+                disabled={downloadingId === selectedDoc.docEntry}
               >
-                {downloadingId === detail.id ? (
+                {downloadingId === selectedDoc.docEntry ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <FileDown className="w-4 h-4" />
@@ -314,129 +397,87 @@ export default function InventoryCountingsPage() {
                 {t("inventoryCountings.downloadPdf")}
               </Button>
             </div>
-            <div className="grid grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg">
-              <div>
-                <p className="text-xs text-muted-foreground mb-1">{t("common.name")}</p>
-                <p className="font-medium">{detail.name}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground mb-1">{t("common.status")}</p>
-                <p
-                  className={
-                    detail.status === 3
-                      ? "font-medium text-green-600"
-                      : "font-medium"
-                  }
-                >
-                  {t(INVENTORY_COUNTING_STATUS[detail.status] ?? String(detail.status))}
-                </p>
-              </div>
-              <div className="col-span-2">
-                <p className="text-xs text-muted-foreground mb-1">{t("picklist_assignee")}</p>
-                {detail.assigneeName ? (
-                  <p className="font-medium">{detail.assigneeName}</p>
-                ) : (
-                  <div className="flex flex-wrap items-center gap-3">
-                    <Select
-                      showSearch
-                      placeholder={t("inventoryCountings.selectUser")}
-                      value={selectedEmployeeId ?? undefined}
-                      onChange={(val) => setSelectedEmployeeId(val ?? null)}
-                      options={employees.map((emp) => ({
-                        value: getEmployeeId(emp),
-                        label: getEmployeeName(emp),
-                      }))}
-                      filterOption={(input, option) =>
-                        (option?.label ?? "").toString().toLowerCase().includes(input.toLowerCase())
-                      }
-                      optionFilterProp="label"
-                      className="w-[280px] [&_.ant-select-selector]:!h-9"
-                      notFoundContent={t("common.noResults")}
-                    />
+
+            {/* Employee assign / remove */}
+            <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+              <Label className="text-xs shrink-0">{t("admission.assignEmployee")}:</Label>
+              {effectiveEmployeeId ? (
+                <>
+                  <span className="text-sm font-medium">
+                    {selectedEmployeeId !== undefined
+                      ? (() => {
+                          const emp = employees.find((e) => (e.employeeId ?? e.EmployeeID) === selectedEmployeeId);
+                          return emp ? `${emp.firstName} ${emp.lastName}` : currentEmployee;
+                        })()
+                      : currentEmployee}
+                  </span>
+                  {isOpen && (
                     <Button
+                      type="button"
+                      variant="outline"
                       size="sm"
-                      onClick={handleAssign}
-                      disabled={selectedEmployeeId == null || assignMutation.isLoading}
+                      className="gap-1 text-destructive border-destructive hover:bg-destructive/10"
+                      onClick={() => setSelectedEmployeeId(null)}
                     >
-                      {assignMutation.isLoading ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        t("inventoryCountings.assign")
-                      )}
+                      <UserMinus className="w-4 h-4" />
+                      {t("common.delete")}
                     </Button>
-                  </div>
-                )}
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground mb-1">{t("common.createdAt")}</p>
-                <p className="font-medium">{new Date(detail.createdAt).toLocaleString()}</p>
-              </div>
+                  )}
+                </>
+              ) : isOpen ? (
+                <Select
+                  showSearch
+                  placeholder={t("admission.selectEmployee")}
+                  value={selectedEmployeeId ?? undefined}
+                  onChange={(val) => setSelectedEmployeeId(val)}
+                  loading={employeesLoading}
+                  filterOption={(input, option) =>
+                    String(option?.label ?? "").toLowerCase().includes(input.toLowerCase())
+                  }
+                  options={employees.map((e) => ({
+                    value: e.employeeId ?? e.EmployeeID,
+                    label: `${e.firstName} ${e.lastName}`,
+                  }))}
+                  className="w-64 [&_.ant-select-selector]:!h-9"
+                  allowClear
+                  onClear={() => setSelectedEmployeeId(undefined)}
+                />
+              ) : (
+                <span className="text-sm text-muted-foreground">—</span>
+              )}
             </div>
-            {detail.lines && detail.lines.length > 0 && (
+
+            {/* Lines table */}
+            {selectedDoc.inventoryCountingLines?.length > 0 ? (
               <>
-                <div className="flex items-center gap-3 py-2">
-                  <Switch
-                    id="show-system-qty"
-                    checked={showSystemQty}
-                    onCheckedChange={setShowSystemQty}
-                  />
-                  <Label htmlFor="show-system-qty" className="text-sm font-normal cursor-pointer">
-                    {t("inventoryCountings.showSystemQty")}
-                  </Label>
-                </div>
                 <Table
-                  columns={[
-                    { title: "#", key: "idx", width: 50, align: "center", render: (_: unknown, __: InventoryCountingLine, idx: number) => idx + 1 },
-                    { title: t("inventoryCountings.itemCode"), dataIndex: "itemCode", key: "itemCode", width: 120 },
-                    { title: t("inventoryCountings.itemDescription"), dataIndex: "productName", key: "productName" },
-                    { title: t("inventoryCountings.warehouseCode"), dataIndex: "warehouseCode", key: "warehouseCode", width: 100 },
-                    { title: t("inventoryCountings.binLocation"), dataIndex: "binCode", key: "binCode", width: 180 },
-                    ...(showSystemQty ? [{ title: t("inventoryCountings.currentQty"), dataIndex: "currentQuantity", key: "currentQuantity", width: 110, align: "right" as const }] : []),
-                    {
-                      title: t("inventoryCountings.actualQty"),
-                      key: "actualQuantity",
-                      width: 120,
-                      align: "right",
-                      render: (_: unknown, record: InventoryCountingLine) => (
-                        <Input
-                          type="number"
-                          min={0}
-                          className="h-8 w-20 text-right"
-                          value={lineQuantities[record.id] ?? ""}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            const num = val === "" ? 0 : parseFloat(val);
-                            setLineQuantities((prev) => ({
-                              ...prev,
-                              [record.id]: isNaN(num) ? 0 : num,
-                            }));
-                          }}
-                        />
-                      ),
-                    },
-                  ]}
-                dataSource={detail.lines}
-                rowKey="id"
-                pagination={false}
-                scroll={{ x: "max-content" }}
-                size="small"
-              />
-                <div className="flex justify-end pt-4 border-t">
+                  columns={lineColumns}
+                  dataSource={selectedDoc.inventoryCountingLines}
+                  rowKey="lineNum"
+                  pagination={false}
+                  scroll={{ x: "max-content", y: 380 }}
+                  size="small"
+                />
+                <div className="flex justify-end pt-3 border-t">
                   <Button
-                    onClick={handleFinalize}
-                    disabled={!detail.assigneeName || finalizeMutation.isLoading}
+                    onClick={handleSave}
+                    disabled={patchMutation.isLoading || !effectiveEmployeeId}
                     className="gap-2"
                   >
-                    {finalizeMutation.isLoading && (
+                    {patchMutation.isLoading ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4" />
                     )}
-                    {t("inventoryCountings.finalize")}
+                    {t("common.save")}
                   </Button>
                 </div>
               </>
+            ) : (
+              <div className="py-8 text-center text-muted-foreground">{t("common.noData")}</div>
             )}
           </div>
-        ) : null}
+        )}
       </Modal>
     </div>
   );

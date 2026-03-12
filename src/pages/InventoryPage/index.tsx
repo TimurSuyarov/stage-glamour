@@ -8,10 +8,11 @@ import {
   type BinLocationItemCount,
 } from "@/entities/BinLocations/api";
 import { useCreateInventoryCounting } from "@/entities/InventoryCountings/api";
+import { useEmployees } from "@/entities/Employees/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Table, Tooltip, Select, message } from "antd";
+import { Table, Tooltip, Select, message, Modal } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { ClearOutlined } from "@ant-design/icons";
 import { Loader2, ChevronLeft, ChevronRight, Plus } from "lucide-react";
@@ -38,9 +39,12 @@ export default function InventoryPage() {
   const [filterBatchNumber, setFilterBatchNumber] = useState("");
   const [appliedFilters, setAppliedFilters] = useState<BinLocationItemCountFilters>({});
   const [pageIndex, setPageIndex] = useState(0);
-  const [selectedZoneForCreate, setSelectedZoneForCreate] = useState<string | undefined>(undefined);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [createZone, setCreateZone] = useState<string | undefined>(undefined);
+  const [createEmployeeId, setCreateEmployeeId] = useState<number | undefined>(undefined);
 
   const createMutation = useCreateInventoryCounting();
+  const { data: employees = [], isLoading: employeesLoading } = useEmployees({ PageSize: 200 });
 
   const filters: BinLocationItemCountFilters = useMemo(
     () => ({
@@ -142,43 +146,102 @@ export default function InventoryPage() {
       />
 
         <div className="flex items-end justify-end gap-3 mb-6 pl-2.5">
-          <div className="space-x-3">
-            <Label className="">{t("inventory.selectZoneForCreate")}</Label>
-            <Select
-              placeholder={t("inventory.selectZoneForCreate")}
-              value={selectedZoneForCreate}
-              onChange={(val) => setSelectedZoneForCreate(val)}
-              options={ZONE_OPTIONS}
-              className="w-48 [&_.ant-select-selector]:!h-9 [&_.ant-select-selection-placeholder]:!text-xs"
-            />
-          </div>
           <Button
-            onClick={() => {
-              if (!selectedZoneForCreate) {
-                message.warning(t("inventory.selectZoneFirst"));
-                return;
-              }
-              createMutation.mutate(selectedZoneForCreate, {
-                onSuccess: () => {
-                  message.success(t("common.success"));
-                  setSelectedZoneForCreate(undefined);
-                },
-                onError: () => {
-                  message.error(t("error.somethingWentWrong"));
-                },
-              });
-            }}
-            disabled={!selectedZoneForCreate || createMutation.isLoading}
+            onClick={() => setIsCreateModalOpen(true)}
             className="gap-2 h-9"
           >
-            {createMutation.isLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Plus className="w-4 h-4" />
-            )}
+            <Plus className="w-4 h-4" />
             {t("common_create")}
           </Button>
         </div>
+
+        <Modal
+          title={t("common_create")}
+          open={isCreateModalOpen}
+          onCancel={() => {
+            setIsCreateModalOpen(false);
+            setCreateZone(undefined);
+            setCreateEmployeeId(undefined);
+          }}
+          footer={null}
+          width={420}
+        >
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs">{t("inventory.zone")}</Label>
+              <Select
+                placeholder={t("inventory.zone")}
+                value={createZone}
+                onChange={(val) => setCreateZone(val)}
+                options={ZONE_OPTIONS}
+                className="w-full [&_.ant-select-selector]:!h-9"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">{t("admission.assignEmployee")}</Label>
+              <Select
+                showSearch
+                placeholder={t("admission.selectEmployee")}
+                value={createEmployeeId}
+                onChange={(val) => setCreateEmployeeId(val)}
+                loading={employeesLoading}
+                filterOption={(input, option) =>
+                  String(option?.label ?? "").toLowerCase().includes(input.toLowerCase())
+                }
+                options={employees.map((e) => ({
+                  value: e.employeeId ?? e.EmployeeID,
+                  label: `${e.firstName} ${e.lastName}`,
+                }))}
+                className="w-full [&_.ant-select-selector]:!h-9"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                variant="outline"
+                className="h-9"
+                onClick={() => {
+                  setIsCreateModalOpen(false);
+                  setCreateZone(undefined);
+                  setCreateEmployeeId(undefined);
+                }}
+              >
+                {t("common_cancel")}
+              </Button>
+              <Button
+                className="h-9 gap-2"
+                disabled={!createZone || createMutation.isLoading}
+                onClick={() => {
+                  if (!createZone) return;
+                  createMutation.mutate(
+                    {
+                      zone: createZone,
+                      employeeId: createEmployeeId ?? null,
+                      countDate: new Date().toISOString(),
+                    },
+                    {
+                      onSuccess: () => {
+                        message.success(t("common.success"));
+                        setIsCreateModalOpen(false);
+                        setCreateZone(undefined);
+                        setCreateEmployeeId(undefined);
+                      },
+                      onError: () => {
+                        message.error(t("error.somethingWentWrong"));
+                      },
+                    }
+                  );
+                }}
+              >
+                {createMutation.isLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Plus className="w-4 h-4" />
+                )}
+                {t("common_create")}
+              </Button>
+            </div>
+          </div>
+        </Modal>
       <ModuleCard>
 
         {/* Filters */}
