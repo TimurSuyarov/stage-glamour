@@ -10,6 +10,7 @@ export interface RequiredTransferItem {
   requiredTransferQuantity: number;
   completedPercentage: number;
   createdAt: string;
+  isCompleted: boolean;
 }
 
 export interface RequiredTransfersResponse {

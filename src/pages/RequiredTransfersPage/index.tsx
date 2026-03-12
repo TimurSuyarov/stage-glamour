@@ -515,22 +515,24 @@ export default function RequiredTransfersPage() {
                 <Button variant="outline" size="sm" onClick={handleCloseModal}>
                   {t("common.close")}
                 </Button>
-                <Button
-                  size="sm"
-                  onClick={handleFinalize}
-                  disabled={
-                    !selectedRequest.assignedUser ||
-                    lines.length === 0 ||
-                    lines.some((l) => !l.isTransferred) ||
-                    finalizeMutation.isLoading
-                  }
-                >
-                  {finalizeMutation.isLoading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    t("requiredTransfers.finalize")
-                  )}
-                </Button>
+                {!selectedRequest.isCompleted && (
+                  <Button
+                    size="sm"
+                    onClick={handleFinalize}
+                    disabled={
+                      !selectedRequest.assignedUser ||
+                      lines.length === 0 ||
+                      lines.some((l) => !l.isTransferred) ||
+                      finalizeMutation.isLoading
+                    }
+                  >
+                    {finalizeMutation.isLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      t("requiredTransfers.finalize")
+                    )}
+                  </Button>
+                )}
               </div>
             </div>
           )}
