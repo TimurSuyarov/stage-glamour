@@ -114,11 +114,12 @@ export const useBonusRecordsInfinite = (
   );
 };
 
-// --- Bonus record by type + docEntry (for modal) ---
+// --- Bonus record metadata by id (for modal) ---
 export interface BonusRecordDocumentLine {
   itemCode: string;
   itemDescription: string;
   quantity: number;
+  bonus: number;
 }
 
 export interface BonusRecordByDocResponse {
@@ -128,20 +129,20 @@ export interface BonusRecordByDocResponse {
   documentLines: BonusRecordDocumentLine[];
 }
 
-export const fetchBonusRecordByDoc = async (
-  type: number,
-  docEntry: number
+export const fetchBonusRecordMetadata = async (
+  id: number
 ): Promise<BonusRecordByDocResponse> => {
   const { data } = await request.get<BonusRecordByDocResponse>(
-    `/bonus-records/${type}/${docEntry}`
+    `/bonus-records/${id}/metadata`
   );
   return data;
 };
 
-export const useBonusRecordByDoc = (type: number | null, docEntry: number | null) => {
+export const useBonusRecordMetadata = (id: number | null) => {
   return useQuery({
-    queryKey: ["bonus-record-doc", type, docEntry],
-    queryFn: () => fetchBonusRecordByDoc(type!, docEntry!),
-    enabled: type != null && docEntry != null,
+    queryKey: ["bonus-record-metadata", id],
+    queryFn: () => fetchBonusRecordMetadata(id!),
+    enabled: id != null,
+    refetchOnWindowFocus: false,
   });
 };

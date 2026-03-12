@@ -9,7 +9,7 @@ import { useTranslation } from "react-i18next";
 import {
   useBonusRecordsGrouped,
   useBonusRecordsInfinite,
-  useBonusRecordByDoc,
+  useBonusRecordMetadata,
   BONUS_RECORD_TYPE_LABELS,
   BONUS_RECORD_TYPE_VALUES,
   PAGE_SIZE,
@@ -166,13 +166,12 @@ export default function BonusesPage() {
   const [expandedRowKeys, setExpandedRowKeys] = useState<number[]>([]);
   const [appliedFilters, setAppliedFilters] =
     useState<BonusRecordsGroupedFilters>(DEFAULT_FILTERS);
-  const [modalDoc, setModalDoc] = useState<{ type: number; docEntry: number } | null>(null);
+  const [modalDoc, setModalDoc] = useState<{ id: number } | null>(null);
 
   const { data: groupedData = [], isLoading, error } =
     useBonusRecordsGrouped(appliedFilters);
-  const { data: modalData, isLoading: modalLoading } = useBonusRecordByDoc(
-    modalDoc?.type ?? null,
-    modalDoc?.docEntry ?? null
+  const { data: modalData, isLoading: modalLoading } = useBonusRecordMetadata(
+    modalDoc?.id ?? null
   );
 
   const typeOptions = Object.entries(BONUS_RECORD_TYPE_VALUES).map(
@@ -303,7 +302,7 @@ export default function BonusesPage() {
                 <ExpandedBonusRow
                   employeeId={record.employeeId}
                   filters={appliedFilters}
-                  onRecordClick={(r) => setModalDoc({ type: r.type, docEntry: r.docEntry })}
+                  onRecordClick={(r) => setModalDoc({ id: r.id })}
                 />
               ),
               rowExpandable: () => true,
@@ -359,6 +358,21 @@ export default function BonusesPage() {
                 key: "quantity",
                 width: 100,
                 align: "right",
+              },
+              {
+                title: t("bonuses.amount"),
+                dataIndex: "bonus",
+                key: "bonus",
+                width: 130,
+                align: "right",
+                render: (val: number) =>
+                  val != null ? (
+                    <span className="text-green-600 font-semibold">
+                      +{val.toLocaleString()}
+                    </span>
+                  ) : (
+                    "—"
+                  ),
               },
             ]}
             dataSource={modalData.documentLines}
