@@ -43,3 +43,9 @@ export function useSignalRWaiting(key: SignalRWaitingKey) {
   }
   return [ctx.isWaiting(key), (value: boolean) => ctx.setWaiting(key, value)] as const;
 }
+
+export function useSignalRWaitingControl() {
+  const ctx = useContext(SignalRWaitingContext);
+  if (!ctx) return { setWaiting: (_key: SignalRWaitingKey, _value: boolean) => {} };
+  return { setWaiting: ctx.setWaiting };
+}

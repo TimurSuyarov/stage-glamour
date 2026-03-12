@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Table, Modal, Tooltip, message } from "antd";
+import { Table, Modal, Button as AntButton, Tooltip, message } from "antd";
 import { toast } from "@/components/ui/sonner";
 import { useQueryClient } from "react-query";
 import type { ColumnsType } from "antd/es/table";
@@ -20,13 +20,12 @@ import {
   type InventoryTransferRequestLine,
   type InventoryTransferRequestsFilters,
 } from "@/entities/InventoryTransferRequests/api";
+import { validateTransferLine, type EwsIssue } from "@/lib/ews";
+import { EwsWarning } from "@/components/ui/ews-warning";
 import { useCollectNotification } from "@/contexts/CollectNotificationContext";
 import { useRequiredTransfersNotification } from "@/contexts/RequiredTransfersNotificationContext";
 import { useSignalRWaiting } from "@/contexts/SignalRWaitingContext";
-import {
-  createSalesOrdersHubConnection,
-  type ProcessingCompletedPayload,
-} from "@/lib/salesOrdersHub";
+import { useSignalRHub } from "@/contexts/SignalRHubContext";
 
 const MoveToRegionPage = () => {
   const { t } = useTranslation();
@@ -100,8 +99,10 @@ const MoveToRegionPage = () => {
   const [selectedRequest, setSelectedRequest] =
     useState<InventoryTransferRequestItem | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isConfirmModalVisible, setIsConfirmModalVisible] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<number[]>([]);
   const [waitingForSignalR, setWaitingForSignalR] = useSignalRWaiting("moveToRegion");
+  const { startListening } = useSignalRHub();
 
   const postMutation = usePostInventoryTransferRequests();
 
@@ -116,63 +117,71 @@ const MoveToRegionPage = () => {
     setPageIndex(0);
   };
 
-  const handleSubmitSelected = () => {
+  const handleOpenConfirmModal = () => {
     if (selectedRowKeys.length === 0) {
       message.warning(t("common.select"));
       return;
     }
+    setIsConfirmModalVisible(true);
+  };
+
+  const handleCloseConfirmModal = () => {
+    setIsConfirmModalVisible(false);
+  };
+
+  const handleSubmitSelected = () => {
     postMutation.mutate(selectedRowKeys, {
       onSuccess: () => {
         setWaitingForSignalR(true);
-        const connection = createSalesOrdersHubConnection();
-
-        const onDone = () => {
-          connection.stop().catch(() => {});
-          setSelectedRowKeys([]);
-          setWaitingForSignalR(false);
-        };
-
-        connection.on(
-          "ProcessingCompleted",
-          (payload: ProcessingCompletedPayload) => {
-            try {
-              if (!payload?.isSuccess) {
-                toast.error(payload?.message ?? t("error.somethingWentWrong"));
-                return;
-              }
-
-              if (payload.hasRequiredTransferExist) {
-                setRequiredTransfersNotification(true);
-                setCollectNotification(false);
-              } else {
-                setCollectNotification(true);
-                clearRequiredTransfersNotification();
-              }
-
-              queryClient.invalidateQueries({
-                queryKey: ["inventory-transfer-requests"],
-              });
-              toast.success(payload.message);
-            } finally {
-              onDone();
+        setSelectedRowKeys([]);
+        setIsConfirmModalVisible(false);
+        startListening("moveToRegion", {
+          onCompleted: (payload) => {
+            if (!payload?.isSuccess) {
+              toast.error(payload?.message ?? t("error.somethingWentWrong"));
+              return;
             }
-          }
-        );
-
-        connection.onclose(onDone);
-
-        connection
-          .start()
-          .catch(() => {
-            toast.error(t("error.couldNotConnect"));
-            onDone();
-          });
+            if (payload.hasRequiredTransferExist) {
+              setRequiredTransfersNotification(true);
+              setCollectNotification(false);
+            } else {
+              setCollectNotification(true);
+              clearRequiredTransfersNotification();
+            }
+            queryClient.invalidateQueries({
+              queryKey: ["inventory-transfer-requests"],
+            });
+            toast.success(payload.message);
+          },
+        });
       },
       onError: () => {
         message.error(t("error.somethingWentWrong"));
       },
     });
   };
+
+  const selectedRequests = useMemo(
+    () => requests.filter((r) => selectedRowKeys.includes(r.docEntry)),
+    [requests, selectedRowKeys]
+  );
+
+  // EWS: validate all lines of selected requests before API call
+  const ewsIssues = useMemo<EwsIssue[]>(() => {
+    const result: EwsIssue[] = [];
+    for (const req of selectedRequests) {
+      for (const line of req.stockTransferLines) {
+        const msgs = validateTransferLine(line);
+        if (msgs.length > 0) {
+          result.push({
+            label: `DocNum ${req.docNum} / ${line.itemCode || "—"}`,
+            messages: msgs,
+          });
+        }
+      }
+    }
+    return result;
+  }, [selectedRequests]);
 
   const handleViewLines = (request: InventoryTransferRequestItem) => {
     setSelectedRequest(request);
@@ -254,16 +263,17 @@ const MoveToRegionPage = () => {
       render: (_: unknown, __: InventoryTransferRequestLine, idx: number) => idx + 1,
     },
     {
-      title: t("creditMemos.itemCode"),
-      dataIndex: "itemCode",
-      key: "itemCode",
-      width: 120,
-      render: (val: string) => <span className="font-mono text-sm">{val}</span>,
-    },
-    {
       title: t("creditMemos.itemDescription"),
       dataIndex: "itemDescription",
       key: "itemDescription",
+      render: (val: string, record: InventoryTransferRequestLine) => (
+        <div>
+          <span>{val || "—"}</span>
+          {record.itemCode && (
+            <p className="font-mono text-xs text-gray-400 mt-0.5">{record.itemCode}</p>
+          )}
+        </div>
+      ),
     },
     {
       title: t("inventory.batchNumber"),
@@ -316,7 +326,7 @@ const MoveToRegionPage = () => {
         ]}
         actions={
           <Button
-            onClick={handleSubmitSelected}
+            onClick={handleOpenConfirmModal}
             disabled={selectedRowKeys.length === 0 || postMutation.isLoading}
             className="gap-2"
           >
@@ -485,6 +495,44 @@ const MoveToRegionPage = () => {
         )}
       </ModuleCard>
 
+      {/* Confirm + EWS modal */}
+      <Modal
+        title={t("sales_orders_create_relocation")}
+        open={isConfirmModalVisible}
+        onCancel={handleCloseConfirmModal}
+        width={900}
+        footer={[
+          <AntButton key="cancel" onClick={handleCloseConfirmModal}>
+            {t("common_cancel")}
+          </AntButton>,
+          <AntButton
+            key="submit"
+            type="primary"
+            loading={postMutation.isLoading}
+            onClick={handleSubmitSelected}
+          >
+            {t("sales_orders_move_to_next_step")}
+          </AntButton>,
+        ]}
+      >
+        <div className="space-y-4">
+          <EwsWarning issues={ewsIssues} />
+          <div className="p-4 bg-muted/30 rounded-lg">
+            <p className="text-sm text-muted-foreground">
+              {t("sales_orders_selected_orders_count", { count: selectedRequests.length })}
+            </p>
+          </div>
+          <Table
+            columns={columns.filter((col) => col.key !== "actions")}
+            dataSource={selectedRequests}
+            rowKey="docEntry"
+            pagination={false}
+            scroll={{ x: "max-content" }}
+          />
+        </div>
+      </Modal>
+
+      {/* Document lines view modal */}
       <Modal
         title={t("sales_orders_document_lines")}
         open={isModalVisible}

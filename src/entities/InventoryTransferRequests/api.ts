@@ -13,6 +13,7 @@ export interface InventoryTransferRequestLine {
   warehouseName?: string;
   uoMCode?: string;
   uoMName?: string;
+  barCode?: string | null;
   batchNumber?: string | null;
   batchQuantity?: number | null;
   batchExpiryDate?: string | null;

@@ -25,6 +25,8 @@ export interface CreditMemoLine {
   cancelItemType?: number | null;
   U_CancelItem: string | null;
   U_QuantityPerBoxLine: number | null;
+  U_BarCode?: string | null;
+  barCode?: string | null;
   batchNumbers: BatchNumber[];
   documentLinesBinAllocations: BinAllocation[];
   batchNumber?: string | null;

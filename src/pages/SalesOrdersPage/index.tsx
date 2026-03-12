@@ -12,12 +12,14 @@ import { ESalesOrderStatus } from "@/enums/salesOrder";
 import { useCollectNotification } from "@/contexts/CollectNotificationContext";
 import { useRequiredTransfersNotification } from "@/contexts/RequiredTransfersNotificationContext";
 import { useSignalRWaiting } from "@/contexts/SignalRWaitingContext";
-import { createSalesOrdersHubConnection, type ProcessingCompletedPayload } from "@/lib/salesOrdersHub";
+import { useSignalRHub } from "@/contexts/SignalRHubContext";
 import { Eye, Loader2, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import dayjs, { type Dayjs } from "dayjs";
+import { validateOrderLine, type EwsIssue } from "@/lib/ews";
+import { EwsWarning } from "@/components/ui/ews-warning";
 
 interface SalesOrdersPageProps {
   status: ESalesOrderStatus;
@@ -64,6 +66,7 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const [moveNextLoading, setMoveNextLoading] = useSignalRWaiting("salesOrders");
+  const { startListening } = useSignalRHub();
 
   // Debounce text inputs (DocNum, CardName)
   useEffect(() => {
@@ -143,18 +146,12 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
     // Close modal and clear selection as soon as the POST succeeds.
     handleCloseCreateModal();
     setSelectedRowKeys([]);
-    const connection = createSalesOrdersHubConnection();
-    const onDone = () => {
-      connection.stop().catch(() => {});
-      setMoveNextLoading(false);
-    };
-    connection.on("ProcessingCompleted", (payload: ProcessingCompletedPayload) => {
-      try {
+    startListening("salesOrders", {
+      onCompleted: (payload) => {
         if (!payload?.isSuccess) {
           toast.error(payload?.message ?? t("error.somethingWentWrong"));
           return;
         }
-
         if (payload.hasRequiredTransferExist) {
           setRequiredTransfersNotification(true);
           setCollectNotification(false);
@@ -162,26 +159,32 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
           setCollectNotification(true);
           clearRequiredTransfersNotification();
         }
-
         queryClient.invalidateQueries({ queryKey: ["sales-orders"] });
         toast.success(payload.message);
-      } finally {
-        onDone();
-      }
+      },
     });
-    connection.onclose(onDone);
-    connection.on("reconnecting", () => {});
-    try {
-      await connection.start();
-    } catch {
-      toast.error(t("error.couldNotConnect"));
-      onDone();
-    }
   };
 
   const selectedOrders = useMemo(() => {
     return salesOrders.filter((order) => selectedRowKeys.includes(order.docEntry));
   }, [salesOrders, selectedRowKeys]);
+
+  // EWS: validate all lines of selected orders before API call
+  const ewsIssues = useMemo<EwsIssue[]>(() => {
+    const result: EwsIssue[] = [];
+    for (const order of selectedOrders) {
+      for (const line of order.documentLines) {
+        const msgs = validateOrderLine(line);
+        if (msgs.length > 0) {
+          result.push({
+            label: `DocNum ${order.docNum} / ${line.itemCode || "—"}`,
+            messages: msgs,
+          });
+        }
+      }
+    }
+    return result;
+  }, [selectedOrders]);
 
   const rowSelection = {
     selectedRowKeys,
@@ -256,6 +259,14 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
       title: t("sales_orders_item_description"),
       dataIndex: "itemDescription",
       key: "itemDescription",
+      render: (val: string, record: SalesOrderDocumentLine) => (
+        <div>
+          <span>{val || "—"}</span>
+          {record.itemCode && (
+            <p className="font-mono text-xs text-gray-400 mt-0.5">{record.itemCode}</p>
+          )}
+        </div>
+      ),
     },
     {
       title: t("sales_orders_quantity"),
@@ -493,6 +504,8 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
         ]}
       >
         <div className="space-y-4">
+          <EwsWarning issues={ewsIssues} />
+
           <div className="p-4 bg-muted/30 rounded-lg">
             <p className="text-sm text-muted-foreground mb-2">
               {t("sales_orders_selected_orders_count", { count: selectedOrders.length })}

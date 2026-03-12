@@ -12,7 +12,7 @@ import {
 } from "@/entities/CreditMemos/api";
 import { EReturnReasonType } from "@/enums/returnReason";
 import { useSignalRWaiting } from "@/contexts/SignalRWaitingContext";
-import { createReturnsHubConnection, type ReturnCompletedPayload } from "@/lib/returnsHub";
+import { useSignalRHub } from "@/contexts/SignalRHubContext";
 import { useRequiredTransfersNotification } from "@/contexts/RequiredTransfersNotificationContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +38,8 @@ import type { ColumnsType } from "antd/es/table";
 import { ClearOutlined } from "@ant-design/icons";
 import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
+import { validateReturnLine, type EwsIssue } from "@/lib/ews";
+import { EwsWarning } from "@/components/ui/ews-warning";
 import { useQueryClient } from "react-query";
 import dayjs from "dayjs";
 
@@ -80,6 +82,7 @@ export default function CreditMemosDraftsPage() {
 
   const [lineReasons, setLineReasons] = useState<Record<number, number>>({});
   const [returnLoading, setReturnLoading] = useSignalRWaiting("returnDrafts");
+  const { startListening } = useSignalRHub();
 
   const returnMutation = useReturnMutation();
 
@@ -151,6 +154,16 @@ export default function CreditMemosDraftsPage() {
     detailLines.length > 0 &&
     detailLines.every((line) => lineReasons[line.lineNum] != null);
 
+  // EWS: validate lines before return submission
+  const ewsIssues = useMemo<EwsIssue[]>(() => {
+    return detailLines.flatMap((line) => {
+      const msgs = validateReturnLine(line);
+      return msgs.length > 0
+        ? [{ label: `Line ${line.lineNum + 1} / ${line.itemCode}`, messages: msgs }]
+        : [];
+    });
+  }, [detailLines]);
+
   const handleReturn = async () => {
     if (!selectedDocEntry || !allLinesHaveReason) return;
 
@@ -170,34 +183,17 @@ export default function CreditMemosDraftsPage() {
 
     handleCloseModal();
 
-    const connection = createReturnsHubConnection();
-    const onDone = () => {
-      connection.stop().catch(() => {});
-      setReturnLoading(false);
-    };
-
-    connection.on("ProcessingCompleted", (payload: ReturnCompletedPayload) => {
-      try {
-        if (!payload?.isSuccess) {
-          toast.error(payload?.message ?? t("error.somethingWentWrong"));
+    startListening("returnDrafts", {
+      onCompleted: (result) => {
+        if (!result?.isSuccess) {
+          toast.error(result?.message ?? t("error.somethingWentWrong"));
           return;
         }
-
         setRequiredTransfersNotification(true);
         queryClient.invalidateQueries({ queryKey: ["credit-memos"] });
-        toast.success(payload.message);
-      } finally {
-        onDone();
-      }
+        toast.success(result.message);
+      },
     });
-    connection.onclose(onDone);
-
-    try {
-      await connection.start();
-    } catch {
-      toast.error(t("error.couldNotConnect"));
-      onDone();
-    }
   };
 
   const columns: ColumnsType<CreditMemoItem> = [
@@ -497,6 +493,8 @@ export default function CreditMemosDraftsPage() {
               </Table>
             </div>
           ) : null}
+
+          <EwsWarning issues={ewsIssues} className="mx-0" />
 
           <DialogFooter>
             <Button variant="outline" onClick={handleCloseModal}>

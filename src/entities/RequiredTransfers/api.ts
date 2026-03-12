@@ -30,6 +30,7 @@ export interface RequiredTransferLine {
   quantityPerBox: number;
   itemCode: string;
   productName: string;
+  barcode?: string | null;
   expirationDate: string | null;
   batchNumber: string | null;
   createdAt: string;

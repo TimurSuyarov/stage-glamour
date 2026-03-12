@@ -48,8 +48,14 @@ export function getStoredEmployee(): LoginEmployee | null {
   }
 }
 
+export const ADMISSION_DRAFT_PREFIX = "glamour_admission_draft_";
+
 export function clearStoredAuth(): void {
   sessionStorage.removeItem(AUTH_TOKEN_KEY);
   sessionStorage.removeItem(AUTH_REFRESH_TOKEN_KEY);
   sessionStorage.removeItem(AUTH_EMPLOYEE_KEY);
+  // Clear all unsaved admission drafts
+  Object.keys(localStorage)
+    .filter((k) => k.startsWith(ADMISSION_DRAFT_PREFIX))
+    .forEach((k) => localStorage.removeItem(k));
 }

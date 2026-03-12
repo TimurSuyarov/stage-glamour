@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import Barcode from "react-barcode";
 import { PageHeader } from "@/components/ui/page-header";
 import { useTranslation } from "react-i18next";
 import {
@@ -436,19 +437,20 @@ export default function RequiredTransfersPage() {
                       <TableHead className="text-xs font-semibold uppercase">{t("requiredTransfers.targetBin")}</TableHead>
                       <TableHead className="text-xs font-semibold uppercase">{t("requiredTransfers.batchNumber")}</TableHead>
                       <TableHead className="text-xs font-semibold uppercase">{t("admission.expiryDate")}</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase">Barcode</TableHead>
                       <TableHead className="text-xs font-semibold uppercase w-28"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {linesLoading ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="h-24 text-center">
+                        <TableCell colSpan={8} className="h-24 text-center">
                           <Loader2 className="w-5 h-5 animate-spin mx-auto text-muted-foreground" />
                         </TableCell>
                       </TableRow>
                     ) : lines.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                        <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
                           {t("common.noData")}
                         </TableCell>
                       </TableRow>
@@ -470,6 +472,19 @@ export default function RequiredTransfersPage() {
                             {line.expirationDate
                               ? new Date(line.expirationDate).toLocaleDateString()
                               : "—"}
+                          </TableCell>
+                          <TableCell>
+                            {line.barcode ? (
+                              <Barcode
+                                value={line.barcode}
+                                displayValue={false}
+                                width={1}
+                                height={28}
+                                margin={0}
+                              />
+                            ) : (
+                              <span className="text-muted-foreground text-xs">—</span>
+                            )}
                           </TableCell>
                           <TableCell>
                             <Button

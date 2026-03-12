@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { PageHeader } from "@/components/ui/page-header";
 import { ModuleCard } from "@/components/ui/stat-card";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -36,6 +36,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
+import { ADMISSION_DRAFT_PREFIX } from "@/lib/authStorage";
 import {
   Eye,
   FileText,
@@ -180,6 +181,33 @@ function BinLocationSelect({
   );
 }
 
+// ─── Admission draft persistence (localStorage, keyed by docNum) ─────────────
+interface AdmissionDraftData {
+  items: Array<{ id: string; actualQty: number; expiryDate: string; cellLocation: string }>;
+  pendingEmployeeId: number | null;
+}
+
+const draftKey = (docNum: string) => `${ADMISSION_DRAFT_PREFIX}${docNum}`;
+
+function loadDraft(docNum: string): AdmissionDraftData | null {
+  try {
+    const raw = localStorage.getItem(draftKey(docNum));
+    return raw ? (JSON.parse(raw) as AdmissionDraftData) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveDraft(docNum: string, data: AdmissionDraftData) {
+  try {
+    localStorage.setItem(draftKey(docNum), JSON.stringify(data));
+  } catch {}
+}
+
+function clearDraft(docNum: string) {
+  localStorage.removeItem(draftKey(docNum));
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 const AdmissionPage = () => {
   const { t } = useTranslation();
@@ -201,7 +229,29 @@ const AdmissionPage = () => {
   const [pageIndex, setPageIndex] = useState(0);
 
   const pageSize = 20;
-  
+
+  // ── Debounced draft auto-save ─────────────────────────────────────────────
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!selectedAdmission || editedItems.length === 0) return;
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      saveDraft(selectedAdmission.documentNumber, {
+        items: editedItems.map(({ id, actualQty, expiryDate, cellLocation }) => ({
+          id,
+          actualQty: actualQty ?? 0,
+          expiryDate: expiryDate ?? "",
+          cellLocation: cellLocation ?? "",
+        })),
+        pendingEmployeeId,
+      });
+    }, 500);
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, [editedItems, pendingEmployeeId, selectedAdmission]);
+
   const filters: PurchaseInvoicesFilters = useMemo(() => {
     const f: PurchaseInvoicesFilters = { skip: pageIndex * pageSize };
     if (appliedFilters.DocNum != null) f.DocNum = appliedFilters.DocNum;
@@ -272,17 +322,38 @@ const AdmissionPage = () => {
     );
   }, [admissionsFromApi, searchQuery]);
 
-  // Open admission detail modal
+  // Open admission detail modal — restore draft if available
   const handleOpenAdmission = (admission: Admission) => {
     setSelectedAdmission(admission);
-    setEditedItems([...admission.items]);
     setShowValidationErrors(false);
     const empId = admission.assignedEmployeeId ?? null;
     setAssignedEmployeeId(empId);
-    setPendingEmployeeId(empId);
+
+    const draft = loadDraft(admission.documentNumber);
+    if (draft) {
+      // Merge saved overrides into live item list
+      const mergedItems = admission.items.map((item) => {
+        const d = draft.items.find((di) => di.id === item.id);
+        if (!d) return item;
+        const maxQty = item.remainingOpenQuantity ?? item.quantity;
+        const actualQty = Math.min(d.actualQty, maxQty);
+        return {
+          ...item,
+          actualQty,
+          expiryDate: d.expiryDate || item.expiryDate,
+          cellLocation: d.cellLocation || item.cellLocation,
+          status: (actualQty === maxQty ? "received" : actualQty > 0 ? "mismatch" : "pending") as AdmissionItem["status"],
+        };
+      });
+      setEditedItems(mergedItems);
+      setPendingEmployeeId(draft.pendingEmployeeId ?? empId);
+    } else {
+      setEditedItems([...admission.items]);
+      setPendingEmployeeId(empId);
+    }
   };
 
-  // Close modal
+  // Close modal — keep draft intact so it can be restored on reopen
   const handleCloseModal = () => {
     setSelectedAdmission(null);
     setEditedItems([]);
@@ -440,6 +511,7 @@ const AdmissionPage = () => {
     try {
       console.log(body);
       await fromInvoiceMutation.mutateAsync(body);
+      clearDraft(selectedAdmission.documentNumber); // remove draft only on success
       handleCloseModal();
       message.success(t("admission.completeAdmissionSuccess"));
     } catch (err) {
@@ -736,9 +808,6 @@ const AdmissionPage = () => {
                   <table className="w-full text-sm border-collapse min-w-[900px]">
                     <thead className="bg-muted/50">
                       <tr>
-                        <th className="px-3 py-2 text-left text-xs font-medium border-r border-border w-28">
-                          {t("common.itemCode")}
-                        </th>
                         <th className="px-3 py-2 text-left text-xs font-medium border-r border-border w-44">
                           {t("admission.product")}
                         </th>
@@ -777,15 +846,15 @@ const AdmissionPage = () => {
                               "bg-status-warning-bg/30"
                           )}
                         >
-                          <td className="px-3 py-3 border-r border-border w-28">
-                            <span className="font-mono text-xs text-muted-foreground">
-                              {item.itemCode ?? "—"}
-                            </span>
-                          </td>
                           <td className="px-3 py-3 border-r border-border w-44">
                             <p className="font-medium text-xs truncate max-w-[160px]" title={item.name || "—"}>
                               {item.name || "—"}
                             </p>
+                            {item.itemCode && (
+                              <p className="font-mono text-[11px] text-muted-foreground mt-0.5">
+                                {item.itemCode}
+                              </p>
+                            )}
                           </td>
                           <td className="px-3 py-3 text-center font-medium border-r border-border">
                             {item.quantity}

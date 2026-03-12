@@ -15,6 +15,7 @@ export interface SalesOrderDocumentLine {
   warehouseCode: string;
   unitsOfMeasurment: number;
   remainingOpenQuantity: number;
+  barCode?: string | null;
   batchNumber: string | null;
   batchQuantity: number | null;
   batchExpiryDate: string | null;

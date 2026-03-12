@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { CollectNotificationProvider } from "@/contexts/CollectNotificationContext";
 import { RequiredTransfersNotificationProvider } from "@/contexts/RequiredTransfersNotificationContext";
 import { SignalRWaitingProvider } from "@/contexts/SignalRWaitingContext";
+import { SignalRHubProvider } from "@/contexts/SignalRHubContext";
 import { Provider } from "react-redux";
 import store from "./redux/store/store";
 
@@ -52,6 +53,7 @@ const App = () => (
         <CollectNotificationProvider>
           <RequiredTransfersNotificationProvider>
             <SignalRWaitingProvider>
+              <SignalRHubProvider>
               <TooltipProvider>
               <Toaster />
               <Sonner />
@@ -100,6 +102,7 @@ const App = () => (
                 </Routes>
               </BrowserRouter>
               </TooltipProvider>
+              </SignalRHubProvider>
             </SignalRWaitingProvider>
           </RequiredTransfersNotificationProvider>
         </CollectNotificationProvider>
