@@ -68,6 +68,7 @@ export interface BinLocationItemCount {
   binAbsEntry: number;
   warehouseCode: string;
   batchNumber: string;
+  batchExpiryDate?: string | null;
   onHand: number;
 }
 
@@ -110,5 +111,65 @@ export const useBinLocationItemCount = (filters?: BinLocationItemCountFilters) =
     queryKey: ["bin-locations", "item-count", filters ?? {}],
     queryFn: () => fetchBinLocationItemCount(filters),
     refetchOnWindowFocus: false,
+  });
+};
+
+// ─── Item statistics (cells page: /bin-locations/item-statistics) ───────────
+export interface BinLocationItemStatisticsEntry {
+  itemCode: string;
+  itemName: string;
+  barCode: string | null;
+  batchNumber: string;
+  expiryDate: string;
+  manufactureDate: string;
+  onHandQuantity: number;
+}
+
+export interface BinLocationItemStatisticsItem {
+  binCode: string;
+  binAbsEntry: number;
+  warehouseCode: string;
+  zone: string | null;
+  warehouseName: string | null;
+  binItems: BinLocationItemStatisticsEntry[];
+}
+
+export interface BinLocationItemStatisticsResponse {
+  items: BinLocationItemStatisticsItem[];
+}
+
+export interface BinLocationItemStatisticsFilters {
+  ItemCode?: string;
+  ItemDesc?: string;
+  WarehouseCode?: string;
+  /** Zone letter: A, B, D, G, N, P, Other */
+  Zone?: string;
+  PageSize?: number;
+  Skip?: number;
+}
+
+const fetchBinLocationItemStatistics = async (
+  filters?: BinLocationItemStatisticsFilters
+): Promise<BinLocationItemStatisticsItem[]> => {
+  const params = new URLSearchParams();
+  if (filters?.ItemCode != null) params.set("ItemCode", filters.ItemCode);
+  if (filters?.ItemDesc != null) params.set("ItemDesc", filters.ItemDesc);
+  if (filters?.WarehouseCode != null) params.set("WarehouseCode", filters.WarehouseCode);
+  if (filters?.Zone != null) params.set("Zone", filters.Zone);
+  if (filters?.PageSize != null) params.set("PageSize", String(filters.PageSize));
+  if (filters?.Skip != null) params.set("Skip", String(filters.Skip));
+  const query = params.toString() ? `?${params.toString()}` : "";
+  const { data } = await request.get<BinLocationItemStatisticsResponse>(
+    `/bin-locations/item-statistics${query}`
+  );
+  return data?.items ?? [];
+};
+
+export const useBinLocationItemStatistics = (filters?: BinLocationItemStatisticsFilters) => {
+  return useQuery({
+    queryKey: ["bin-locations", "item-statistics", filters ?? {}],
+    queryFn: () => fetchBinLocationItemStatistics(filters),
+    refetchOnWindowFocus: false,
+    enabled: true,
   });
 };

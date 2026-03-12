@@ -99,13 +99,16 @@ export default function InventoryPage() {
       title: t("inventory.itemDesc"),
       dataIndex: "itemDesc",
       key: "itemDesc",
+      width: 230,
+      ellipsis: true,
     },
     {
-      title: t("inventory.warehouseCode"),
-      dataIndex: "warehouseCode",
-      key: "warehouseCode",
-      width: 100,
-      align: "center",
+      title: t("admission.expiryDate"),
+      dataIndex: "batchExpiryDate",
+      key: "batchExpiryDate",
+      width: 120,
+      render: (v: string | null | undefined) =>
+        v ? new Date(v).toLocaleDateString() : "—",
     },
     {
       title: t("inventory.binCode"),
@@ -123,7 +126,7 @@ export default function InventoryPage() {
       title: t("inventory.onHand"),
       dataIndex: "onHand",
       key: "onHand",
-      width: 100,
+      width: 140,
       align: "right",
     },
   ];
@@ -262,13 +265,16 @@ export default function InventoryPage() {
           </div>
         ) : (
           <>
-            <Table
-              columns={columns}
-              dataSource={items}
-              rowKey={(_, idx) => `${_.itemCode}-${_.binCode}-${_.batchNumber}-${idx}`}
-              pagination={false}
-              scroll={{ x: "max-content" }}
-            />
+            <style>{`.inventory-table-fixed-layout .ant-table { table-layout: fixed; }`}</style>
+            <div className="inventory-table-fixed-layout">
+              <Table
+                columns={columns}
+                dataSource={items}
+                rowKey={(_, idx) => `${_.itemCode}-${_.binCode}-${_.batchNumber}-${idx}`}
+                pagination={false}
+                scroll={{ x: 1030 }}
+              />
+            </div>
 
             {(items.length > 0 || pageIndex > 0) && (
               <div className="flex items-center justify-between border-t border-border px-4 py-3 mt-0">

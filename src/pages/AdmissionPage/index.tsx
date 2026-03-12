@@ -792,7 +792,7 @@ const AdmissionPage = () => {
                           </td>
                           <td className="px-3 py-3 text-center border-r border-border tabular-nums">
                             {item.quantityPerPackage != null && item.quantityPerPackage > 0
-                              ? Math.floor(item.quantity / item.quantityPerPackage)
+                              ? Number((item.quantity / item.quantityPerPackage).toFixed(1))
                               : "—"}
                           </td>
                           <td className="px-3 py-3 border-r border-border">

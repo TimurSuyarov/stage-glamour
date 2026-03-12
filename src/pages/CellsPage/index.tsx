@@ -5,116 +5,127 @@ import { ClearOutlined } from "@ant-design/icons";
 import { PageHeader } from "@/components/ui/page-header";
 import { ModuleCard } from "@/components/ui/stat-card";
 import { useTranslation } from "react-i18next";
-import { useBinLocations, type BinLocationItem, type BinLocationsFilters } from "@/entities/BinLocations/api";
-import { EZone } from "@/enums/zone";
+import {
+  useBinLocationItemStatistics,
+  type BinLocationItemStatisticsItem,
+  type BinLocationItemStatisticsFilters,
+  type BinLocationItemStatisticsEntry,
+} from "@/entities/BinLocations/api";
 import { Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 const ZONE_OPTIONS = [
-  { value: EZone.A, label: "A" },
-  { value: EZone.B, label: "B" },
-  { value: EZone.D, label: "D" },
-  { value: EZone.G, label: "G" },
-  { value: EZone.N, label: "N" },
-  { value: EZone.P, label: "P" },
-  { value: EZone.Other, label: "Other" },
+  { value: "A", label: "A" },
+  { value: "B", label: "B" },
+  { value: "D", label: "D" },
+  { value: "G", label: "G" },
+  { value: "N", label: "N" },
+  { value: "P", label: "P" },
+  { value: "Other", label: "Other" },
 ];
+
+const pageSize = 20;
 
 const CellsPage = () => {
   const { t } = useTranslation();
-  
-  // Filter state
-  const [filterBinCode, setFilterBinCode] = useState("");
-  const [filterZone, setFilterZone] = useState<number | undefined>(undefined);
-  const [appliedFilters, setAppliedFilters] = useState<BinLocationsFilters>({});
+
+  const [filterItemCode, setFilterItemCode] = useState("");
+  const [filterItemDesc, setFilterItemDesc] = useState("");
+  const [filterWarehouseCode, setFilterWarehouseCode] = useState("");
+  const [filterZone, setFilterZone] = useState<string | undefined>(undefined);
+  const [appliedFilters, setAppliedFilters] = useState<BinLocationItemStatisticsFilters>({});
   const [pageIndex, setPageIndex] = useState(0);
-  
-  const pageSize = 20;
-  
-  const filters: BinLocationsFilters = useMemo(() => {
-    const f: BinLocationsFilters = { skip: pageIndex * pageSize };
-    if (appliedFilters.BinCode) f.BinCode = appliedFilters.BinCode;
-    if (appliedFilters.Zone != null) f.Zone = appliedFilters.Zone;
-    return f;
-  }, [appliedFilters, pageIndex, pageSize]);
-  
-  const { data: binLocations = [], isLoading, error } = useBinLocations(filters);
-  const hasNextPage = binLocations.length >= pageSize;
+
+  const filters: BinLocationItemStatisticsFilters = useMemo(
+    () => ({
+      ...appliedFilters,
+      Zone: appliedFilters.Zone,
+      PageSize: pageSize,
+      Skip: pageIndex * pageSize,
+    }),
+    [appliedFilters, pageIndex]
+  );
+
+  const { data: items = [], isLoading, error } = useBinLocationItemStatistics(filters);
+  const hasNextPage = items.length >= pageSize;
   const hasPrevPage = pageIndex > 0;
   const rangeStart = pageIndex * pageSize + 1;
-  const rangeEnd = (pageIndex + 1) * pageSize;
-  
+  const rangeEnd = pageIndex * pageSize + items.length;
+
   const handleApplyFilters = () => {
     setPageIndex(0);
     setAppliedFilters({
-      BinCode: filterBinCode.trim() || undefined,
+      ItemCode: filterItemCode.trim() || undefined,
+      ItemDesc: filterItemDesc.trim() || undefined,
+      WarehouseCode: filterWarehouseCode.trim() || undefined,
       Zone: filterZone,
     });
   };
 
   const handleClearFilters = () => {
-    setFilterBinCode("");
+    setFilterItemCode("");
+    setFilterItemDesc("");
+    setFilterWarehouseCode("");
     setFilterZone(undefined);
     setAppliedFilters({});
     setPageIndex(0);
   };
 
-  const columns: ColumnsType<BinLocationItem> = [
+  const binItemColumns: ColumnsType<BinLocationItemStatisticsEntry> = [
+    { title: t("inventoryCountings.itemCode"), dataIndex: "itemCode", key: "itemCode", width: 120 },
+    { title: t("inventoryCountings.itemDescription"), dataIndex: "itemName", key: "itemName", ellipsis: true },
+    { title: t("returns.batchNumber"), dataIndex: "batchNumber", key: "batchNumber", width: 140 },
+    {
+      title: t("admission.expiryDate"),
+      dataIndex: "expiryDate",
+      key: "expiryDate",
+      width: 120,
+      render: (v: string) => (v ? new Date(v).toLocaleDateString() : "—"),
+    },
+    {
+      title: t("common.quantity"),
+      dataIndex: "onHandQuantity",
+      key: "onHandQuantity",
+      width: 100,
+      align: "right" as const,
+    },
+  ];
+
+  const columns: ColumnsType<BinLocationItemStatisticsItem> = [
     {
       title: "#",
       key: "index",
       width: 60,
       align: "center" as const,
-      render: (_: any, __: BinLocationItem, index: number) => {
-        return pageIndex * pageSize + index + 1;
-      },
+      render: (_: unknown, __: BinLocationItemStatisticsItem, index: number) =>
+        pageIndex * pageSize + index + 1,
+    },
+    { title: t("cells_bin_code"), dataIndex: "binCode", key: "binCode", width: 120 },
+    { title: t("cells_abs_entry"), dataIndex: "binAbsEntry", key: "binAbsEntry", width: 100 },
+    { title: t("cells_warehouse"), dataIndex: "warehouseCode", key: "warehouseCode", width: 100 },
+    {
+      title: t("cells_filter_zone"),
+      dataIndex: "zone",
+      key: "zone",
+      width: 80,
+      render: (v: string | null) => v ?? "—",
     },
     {
-      title: t("cells_abs_entry"),
-      dataIndex: "absEntry",
-      key: "absEntry",
-      width: 120,
+      title: t("purchaseDelivery.warehouseName"),
+      dataIndex: "warehouseName",
+      key: "warehouseName",
+      width: 180,
+      render: (v: string | null) => v ?? "—",
     },
     {
-      title: t("cells_warehouse"),
-      dataIndex: "warehouse",
-      key: "warehouse",
-      width: 150,
-    },
-    {
-      title: t("cells_sublevel1"),
-      dataIndex: "sublevel1",
-      key: "sublevel1",
-      width: 150,
-    },
-    {
-      title: t("cells_bin_code"),
-      dataIndex: "binCode",
-      key: "binCode",
-      width: 150,
-    },
-    {
-      title: t("cells_bar_code"),
-      dataIndex: "barCode",
-      key: "barCode",
-      width: 150,
-      render: (barCode: string | null) => barCode || "—",
-    },
-    {
-      title: t("cells_minimum_qty"),
-      dataIndex: "minimumQty",
-      key: "minimumQty",
-      width: 120,
+      title: t("common.quantity"),
+      key: "binItemsCount",
+      width: 100,
       align: "right" as const,
-    },
-    {
-      title: t("cells_maximum_qty"),
-      dataIndex: "maximumQty",
-      key: "maximumQty",
-      width: 120,
-      align: "right" as const,
+      render: (_: unknown, record: BinLocationItemStatisticsItem) =>
+        record.binItems?.length ?? 0,
     },
   ];
 
@@ -127,13 +138,31 @@ const CellsPage = () => {
 
       <ModuleCard>
         {/* Filters */}
-        <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+        <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
           <div className="space-y-2">
-            <Label className="text-xs">{t("cells_filter_bin_code")}</Label>
+            <Label className="text-xs">{t("common.itemCode")}</Label>
             <Input
-              placeholder={t("cells_filter_bin_code")}
-              value={filterBinCode}
-              onChange={(e) => setFilterBinCode(e.target.value)}
+              placeholder={t("common.search")}
+              value={filterItemCode}
+              onChange={(e) => setFilterItemCode(e.target.value)}
+              className="h-9"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs">{t("inventoryCountings.itemDescription")}</Label>
+            <Input
+              placeholder={t("common.search")}
+              value={filterItemDesc}
+              onChange={(e) => setFilterItemDesc(e.target.value)}
+              className="h-9"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs">{t("purchaseDelivery.warehouseCode")}</Label>
+            <Input
+              placeholder={t("common.search")}
+              value={filterWarehouseCode}
+              onChange={(e) => setFilterWarehouseCode(e.target.value)}
               className="h-9"
             />
           </div>
@@ -176,14 +205,25 @@ const CellsPage = () => {
           <>
             <Table
               columns={columns}
-              dataSource={binLocations}
-              rowKey="id"
+              dataSource={items}
+              rowKey={(row) => `${row.binAbsEntry}-${row.binCode}`}
               pagination={false}
               scroll={{ x: "max-content" }}
+              expandable={{
+                expandedRowRender: (record) => (
+                  <Table
+                    size="small"
+                    columns={binItemColumns}
+                    dataSource={record.binItems ?? []}
+                    rowKey={(_, i) => `${record.binAbsEntry}-${i}`}
+                    pagination={false}
+                  />
+                ),
+              }}
             />
 
             {/* Custom Pagination */}
-            {(binLocations.length > 0 || pageIndex > 0) && (
+            {(items.length > 0 || pageIndex > 0) && (
               <div className="flex items-center justify-between border-t border-border px-4 py-3 mt-0">
                 <div className="text-sm text-muted-foreground">
                   {t("cells_showing_range", {
