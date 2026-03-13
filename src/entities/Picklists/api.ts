@@ -10,12 +10,14 @@ export interface PicklistLine {
   isWholePack: boolean;
   quantityInPack: number | null;
   requestedQty: number;
+  totalQty?: number | null;
   allocatedQty: number;
   pickedQty: number;
   requiredTransferQty: number;
   expirationDate: string | null;
   batchNumber?: string | null;
   status: number;
+  barcode?: string | null;
 }
 
 export interface PicklistItem {
@@ -115,22 +117,41 @@ export const useAssignPicklistEmployee = () => {
   });
 };
 
-const postValidationScan = async (
+const fetchValidationItems = async (docEntry: number): Promise<PicklistLine[]> => {
+  const { data } = await request.get<PicklistLine[]>(`/validation/${docEntry}/items`);
+  return Array.isArray(data) ? data : [];
+};
+
+export const useValidationItems = (docEntry: number | null) => {
+  return useQuery({
+    queryKey: ["validation", "items", docEntry],
+    queryFn: () => fetchValidationItems(docEntry!),
+    refetchOnWindowFocus: false,
+    enabled: docEntry != null,
+  });
+};
+
+const postValidationScanByBarcode = async (
   docEntry: number,
-  lineId: number
+  barcode: string
 ): Promise<unknown> => {
-  const { data } = await request.post(`/validation/${docEntry}/scan/${lineId}`);
+  const { data } = await request.post(
+    `/validation/${docEntry}/scan/barcode/${encodeURIComponent(barcode)}`
+  );
   return data;
 };
 
 export const useValidationScan = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (vars: { docEntry: number; lineId: number }) =>
-      postValidationScan(vars.docEntry, vars.lineId),
+    mutationFn: (vars: { docEntry: number; barcode: string }) =>
+      postValidationScanByBarcode(vars.docEntry, vars.barcode),
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ["picklists"] });
       queryClient.invalidateQueries({ queryKey: ["picklists", vars.docEntry] });
+      queryClient.invalidateQueries({
+        queryKey: ["validation", "items", vars.docEntry],
+      });
     },
   });
 };

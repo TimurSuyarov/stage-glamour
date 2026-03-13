@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { Table, Modal, Button as AntButton, Select } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { PageHeader } from "@/components/ui/page-header";
@@ -14,6 +14,7 @@ import {
   useDetachPicklist,
   useAssignValidationValidator,
   useDetachValidation,
+  useValidationItems,
   type PicklistItem,
   type PicklistLine,
   type PicklistsFilters,
@@ -100,6 +101,7 @@ export default function PicklistsPage({
   const [selectedDocEntry, setSelectedDocEntry] = useState<number | null>(null);
   const [deliveryPackageCount, setDeliveryPackageCount] = useState<number>(0);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null);
+  const barcodeInputRef = useRef<HTMLInputElement>(null);
 
   const assignPicklist = useAssignPicklist();
   const assignPicklistEmployee = useAssignPicklistEmployee();
@@ -119,18 +121,30 @@ export default function PicklistsPage({
   );
   const { data: picklists = [], isLoading, error } = usePicklists(filters);
   const { data: picklistDetail, isLoading: detailLoading } = usePicklistByDocEntry(selectedDocEntry);
+  const { data: validationItems = [] } = useValidationItems(
+    isValidationMode ? selectedDocEntry : null
+  );
+
+  const currentLines: PicklistLine[] =
+    (isValidationMode ? validationItems : picklistDetail?.lines) ?? [];
 
   const allLinesValidated =
-    !!picklistDetail &&
-    (picklistDetail.lines ?? []).length > 0 &&
-    (picklistDetail.lines ?? []).every(
-      (line) => line.status === EPickListLineStatus.Validated
-    );
+    currentLines.length > 0 &&
+    currentLines.every((line) => line.status === EPickListLineStatus.Validated);
 
   const hasNextPage = picklists.length >= PAGE_SIZE;
   const hasPrevPage = pageIndex > 0;
   const rangeStart = pageIndex * PAGE_SIZE + 1;
   const rangeEnd = pageIndex * PAGE_SIZE + picklists.length;
+
+  useEffect(() => {
+    if (isValidationMode && selectedDocEntry != null) {
+      const timer = setTimeout(() => {
+        barcodeInputRef.current?.focus();
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [isValidationMode, selectedDocEntry]);
 
   const handleViewDetail = (docEntry: number) => {
     setSelectedDocEntry(docEntry);
@@ -140,6 +154,55 @@ export default function PicklistsPage({
     setSelectedDocEntry(null);
     setDeliveryPackageCount(0);
     setSelectedEmployeeId(null);
+  };
+
+  const handleBarcodeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    const value = e.currentTarget.value.trim();
+    e.currentTarget.value = "";
+    if (!value || !isValidationMode || !picklistDetail) return;
+
+    const line = currentLines.find((l) => (l.barcode ?? "").trim() === value);
+
+    if (!line) {
+      message.warning(t("validation.barcodeNotFound"));
+      return;
+    }
+
+    if (line.status === EPickListLineStatus.Validated) {
+      message.warning(t("validation.alreadyValidated"));
+      return;
+    }
+
+    if (!picklistDetail.assigneeName || validationScan.isLoading) {
+      return;
+    }
+
+    validationScan.mutate(
+      {
+        docEntry: picklistDetail.id,
+        barcode: value,
+      },
+      {
+        onSuccess: () => {
+          message.success(t("common.success"));
+        },
+        onError: () => {
+          message.error(t("error.somethingWentWrong"));
+        },
+      }
+    );
+  };
+
+  const handleModalContentClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest("input, textarea, [contenteditable], .ant-select")) {
+      return;
+    }
+    if (isValidationMode && selectedDocEntry != null) {
+      barcodeInputRef.current?.focus();
+    }
   };
 
   const columns: ColumnsType<PicklistItem> = [
@@ -214,35 +277,31 @@ export default function PicklistsPage({
 
   const baseLineColumns: ColumnsType<PicklistLine> = [
     { title: "#", key: "index", width: 60, align: "center", render: (_: unknown, __: PicklistLine, idx: number) => idx + 1 },
-    { title: t("picklist_line_product_name"), dataIndex: "productName", key: "productName", width: 220 },
-    { title: t("picklist_line_bin_code"), dataIndex: "binCode", key: "binCode", width: 120 },
+    {
+      title: t("picklist_line_product_name"),
+      dataIndex: "productName",
+      key: "productName",
+      width: 260,
+      render: (_: string, record: PicklistLine) => (
+        <div className="space-y-0.5">
+          <p className="font-medium">{record.productName}</p>
+          <p className="text-xs text-muted-foreground font-mono">{record.itemCode}</p>
+        </div>
+      ),
+    },
     {
       title: t("picklist_line_requested_qty"),
       dataIndex: "requestedQty",
       key: "requestedQty",
       width: 100,
       render: (val: number, record: PicklistLine) => {
+        const qty = record.totalQty ?? val;
         if (record.isWholePack && record.quantityInPack) {
-          const boxes = val / record.quantityInPack;
-          return `${val} (📦 ${boxes})`;
+          const boxes = qty / record.quantityInPack;
+          return `${qty} (📦 ${boxes})`;
         }
-        return val;
+        return qty;
       },
-    },
-    {
-      title: t("picklist_line_batch_number"),
-      dataIndex: "batchNumber",
-      key: "batchNumber",
-      width: 140,
-      render: (val: string | null | undefined) => val ?? "—",
-    },
-    {
-      title: t("admission.expiryDate"),
-      dataIndex: "expirationDate",
-      key: "expirationDate",
-      width: 130,
-      render: (val: string | null | undefined) =>
-        val ? new Date(val).toLocaleDateString() : "—",
     },
     {
       title: t("picklist_line_status"),
@@ -273,7 +332,8 @@ export default function PicklistsPage({
           );
         }
         const noAssignee = !picklistDetail?.assigneeName;
-        const disabled = validationScan.isLoading || noAssignee;
+        const noBarcode = !line.barcode;
+        const disabled = validationScan.isLoading || noAssignee || noBarcode;
         return (
           <Button
             type="button"
@@ -285,7 +345,7 @@ export default function PicklistsPage({
               validationScan.mutate(
                 {
                   docEntry: picklistDetail.id,
-                  lineId: line.id,
+                  barcode: (line.barcode ?? "").trim(),
                 },
                 {
                   onSuccess: () => {
@@ -450,7 +510,21 @@ export default function PicklistsPage({
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
         ) : picklistDetail ? (
-          <div className="space-y-4">
+          <div
+            className="space-y-4"
+            onClick={handleModalContentClick}
+            role="presentation"
+          >
+            {isValidationMode && (
+              <input
+                ref={barcodeInputRef}
+                type="text"
+                autoComplete="off"
+                aria-hidden
+                className="absolute left-[-9999px] w-px h-px opacity-0 overflow-hidden"
+                onKeyDown={handleBarcodeKeyDown}
+              />
+            )}
             <div className="grid grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg">
               <div className="flex flex-wrap items-center gap-3">
                 <div>
@@ -565,7 +639,7 @@ export default function PicklistsPage({
               </div>
             </div>
             {(() => {
-              const lines = picklistDetail.lines ?? [];
+              const lines = currentLines;
               const sortedLines = [...lines].sort((a, b) => {
                 const aValidated = a.status === EPickListLineStatus.Validated;
                 const bValidated = b.status === EPickListLineStatus.Validated;

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { PageHeader } from "@/components/ui/page-header";
 import { ModuleCard } from "@/components/ui/stat-card";
 import { useTranslation } from "react-i18next";
@@ -81,6 +81,9 @@ export default function CreditMemosDraftsPage() {
   const [appliedFilters, setAppliedFilters] = useState<CreditMemosFilters>({});
 
   const [lineReasons, setLineReasons] = useState<Record<number, number>>({});
+  const [barcodeFilter, setBarcodeFilter] = useState("");
+  const [scannerBuffer, setScannerBuffer] = useState("");
+  const barcodeInputRef = useRef<HTMLInputElement | null>(null);
   const [returnLoading, setReturnLoading] = useSignalRWaiting("returnDrafts");
   const { startListening } = useSignalRHub();
 
@@ -150,6 +153,12 @@ export default function CreditMemosDraftsPage() {
   };
 
   const detailLines = detail?.documentLines ?? [];
+  const filteredDetailLines = barcodeFilter
+    ? detailLines.filter((line) => {
+        const code = (line.U_BarCode ?? line.barCode ?? "").trim();
+        return code === barcodeFilter;
+      })
+    : detailLines;
   const allLinesHaveReason =
     detailLines.length > 0 &&
     detailLines.every((line) => lineReasons[line.lineNum] != null);
@@ -163,6 +172,45 @@ export default function CreditMemosDraftsPage() {
         : [];
     });
   }, [detailLines]);
+
+  useEffect(() => {
+    if (selectedDocEntry != null && detail && barcodeInputRef.current) {
+      const timer = setTimeout(() => {
+        barcodeInputRef.current?.focus();
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [selectedDocEntry, detail]);
+
+  const handleBarcodeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const value = scannerBuffer.trim();
+      setScannerBuffer("");
+      setBarcodeFilter(value);
+      return;
+    }
+    if (e.key.length === 1) {
+      setScannerBuffer((prev) => prev + e.key);
+    }
+    if (e.key === "Backspace") {
+      setScannerBuffer((prev) => prev.slice(0, -1));
+    }
+  };
+
+  const handleClearBarcode = () => {
+    setBarcodeFilter("");
+    setScannerBuffer("");
+    barcodeInputRef.current?.focus();
+  };
+
+  const handleModalContentClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    if (target.closest("input, textarea, [contenteditable], .ant-picker")) return;
+    if (selectedDocEntry != null && detail) {
+      barcodeInputRef.current?.focus();
+    }
+  };
 
   const handleReturn = async () => {
     if (!selectedDocEntry || !allLinesHaveReason) return;
@@ -429,68 +477,95 @@ export default function CreditMemosDraftsPage() {
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
             </div>
           ) : detail ? (
-            <div className="border rounded-lg overflow-auto flex-1 min-h-0">
-              <Table>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="text-xs font-semibold uppercase w-12">#</TableHead>
-                    <TableHead className="text-xs font-semibold uppercase">{t("creditMemos.itemDescription")}</TableHead>
-                    <TableHead className="text-xs font-semibold uppercase w-16">{t("common.quantity")}</TableHead>
-                    <TableHead className="text-xs font-semibold uppercase">{t("returns.batchNumber")}</TableHead>
-                    <TableHead className="text-xs font-semibold uppercase">{t("admission.expiryDate")}</TableHead>
-                    <TableHead className="text-xs font-semibold uppercase">{t("returns.condition")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {detailLines.map((line, idx) => {
-                    const batch = line.batchNumbers?.[0];
-                    const selectedReason = lineReasons[line.lineNum];
-                    return (
-                      <TableRow key={line.lineNum}>
-                        <TableCell className="font-mono text-sm">{idx + 1}</TableCell>
-                        <TableCell className="max-w-[240px]">
-                          <div className="font-medium truncate" title={line.itemDescription}>
-                            {line.itemDescription}
-                          </div>
-                          <div className="text-xs text-muted-foreground">{line.itemCode}</div>
-                        </TableCell>
-                        <TableCell className="font-semibold text-center">{line.quantity}</TableCell>
-                        <TableCell className="text-sm">
-                          {batch?.batchNumber ?? "—"}
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          {batch?.expiryDate
-                            ? new Date(batch.expiryDate).toLocaleDateString()
-                            : "—"}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1.5">
-                            {REASON_BUTTONS.map(({ reason, labelKey, icon: Icon, activeClass }) => {
-                              const isActive = selectedReason === reason;
-                              return (
-                                <button
-                                  key={reason}
-                                  type="button"
-                                  onClick={() => setReason(line.lineNum, reason)}
-                                  className={cn(
-                                    "inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors",
-                                    isActive
-                                      ? activeClass
-                                      : "border-border bg-background text-muted-foreground hover:bg-muted"
-                                  )}
-                                >
-                                  <Icon className="w-3.5 h-3.5" />
-                                  {t(labelKey)}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+            <div
+              className="flex flex-col gap-3 flex-1 min-h-0"
+              onClick={handleModalContentClick}
+              role="presentation"
+            >
+              <div className="flex items-center gap-2">
+                <Input
+                  ref={barcodeInputRef}
+                  value={barcodeFilter}
+                  readOnly
+                  placeholder="Scan barcode to filter"
+                  onKeyDown={handleBarcodeKeyDown}
+                  className="h-7 max-w-xs text-sm"
+                />
+                {barcodeFilter && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-9 px-3 whitespace-nowrap"
+                    onClick={handleClearBarcode}
+                  >
+                    {t("common.clearFilters")}
+                  </Button>
+                )}
+              </div>
+              <div className="border rounded-lg overflow-auto flex-1 min-h-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="text-xs font-semibold uppercase w-12">#</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase">{t("creditMemos.itemDescription")}</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase w-16">{t("common.quantity")}</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase">{t("returns.batchNumber")}</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase">{t("admission.expiryDate")}</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase">{t("returns.condition")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredDetailLines.map((line, idx) => {
+                      const batch = line.batchNumbers?.[0];
+                      const selectedReason = lineReasons[line.lineNum];
+                      return (
+                        <TableRow key={line.lineNum}>
+                          <TableCell className="font-mono text-sm">{idx + 1}</TableCell>
+                          <TableCell className="max-w-[240px]">
+                            <div className="font-medium truncate" title={line.itemDescription}>
+                              {line.itemDescription}
+                            </div>
+                            <div className="text-xs text-muted-foreground">{line.itemCode}</div>
+                          </TableCell>
+                          <TableCell className="font-semibold text-center">{line.quantity}</TableCell>
+                          <TableCell className="text-sm">
+                            {batch?.batchNumber ?? "—"}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {batch?.expiryDate
+                              ? new Date(batch.expiryDate).toLocaleDateString()
+                              : "—"}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1.5">
+                              {REASON_BUTTONS.map(({ reason, labelKey, icon: Icon, activeClass }) => {
+                                const isActive = selectedReason === reason;
+                                return (
+                                  <button
+                                    key={reason}
+                                    type="button"
+                                    onClick={() => setReason(line.lineNum, reason)}
+                                    className={cn(
+                                      "inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors",
+                                      isActive
+                                        ? activeClass
+                                        : "border-border bg-background text-muted-foreground hover:bg-muted"
+                                    )}
+                                  >
+                                    <Icon className="w-3.5 h-3.5" />
+                                    {t(labelKey)}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           ) : null}
 

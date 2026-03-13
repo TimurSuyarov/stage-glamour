@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable, Column } from '@/components/ui/data-table';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -49,6 +49,9 @@ export default function ReturnsPage() {
   const [selectedOrderId, setSelectedOrderId] = useState<string>('');
   const [returnDraft, setReturnDraft] = useState<ReturnDraft | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [barcodeFilter, setBarcodeFilter] = useState('');
+  const [scannerBuffer, setScannerBuffer] = useState('');
+  const barcodeInputRef = useRef<HTMLInputElement>(null);
 
   const canManage = hasPermission('return', 'manage');
 
@@ -69,6 +72,8 @@ export default function ReturnsPage() {
           condition: null,
         })),
       });
+      setBarcodeFilter('');
+      setScannerBuffer('');
     }
   };
 
@@ -98,6 +103,47 @@ export default function ReturnsPage() {
   };
 
   const isValidReturn = returnDraft && returnDraft.items.some(i => i.quantity > 0 && i.condition);
+
+  useEffect(() => {
+    if (showCreateDialog && returnDraft && barcodeInputRef.current) {
+      const timer = setTimeout(() => {
+        barcodeInputRef.current?.focus();
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [showCreateDialog, returnDraft]);
+
+  const handleBarcodeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const value = scannerBuffer.trim();
+      setScannerBuffer('');
+      setBarcodeFilter(value);
+      return;
+    }
+    if (e.key.length === 1) {
+      setScannerBuffer(prev => prev + e.key);
+    }
+    if (e.key === 'Backspace') {
+      setScannerBuffer(prev => prev.slice(0, -1));
+    }
+  };
+
+  const handleClearBarcode = () => {
+    setBarcodeFilter('');
+    setScannerBuffer('');
+    barcodeInputRef.current?.focus();
+  };
+
+  const handleItemsContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('input, textarea, [contenteditable], .ant-select')) {
+      return;
+    }
+    if (showCreateDialog && returnDraft) {
+      barcodeInputRef.current?.focus();
+    }
+  };
 
   const handleCreateReturn = () => {
     console.log('Creating return:', returnDraft);
@@ -211,8 +257,40 @@ export default function ReturnsPage() {
             {returnDraft && (
               <div className="space-y-3">
                 <Label>{t('return.returnItems')}</Label>
-                <div className="border rounded-lg divide-y">
-                  {returnDraft.items.map((item) => (
+                <div className="flex items-center gap-2">
+                  <Input
+                    ref={barcodeInputRef}
+                    value={barcodeFilter}
+                    readOnly
+                    placeholder="Scan barcode to filter"
+                    onKeyDown={handleBarcodeKeyDown}
+                    className="h-9 max-w-xs text-sm"
+                  />
+                  {barcodeFilter && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-9 px-3 whitespace-nowrap"
+                      onClick={handleClearBarcode}
+                    >
+                      {t('common.clearFilters')}
+                    </Button>
+                  )}
+                </div>
+                <div
+                  className="border rounded-lg divide-y"
+                  onClick={handleItemsContainerClick}
+                  role="presentation"
+                >
+                  {(barcodeFilter
+                    ? returnDraft.items.filter((item) => {
+                        const order = shippedOrders.find(o => o.id === returnDraft.orderId);
+                        const orderItem = order?.items.find(oi => oi.sku === item.sku);
+                        return orderItem?.barcode === barcodeFilter;
+                      })
+                    : returnDraft.items
+                  ).map((item) => (
                     <div key={item.sku} className="p-4 space-y-3">
                       <div className="flex items-start justify-between">
                         <div>

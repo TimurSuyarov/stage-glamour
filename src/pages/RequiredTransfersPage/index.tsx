@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Barcode from "react-barcode";
 import { PageHeader } from "@/components/ui/page-header";
 import { useTranslation } from "react-i18next";
@@ -99,6 +99,7 @@ export default function RequiredTransfersPage() {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null);
   const [assignPopoverOpen, setAssignPopoverOpen] = useState(false);
   const [computedPercentages, setComputedPercentages] = useState<Record<number, number>>({});
+  const barcodeInputRef = useRef<HTMLInputElement>(null);
 
   const filters: RequiredTransfersFilters = useMemo(
     () => ({ skip: pageIndex * PAGE_SIZE }),
@@ -121,6 +122,13 @@ export default function RequiredTransfersPage() {
   useEffect(() => {
     clearRequiredTransfersNotification();
   }, [clearRequiredTransfersNotification]);
+
+  useEffect(() => {
+    if (modalRequestId != null) {
+      const timer = setTimeout(() => barcodeInputRef.current?.focus(), 150);
+      return () => clearTimeout(timer);
+    }
+  }, [modalRequestId]);
 
   const selectedRequest = items.find((r) => r.id === modalRequestId);
 
@@ -200,6 +208,33 @@ export default function RequiredTransfersPage() {
         },
       }
     );
+  };
+
+  const handleBarcodeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    const value = e.currentTarget.value.trim();
+    e.currentTarget.value = "";
+    if (!value) return;
+    const line = lines.find((l) => (l.barcode ?? "").trim() === value);
+    if (!line) {
+      message.warning(t("requiredTransfers.barcodeNotFound"));
+      return;
+    }
+    if (line.isTransferred) {
+      message.warning(t("requiredTransfers.alreadyTransferred"));
+      return;
+    }
+    if (!selectedRequest?.assignedUser || transferMutation.isLoading || finalizeMutation.isLoading) {
+      return;
+    }
+    handleTransfer(line);
+  };
+
+  const handleModalContentClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest("input, textarea, [contenteditable]")) return;
+    barcodeInputRef.current?.focus();
   };
 
   return (
@@ -329,7 +364,15 @@ export default function RequiredTransfersPage() {
           </DialogHeader>
 
           {selectedRequest && (
-            <div className="space-y-4">
+            <div className="space-y-4" onClick={handleModalContentClick} role="presentation">
+              <input
+                ref={barcodeInputRef}
+                type="text"
+                autoComplete="off"
+                aria-hidden
+                className="absolute left-[-9999px] w-px h-px opacity-0 overflow-hidden"
+                onKeyDown={handleBarcodeKeyDown}
+              />
               {/* Assign section */}
               <div className="flex flex-wrap items-center gap-3 p-3 rounded-lg border bg-muted/30">
                 <span className="text-sm font-medium">{t("requiredTransfers.assignedUser")}:</span>
