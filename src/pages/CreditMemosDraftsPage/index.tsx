@@ -32,7 +32,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Eye, Loader2, ChevronLeft, ChevronRight, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+import { Eye, Loader2, ChevronLeft, ChevronRight, CheckCircle2, XCircle, AlertTriangle, X } from "lucide-react";
 import { Table as AntTable, DatePicker, message, Tooltip } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { ClearOutlined } from "@ant-design/icons";
@@ -81,6 +81,9 @@ export default function CreditMemosDraftsPage() {
   const [appliedFilters, setAppliedFilters] = useState<CreditMemosFilters>({});
 
   const [lineReasons, setLineReasons] = useState<Record<number, number>>({});
+  const [lineReasonsByDoc, setLineReasonsByDoc] = useState<
+    Record<number, Record<number, number>>
+  >({});
   const [barcodeFilter, setBarcodeFilter] = useState("");
   const [scannerBuffer, setScannerBuffer] = useState("");
   const barcodeInputRef = useRef<HTMLInputElement | null>(null);
@@ -129,27 +132,48 @@ export default function CreditMemosDraftsPage() {
 
   const handleOpenModal = (doc: CreditMemoItem) => {
     setSelectedDocEntry(doc.docEntry);
-    setLineReasons({});
+    const saved = lineReasonsByDoc[doc.docEntry];
+    if (saved && Object.keys(saved).length > 0) {
+      setLineReasons(saved);
+    } else {
+      setLineReasons({});
+    }
   };
 
-  // When detail is loaded, default all lines to Valid (Yaroqli)
+  // When detail is loaded, restore saved reasons if we have them
   useEffect(() => {
     const lines = detail?.documentLines ?? [];
     if (!selectedDocEntry || lines.length === 0) return;
     setLineReasons((prev) => {
-      const hasAny = lines.some((line) => prev[line.lineNum] != null);
-      if (hasAny) return prev;
-      return Object.fromEntries(lines.map((line) => [line.lineNum, EReturnReasonType.Valid]));
+      // If current state already has reasons, keep them
+      if (Object.keys(prev).length > 0) return prev;
+
+      // If we have saved reasons for this doc, restore them
+      const saved = lineReasonsByDoc[selectedDocEntry];
+      if (saved && Object.keys(saved).length > 0) {
+        return saved;
+      }
+
+      // Otherwise, leave all lines without a selected reason
+      return {};
     });
-  }, [selectedDocEntry, detail?.documentLines]);
+  }, [selectedDocEntry, detail?.documentLines, lineReasonsByDoc]);
 
   const handleCloseModal = () => {
     setSelectedDocEntry(null);
-    setLineReasons({});
   };
 
   const setReason = (lineNum: number, reason: number) => {
     setLineReasons((prev) => ({ ...prev, [lineNum]: reason }));
+    if (selectedDocEntry != null) {
+      setLineReasonsByDoc((store) => ({
+        ...store,
+        [selectedDocEntry]: {
+          ...(store[selectedDocEntry] ?? {}),
+          [lineNum]: reason,
+        },
+      }));
+    }
   };
 
   const detailLines = detail?.documentLines ?? [];
@@ -229,6 +253,7 @@ export default function CreditMemosDraftsPage() {
   const handleReturn = async () => {
     if (!selectedDocEntry || !allLinesHaveReason) return;
 
+    const currentDocEntry = selectedDocEntry;
     const payload: ReturnLinePayload[] = detailLines.map((line) => ({
       lineNum: line.lineNum,
       reasonId: lineReasons[line.lineNum],
@@ -241,6 +266,15 @@ export default function CreditMemosDraftsPage() {
       message.error(t("error.somethingWentWrong"));
       setReturnLoading(false);
       return;
+    }
+
+    // On successful submit, clear reasons for this document
+    if (currentDocEntry != null) {
+      setLineReasons({});
+      setLineReasonsByDoc((store) => {
+        const { [currentDocEntry]: _, ...rest } = store;
+        return rest;
+      });
     }
 
     handleCloseModal();
@@ -470,9 +504,9 @@ export default function CreditMemosDraftsPage() {
       </ModuleCard>
 
       {/* Detail + Return modal */}
-      <Dialog open={selectedDocEntry != null} onOpenChange={(open) => !open && handleCloseModal()}>
-        <DialogContent className="max-w-[1200px] max-h-[90vh] flex flex-col">
-          <DialogHeader>
+      <Dialog open={selectedDocEntry != null} onOpenChange={() => {}}>
+        <DialogContent className="max-w-[1200px] max-h-[90vh] flex flex-col [&>button:last-of-type]:hidden">
+          <DialogHeader className="relative pr-10">
             <DialogTitle className="flex flex-wrap items-center gap-3">
               {detail && (
                 <>
@@ -484,6 +518,15 @@ export default function CreditMemosDraftsPage() {
                 </>
               )}
             </DialogTitle>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="absolute right-2 top-2 h-8 w-8"
+              onClick={handleCloseModal}
+            >
+              <X className="w-4 h-4" />
+            </Button>
           </DialogHeader>
 
           {detailLoading ? (
@@ -538,8 +581,24 @@ export default function CreditMemosDraftsPage() {
                     {filteredDetailLines.map((line, idx) => {
                       const batch = line.batchNumbers?.[0];
                       const selectedReason = lineReasons[line.lineNum];
+
+                      const baseRowClasses =
+                        "transition-colors bg-background hover:bg-background";
+
+                      const rowHighlight =
+                        selectedReason === EReturnReasonType.Valid
+                          ? "bg-emerald-50 hover:bg-emerald-50"
+                          : selectedReason === EReturnReasonType.Damaged
+                          ? "bg-red-50 hover:bg-red-50"
+                          : selectedReason === EReturnReasonType.Expired
+                          ? "bg-amber-50 hover:bg-amber-50"
+                          : "";
+
                       return (
-                        <TableRow key={line.lineNum}>
+                        <TableRow
+                          key={line.lineNum}
+                          className={cn(baseRowClasses, rowHighlight)}
+                        >
                           <TableCell className="font-mono text-sm">{idx + 1}</TableCell>
                           <TableCell className="max-w-[240px]">
                             <div className="font-medium truncate" title={line.itemDescription}>
