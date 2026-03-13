@@ -102,6 +102,8 @@
   "returns.condition": "Состояние",
   "returns.batchNumber": "Номер партии",
   "returns.submit": "Вернуть",
+  "returns.selectedBarcode": "Выбранный штрих-код: {{barcode}}",
+  "returns.noBarcodeSelected": "Штрих-код не выбран",
   "return.title": "Возвраты",
   "return.originalOrder": "Исходный заказ",
   "return.condition": "Состояние",

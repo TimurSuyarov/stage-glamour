@@ -174,12 +174,19 @@ export default function CreditMemosDraftsPage() {
   }, [detailLines]);
 
   useEffect(() => {
-    if (selectedDocEntry != null && detail && barcodeInputRef.current) {
-      const timer = setTimeout(() => {
-        barcodeInputRef.current?.focus();
-      }, 150);
-      return () => clearTimeout(timer);
-    }
+    if (!(selectedDocEntry != null && detail && barcodeInputRef.current)) return;
+
+    const focusHiddenInput = () => {
+      barcodeInputRef.current?.focus();
+    };
+
+    const t1 = setTimeout(focusHiddenInput, 150);
+    const t2 = setTimeout(focusHiddenInput, 400);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
   }, [selectedDocEntry, detail]);
 
   const handleBarcodeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -191,7 +198,14 @@ export default function CreditMemosDraftsPage() {
       return;
     }
     if (e.key.length === 1) {
-      setScannerBuffer((prev) => prev + e.key);
+      setScannerBuffer((prev) => {
+        const next = prev + e.key;
+        if (prev === "") {
+          // New scan started – clear visible filter immediately
+          setBarcodeFilter("");
+        }
+        return next;
+      });
     }
     if (e.key === "Backspace") {
       setScannerBuffer((prev) => prev.slice(0, -1));
@@ -482,21 +496,26 @@ export default function CreditMemosDraftsPage() {
               onClick={handleModalContentClick}
               role="presentation"
             >
-              <div className="flex items-center gap-2">
-                <Input
-                  ref={barcodeInputRef}
-                  value={barcodeFilter}
-                  readOnly
-                  placeholder="Scan barcode to filter"
-                  onKeyDown={handleBarcodeKeyDown}
-                  className="h-7 max-w-xs text-sm"
-                />
+              <input
+                ref={barcodeInputRef}
+                type="text"
+                autoComplete="off"
+                aria-hidden
+                className="absolute left-[-9999px] w-px h-px opacity-0 overflow-hidden"
+                onKeyDown={handleBarcodeKeyDown}
+              />
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>
+                  {barcodeFilter
+                    ? t("returns.selectedBarcode", { barcode: barcodeFilter })
+                    : t("returns.noBarcodeSelected")}
+                </span>
                 {barcodeFilter && (
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-9 px-3 whitespace-nowrap"
+                    className="h-7 px-3 whitespace-nowrap"
                     onClick={handleClearBarcode}
                   >
                     {t("common.clearFilters")}

@@ -122,7 +122,14 @@ export default function ReturnsPage() {
       return;
     }
     if (e.key.length === 1) {
-      setScannerBuffer(prev => prev + e.key);
+      setScannerBuffer(prev => {
+        const next = prev + e.key;
+        if (prev === '') {
+          // New scan started – clear visible filter immediately
+          setBarcodeFilter('');
+        }
+        return next;
+      });
     }
     if (e.key === 'Backspace') {
       setScannerBuffer(prev => prev.slice(0, -1));
@@ -230,6 +237,16 @@ export default function ReturnsPage() {
           </DialogHeader>
 
           <div className="space-y-6">
+            {showCreateDialog && returnDraft && (
+              <input
+                ref={barcodeInputRef}
+                type="text"
+                autoComplete="off"
+                aria-hidden
+                className="absolute left-[-9999px] w-px h-px opacity-0 overflow-hidden"
+                onKeyDown={handleBarcodeKeyDown}
+              />
+            )}
             {/* Order Selection */}
             <div className="space-y-2">
               <Label>{t('return.originalOrder')}</Label>
@@ -259,11 +276,10 @@ export default function ReturnsPage() {
                 <Label>{t('return.returnItems')}</Label>
                 <div className="flex items-center gap-2">
                   <Input
-                    ref={barcodeInputRef}
                     value={barcodeFilter}
                     readOnly
+                    disabled
                     placeholder="Scan barcode to filter"
-                    onKeyDown={handleBarcodeKeyDown}
                     className="h-9 max-w-xs text-sm"
                   />
                   {barcodeFilter && (

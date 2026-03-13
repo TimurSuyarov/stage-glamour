@@ -138,12 +138,19 @@ export default function PicklistsPage({
   const rangeEnd = pageIndex * PAGE_SIZE + picklists.length;
 
   useEffect(() => {
-    if (isValidationMode && selectedDocEntry != null) {
-      const timer = setTimeout(() => {
-        barcodeInputRef.current?.focus();
-      }, 150);
-      return () => clearTimeout(timer);
-    }
+    if (!(isValidationMode && selectedDocEntry != null)) return;
+
+    const focusHiddenInput = () => {
+      barcodeInputRef.current?.focus();
+    };
+
+    const t1 = setTimeout(focusHiddenInput, 150);
+    const t2 = setTimeout(focusHiddenInput, 400);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
   }, [isValidationMode, selectedDocEntry]);
 
   const handleViewDetail = (docEntry: number) => {
