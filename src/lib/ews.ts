@@ -117,5 +117,10 @@ export function validateReturnLine(line: CreditMemoLine): string[] {
   else if (qtyPerPkg <= 0)
     errors.push("Qutidagi miqdor 0 dan katta bo'lishi kerak.");
 
+  if (!line.documentLinesBinAllocations?.length)
+    errors.push("Bin joylashuvi ko'rsatilmagan. Iltimos, mahsulot bin ma'lumotlarini tekshiring.");
+  else if (line.documentLinesBinAllocations.some(b => b.quantity <= 0))
+    errors.push("Bin joylashuvida miqdor 0 dan katta bo'lishi kerak.");
+
   return errors;
 }
