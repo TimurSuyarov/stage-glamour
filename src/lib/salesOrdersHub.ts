@@ -25,6 +25,6 @@ export function createSalesOrdersHubConnection(): signalR.HubConnection {
     .withUrl(hubUrl, {
       accessTokenFactory: () => sessionStorage.getItem("token") ?? "",
     })
-    .withAutomaticReconnect()
+    .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
     .build();
 }
