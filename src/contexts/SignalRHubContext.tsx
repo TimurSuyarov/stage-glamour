@@ -1,7 +1,6 @@
-import { createContext, useContext, useRef, type ReactNode } from "react";
+import { createContext, useContext, useRef, useEffect, useCallback, type ReactNode } from "react";
 import type { HubConnection } from "@microsoft/signalr";
 import { createSalesOrdersHubConnection, type ProcessingCompletedPayload } from "@/lib/salesOrdersHub";
-import { createReturnsHubConnection } from "@/lib/returnsHub";
 import { useSignalRWaitingControl, type SignalRWaitingKey } from "./SignalRWaitingContext";
 
 type OperationHandlers = {
@@ -15,35 +14,38 @@ type SignalRHubContextValue = {
 const SignalRHubContext = createContext<SignalRHubContextValue | null>(null);
 
 export function SignalRHubProvider({ children }: { children: ReactNode }) {
-  const connectionsRef = useRef<Map<SignalRWaitingKey, HubConnection>>(new Map());
+  const connectionRef = useRef<HubConnection | null>(null);
+  const handlersRef = useRef<Map<SignalRWaitingKey, OperationHandlers>>(new Map());
   const { setWaiting } = useSignalRWaitingControl();
 
-  const startListening = (key: SignalRWaitingKey, handlers: OperationHandlers) => {
-    connectionsRef.current.get(key)?.stop().catch(() => {});
+  useEffect(() => {
+    const token = sessionStorage.getItem("token");
+    if (!token) return;
 
-    const connection =
-      key === "returnDrafts"
-        ? createReturnsHubConnection()
-        : createSalesOrdersHubConnection();
-
-    const cleanup = () => {
-      connection.stop().catch(() => {});
-      connectionsRef.current.delete(key);
-      setWaiting(key, false);
-    };
+    const connection = createSalesOrdersHubConnection();
+    connectionRef.current = connection;
 
     connection.on("ProcessingCompleted", (result: ProcessingCompletedPayload) => {
-      try {
-        handlers.onCompleted(result);
-      } finally {
-        cleanup();
-      }
+      handlersRef.current.forEach((handlers, key) => {
+        try {
+          handlers.onCompleted(result);
+        } finally {
+          handlersRef.current.delete(key);
+          setWaiting(key, false);
+        }
+      });
     });
 
-    connection.onclose(cleanup);
-    connectionsRef.current.set(key, connection);
-    connection.start().catch(cleanup);
-  };
+    connection.start().catch(console.error);
+
+    return () => {
+      connection.stop().catch(() => {});
+    };
+  }, [setWaiting]);
+
+  const startListening = useCallback((key: SignalRWaitingKey, handlers: OperationHandlers) => {
+    handlersRef.current.set(key, handlers);
+  }, []);
 
   return (
     <SignalRHubContext.Provider value={{ startListening }}>
