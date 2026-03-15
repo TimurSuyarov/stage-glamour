@@ -146,6 +146,7 @@ export interface FromInvoiceDocumentLine {
   warehouseCode: string;
   baseType: number;
   baseEntry: number;
+  baseLine: number;
   batchNumbers: FromInvoiceBatchNumber[];
   documentLinesBinAllocations: FromInvoiceBinAllocation[];
 }

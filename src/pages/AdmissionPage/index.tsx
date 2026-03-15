@@ -488,6 +488,7 @@ const AdmissionPage = () => {
           warehouseCode: item.warehouseCode ?? "",
           baseType: 18,
           baseEntry: docEntry,
+          baseLine: item.lineNum,
           batchNumbers: [
             {
               expiryDate: expiryIso,
