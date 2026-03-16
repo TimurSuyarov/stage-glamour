@@ -297,6 +297,15 @@ export default function PicklistsPage({
       ),
     },
     {
+      title: t("picklist_line_bin_code"),
+      dataIndex: "binCode",
+      key: "binCode",
+      width: 140,
+      render: (val: string) => (
+        <span className="font-mono text-sm">{val || "—"}</span>
+      ),
+    },
+    {
       title: t("picklist_line_requested_qty"),
       dataIndex: "requestedQty",
       key: "requestedQty",
