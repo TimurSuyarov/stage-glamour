@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import Barcode from "react-barcode";
 import { PageHeader } from "@/components/ui/page-header";
 import { useTranslation } from "react-i18next";
 import {
@@ -480,28 +479,30 @@ export default function RequiredTransfersPage() {
                       <TableHead className="text-xs font-semibold uppercase">{t("requiredTransfers.targetBin")}</TableHead>
                       <TableHead className="text-xs font-semibold uppercase">{t("requiredTransfers.batchNumber")}</TableHead>
                       <TableHead className="text-xs font-semibold uppercase">{t("admission.expiryDate")}</TableHead>
-                      <TableHead className="text-xs font-semibold uppercase">Barcode</TableHead>
                       <TableHead className="text-xs font-semibold uppercase w-28"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {linesLoading ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="h-24 text-center">
+                        <TableCell colSpan={7} className="h-24 text-center">
                           <Loader2 className="w-5 h-5 animate-spin mx-auto text-muted-foreground" />
                         </TableCell>
                       </TableRow>
                     ) : lines.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
+                        <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                           {t("common.noData")}
                         </TableCell>
                       </TableRow>
                     ) : (
                       lines.map((line) => (
                         <TableRow key={line.id}>
-                          <TableCell className="max-w-[200px] truncate" title={line.productName}>
-                            {line.productName}
+                          <TableCell className="max-w-[260px]">
+                            <div>
+                              <p className="line-clamp-1 text-sm text-foreground">{line.productName}</p>
+                              <p className="text-xs text-muted-foreground font-mono mt-0.5">{line.itemCode}</p>
+                            </div>
                           </TableCell>
                           <TableCell>
                             {line.quantityPerBox && line.quantity % line.quantityPerBox === 0
@@ -515,19 +516,6 @@ export default function RequiredTransfersPage() {
                             {line.expirationDate
                               ? new Date(line.expirationDate).toLocaleDateString()
                               : "—"}
-                          </TableCell>
-                          <TableCell>
-                            {line.barcode ? (
-                              <Barcode
-                                value={line.barcode}
-                                displayValue={false}
-                                width={1}
-                                height={28}
-                                margin={0}
-                              />
-                            ) : (
-                              <span className="text-muted-foreground text-xs">—</span>
-                            )}
                           </TableCell>
                           <TableCell>
                             <Button
