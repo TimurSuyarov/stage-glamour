@@ -278,6 +278,7 @@
   "purchaseDelivery.price": "Цена",
   "purchaseDelivery.lineTotal": "Итого",
   "purchaseDelivery.barCode": "Штрих-код",
+  "purchaseDelivery.employeeFullName": "Ответственный сотрудник",
   "history.filterTransfer": "Перемещение",
   "history.filterAdmission": "Приёмка",
   "history.filterInventory": "Инвентаризация",

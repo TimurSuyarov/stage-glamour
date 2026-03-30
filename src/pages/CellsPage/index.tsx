@@ -34,6 +34,7 @@ const CellsPage = () => {
   const [filterItemCode, setFilterItemCode] = useState("");
   const [filterItemDesc, setFilterItemDesc] = useState("");
   const [filterWarehouseCode, setFilterWarehouseCode] = useState("");
+  const [filterBinCode, setFilterBinCode] = useState("");
   const [filterZone, setFilterZone] = useState<string | undefined>(undefined);
   const [appliedFilters, setAppliedFilters] = useState<BinLocationItemStatisticsFilters>({});
   const [pageIndex, setPageIndex] = useState(0);
@@ -60,6 +61,7 @@ const CellsPage = () => {
       ItemCode: filterItemCode.trim() || undefined,
       ItemDesc: filterItemDesc.trim() || undefined,
       WarehouseCode: filterWarehouseCode.trim() || undefined,
+      BinCode: filterBinCode.trim() || undefined,
       Zone: filterZone,
     });
   };
@@ -68,6 +70,7 @@ const CellsPage = () => {
     setFilterItemCode("");
     setFilterItemDesc("");
     setFilterWarehouseCode("");
+    setFilterBinCode("");
     setFilterZone(undefined);
     setAppliedFilters({});
     setPageIndex(0);
@@ -163,6 +166,15 @@ const CellsPage = () => {
               placeholder={t("common.search")}
               value={filterWarehouseCode}
               onChange={(e) => setFilterWarehouseCode(e.target.value)}
+              className="h-9"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs">{t("cells_filter_bin_code")}</Label>
+            <Input
+              placeholder={t("common.search")}
+              value={filterBinCode}
+              onChange={(e) => setFilterBinCode(e.target.value)}
               className="h-9"
             />
           </div>

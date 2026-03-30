@@ -278,6 +278,7 @@
   "purchaseDelivery.price": "Narx",
   "purchaseDelivery.lineTotal": "Jami",
   "purchaseDelivery.barCode": "Shtrix kod",
+  "purchaseDelivery.employeeFullName": "Masul xodim",
   "history.filterTransfer": "Ko'chirish",
   "history.filterAdmission": "Qabul",
   "history.filterInventory": "Inventarizatsiya",
