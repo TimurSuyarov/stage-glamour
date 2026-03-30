@@ -107,7 +107,7 @@ export const menuVisibility: Record<UserRole, string[]> = {
     'admission', 'relocation', 'requiredStockTransfer', 'collect', 'validation',
     'moveToRegion', 'return', 'history', 'employees', 'cells', 'goods', 'inventory', 'inventoryCountings', 'bonuses',
   ],
-  validator: ['validation'],
+  validator: ['validation', 'history', 'cells', 'goods'],
   returner: ['return'],
 };
 
