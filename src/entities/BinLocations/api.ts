@@ -142,6 +142,8 @@ export interface BinLocationItemStatisticsFilters {
   ItemCode?: string;
   ItemDesc?: string;
   WarehouseCode?: string;
+  /** Bin code */
+  BinCode?: string;
   /** Zone letter: A, B, D, G, N, P, Other */
   Zone?: string;
   PageSize?: number;
@@ -155,6 +157,7 @@ const fetchBinLocationItemStatistics = async (
   if (filters?.ItemCode != null) params.set("ItemCode", filters.ItemCode);
   if (filters?.ItemDesc != null) params.set("ItemDesc", filters.ItemDesc);
   if (filters?.WarehouseCode != null) params.set("WarehouseCode", filters.WarehouseCode);
+  if (filters?.BinCode != null) params.set("BinCode", filters.BinCode);
   if (filters?.Zone != null) params.set("Zone", filters.Zone);
   if (filters?.PageSize != null) params.set("PageSize", String(filters.PageSize));
   if (filters?.Skip != null) params.set("Skip", String(filters.Skip));
