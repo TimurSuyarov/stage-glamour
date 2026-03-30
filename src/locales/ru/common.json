@@ -413,5 +413,7 @@
   "bonuses.typeStockTransfer": "Перемещение склада",
   "bonuses.typeInventoryTransferRequestPicking": "Сбор инвентаризации",
   "bonuses.showing": "{{start}}–{{end}}",
-  "bonuses.detail": "Запись бонуса"
+  "bonuses.detail": "Запись бонуса",
+  "admission.binExpiryMismatch": "Срок годности товара {{itemCode}} не совпадает со сроком товаров в ячейке {{binCode}}",
+  "admission.binAlreadyAllocated": "Ячейка {{binCode}} уже выделена для товара {{allocatedItemCode}}"
 }
