@@ -38,6 +38,7 @@ import {
 } from "./pages/PlaceholderPages";
 import MoveToRegionHistoryPage from "./pages/MoveToRegionHistoryPage";
 import BonusesPage from "./pages/BonusesPage";
+import LabelPrintPage from "./pages/LabelPrintPage";
 import NotFound from "./pages/NotFound";
 
 import PublicRoute from "./components/layout/PublicRoute";
@@ -94,6 +95,7 @@ const App = () => (
                       <Route path="/inventory-countings" element={<InventoryCountingsPage />} />
                       <Route path="/reports" element={<ReportsPage />} />
                       <Route path="/bonuses" element={<BonusesPage />} />
+                      <Route path="/label-print" element={<LabelPrintPage />} />
                     </Route>
                   </Route>
 

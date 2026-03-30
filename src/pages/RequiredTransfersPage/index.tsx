@@ -500,7 +500,7 @@ export default function RequiredTransfersPage() {
                         <TableRow key={line.id}>
                           <TableCell className="max-w-[260px]">
                             <div>
-                              <p className="line-clamp-1 text-sm text-foreground">{line.productName}</p>
+                              <p className="text-sm text-foreground">{line.productName}</p>
                               <p className="text-xs text-muted-foreground font-mono mt-0.5">{line.itemCode}</p>
                             </div>
                           </TableCell>

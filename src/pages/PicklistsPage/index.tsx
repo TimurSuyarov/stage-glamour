@@ -20,12 +20,16 @@ import {
   type PicklistsFilters,
 } from "@/entities/Picklists/api";
 import { useEmployees } from "@/entities/Employees/api";
+import { useRequiredTransfersByIds } from "@/entities/RequiredTransfers/api";
 import { EPickListStatus, EPickListLineStatus } from "@/enums/picklist";
 import { EWarehouseCheckingType } from "@/enums/warehouseChecking";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, Loader2, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Eye, Loader2, ChevronLeft, ChevronRight, X, Printer } from "lucide-react";
+import { Label60x80 } from "@/features/label-print/components/Label60x80";
+import { printLabel } from "@/features/label-print/utils/printLabel";
+import type { LabelData } from "@/features/label-print/types/label";
 import { message } from "antd";
 import { cn } from "@/lib/utils";
 
@@ -87,6 +91,8 @@ interface PicklistsPageProps {
   mode?: "collect" | "validation";
   /** Hide the page header (used when parent renders its own header, e.g. HistoryPage) */
   hideHeader?: boolean;
+  /** When true, replaces the Javobgar section in the detail modal with a label print UI */
+  printMode?: boolean;
 }
 
 export default function PicklistsPage({
@@ -95,13 +101,18 @@ export default function PicklistsPage({
   parentKey,
   mode = "collect",
   hideHeader = false,
+  printMode = false,
 }: PicklistsPageProps) {
   const { t } = useTranslation();
   const [pageIndex, setPageIndex] = useState(0);
   const [selectedDocEntry, setSelectedDocEntry] = useState<number | null>(null);
   const [deliveryPackageCount, setDeliveryPackageCount] = useState<number>(0);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null);
+  const [labelCopies, setLabelCopies] = useState<number>(1);
+  // ID of the transferRequirementId the user clicked — drives the transfer-detail popup
+  const [selectedTransferReqId, setSelectedTransferReqId] = useState<number | null>(null);
   const barcodeInputRef = useRef<HTMLInputElement>(null);
+  const hiddenLabelRef = useRef<HTMLDivElement>(null);
 
   const assignPicklist = useAssignPicklist();
   const assignPicklistEmployee = useAssignPicklistEmployee();
@@ -124,6 +135,8 @@ export default function PicklistsPage({
   const { data: validationItems = [] } = useValidationItems(
     isValidationMode ? selectedDocEntry : null
   );
+  const { data: transferLines = [], isLoading: transferDetailLoading } =
+    useRequiredTransfersByIds(selectedTransferReqId != null ? [selectedTransferReqId] : []);
 
   const currentLines: PicklistLine[] =
     (isValidationMode ? validationItems : picklistDetail?.lines) ?? [];
@@ -161,6 +174,22 @@ export default function PicklistsPage({
     setSelectedDocEntry(null);
     setDeliveryPackageCount(0);
     setSelectedEmployeeId(null);
+    setLabelCopies(1);
+  };
+
+  const handlePrintLabel = () => {
+    if (!picklistDetail || !hiddenLabelRef.current) return;
+    const labelEl = hiddenLabelRef.current.querySelector(".label-template") as HTMLElement | null;
+    if (!labelEl) return;
+    const data: LabelData = {
+      labelSize: "60x80",
+      title: picklistDetail.cardName ?? "",
+      mainCode: picklistDetail.salesOrderDocNum ?? String(picklistDetail.id),
+      location: picklistDetail.warehouseCode ?? "Toshkent",
+      qrValue: String(picklistDetail.id),
+      copies: labelCopies,
+    };
+    printLabel(labelEl, data);
   };
 
   const handleBarcodeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -295,6 +324,36 @@ export default function PicklistsPage({
           <p className="text-xs text-muted-foreground font-mono">{record.itemCode}</p>
         </div>
       ),
+    },
+    {
+      title: t("picklist_line_bin_code"),
+      dataIndex: "binCode",
+      key: "binCode",
+      width: 120,
+      render: (val: string | null) =>
+        val ? (
+          <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{val}</span>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
+    },
+    {
+      title: t("picklist_line_transfer_doc"),
+      dataIndex: "transferRequirementId",
+      key: "transferRequirementId",
+      width: 130,
+      render: (val: number | null) =>
+        val != null ? (
+          <button
+            type="button"
+            className="font-mono text-xs font-medium text-blue-700 underline underline-offset-2 hover:text-blue-900 cursor-pointer"
+            onClick={() => setSelectedTransferReqId(val)}
+          >
+            #{val}
+          </button>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
     },
     {
       title: t("picklist_line_requested_qty"),
@@ -533,113 +592,137 @@ export default function PicklistsPage({
               />
             )}
             <div className="grid grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg">
-              <div className="flex flex-wrap items-center gap-3">
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">{t("picklist_assignee")}</p>
-                  {picklistDetail.assigneeName ? (
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium">{picklistDetail.assigneeName}</p>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => {
-                          const detachMutation = isValidationMode ? detachValidation : detachPicklist;
-                          detachMutation.mutate(picklistDetail.id, {
-                            onSuccess: () => {
-                              message.success(t("common.success"));
-                            },
-                            onError: () => {
-                              message.error(t("error.somethingWentWrong"));
-                            },
-                          });
-                        }}
-                        disabled={
-                          isValidationMode ? detachValidation.isLoading : detachPicklist.isLoading
+              {printMode ? (
+                <div className="flex flex-wrap items-center gap-3">
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Nusxalar soni</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Input
+                        type="number"
+                        min={1}
+                        max={100}
+                        value={labelCopies}
+                        onChange={(e) =>
+                          setLabelCopies(Math.max(1, Math.min(100, Number(e.target.value) || 1)))
                         }
-                        className="h-6 w-6 text-red-600 hover:text-red-700 hover:bg-red-100"
-                        title={t("picklist.detach")}
-                      >
-                        {(isValidationMode ? detachValidation.isLoading : detachPicklist.isLoading) ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <X className="w-4 h-4" />
-                        )}
-                      </Button>
-                    </div>
-                  ) : isCollectMode || isValidationMode ? (
-                    <div className="flex flex-wrap items-center gap-2 mt-1">
-                      <Select
-                        showSearch
-                        placeholder={t("inventoryCountings.selectUser")}
-                        value={selectedEmployeeId ?? undefined}
-                        onChange={(val) => setSelectedEmployeeId(val ?? null)}
-                        options={employees.map((emp) => ({
-                          value: emp.employeeId ?? (emp as any).EmployeeID ?? 0,
-                          label: [emp.firstName, emp.lastName].filter(Boolean).join(" ") || "—",
-                        }))}
-                        filterOption={(input, option) =>
-                          (option?.label ?? "").toString().toLowerCase().includes(input.toLowerCase())
-                        }
-                        optionFilterProp="label"
-                        className="w-[220px] [&_.ant-select-selector]:!h-9"
-                        notFoundContent={t("common.noResults")}
+                        className="w-24 h-9"
                       />
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          if (selectedEmployeeId == null) {
-                            message.warning(t("inventoryCountings.selectUserFirst"));
-                            return;
-                          }
-                          if (isValidationMode) {
-                            assignValidationValidator.mutate(
-                              { picklistId: picklistDetail.id, validatorId: selectedEmployeeId },
-                              {
-                                onSuccess: () => {
-                                  message.success(t("common.success"));
-                                  setSelectedEmployeeId(null);
-                                },
-                                onError: () => {
-                                  message.error(t("error.somethingWentWrong"));
-                                },
-                              }
-                            );
-                          } else {
-                            assignPicklistEmployee.mutate(
-                              { picklistId: picklistDetail.id, employeeId: selectedEmployeeId },
-                              {
-                                onSuccess: () => {
-                                  message.success(t("common.success"));
-                                  setSelectedEmployeeId(null);
-                                },
-                                onError: () => {
-                                  message.error(t("error.somethingWentWrong"));
-                                },
-                              }
-                            );
-                          }
-                        }}
-                        disabled={
-                          selectedEmployeeId == null ||
-                          (isValidationMode
-                            ? assignValidationValidator.isLoading
-                            : assignPicklistEmployee.isLoading)
-                        }
-                      >
-                        {(isValidationMode
-                          ? assignValidationValidator.isLoading
-                          : assignPicklistEmployee.isLoading) ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          t("inventoryCountings.assign")
-                        )}
+                      <Button size="sm" className="gap-1" onClick={handlePrintLabel}>
+                        <Printer className="w-4 h-4" />
+                        Chop etish
                       </Button>
                     </div>
-                  ) : (
-                    <p className="font-medium">—</p>
-                  )}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="flex flex-wrap items-center gap-3">
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">{t("picklist_assignee")}</p>
+                    {picklistDetail.assigneeName ? (
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">{picklistDetail.assigneeName}</p>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => {
+                            const detachMutation = isValidationMode ? detachValidation : detachPicklist;
+                            detachMutation.mutate(picklistDetail.id, {
+                              onSuccess: () => {
+                                message.success(t("common.success"));
+                              },
+                              onError: () => {
+                                message.error(t("error.somethingWentWrong"));
+                              },
+                            });
+                          }}
+                          disabled={
+                            isValidationMode ? detachValidation.isLoading : detachPicklist.isLoading
+                          }
+                          className="h-6 w-6 text-red-600 hover:text-red-700 hover:bg-red-100"
+                          title={t("picklist.detach")}
+                        >
+                          {(isValidationMode ? detachValidation.isLoading : detachPicklist.isLoading) ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <X className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </div>
+                    ) : isCollectMode || isValidationMode ? (
+                      <div className="flex flex-wrap items-center gap-2 mt-1">
+                        <Select
+                          showSearch
+                          placeholder={t("inventoryCountings.selectUser")}
+                          value={selectedEmployeeId ?? undefined}
+                          onChange={(val) => setSelectedEmployeeId(val ?? null)}
+                          options={employees.map((emp) => ({
+                            value: emp.employeeId ?? (emp as any).EmployeeID ?? 0,
+                            label: [emp.firstName, emp.lastName].filter(Boolean).join(" ") || "—",
+                          }))}
+                          filterOption={(input, option) =>
+                            (option?.label ?? "").toString().toLowerCase().includes(input.toLowerCase())
+                          }
+                          optionFilterProp="label"
+                          className="w-[220px] [&_.ant-select-selector]:!h-9"
+                          notFoundContent={t("common.noResults")}
+                        />
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            if (selectedEmployeeId == null) {
+                              message.warning(t("inventoryCountings.selectUserFirst"));
+                              return;
+                            }
+                            if (isValidationMode) {
+                              assignValidationValidator.mutate(
+                                { picklistId: picklistDetail.id, validatorId: selectedEmployeeId },
+                                {
+                                  onSuccess: () => {
+                                    message.success(t("common.success"));
+                                    setSelectedEmployeeId(null);
+                                  },
+                                  onError: () => {
+                                    message.error(t("error.somethingWentWrong"));
+                                  },
+                                }
+                              );
+                            } else {
+                              assignPicklistEmployee.mutate(
+                                { picklistId: picklistDetail.id, employeeId: selectedEmployeeId },
+                                {
+                                  onSuccess: () => {
+                                    message.success(t("common.success"));
+                                    setSelectedEmployeeId(null);
+                                  },
+                                  onError: () => {
+                                    message.error(t("error.somethingWentWrong"));
+                                  },
+                                }
+                              );
+                            }
+                          }}
+                          disabled={
+                            selectedEmployeeId == null ||
+                            (isValidationMode
+                              ? assignValidationValidator.isLoading
+                              : assignPicklistEmployee.isLoading)
+                          }
+                        >
+                          {(isValidationMode
+                            ? assignValidationValidator.isLoading
+                            : assignPicklistEmployee.isLoading) ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            t("inventoryCountings.assign")
+                          )}
+                        </Button>
+                      </div>
+                    ) : (
+                      <p className="font-medium">—</p>
+                    )}
+                  </div>
+                </div>
+              )}
               <div>
                 <p className="text-xs text-muted-foreground mb-1">{t("picklist_warehouse_code")}</p>
                 <p className="font-medium">{picklistDetail.warehouseCode}</p>
@@ -664,8 +747,123 @@ export default function PicklistsPage({
                 />
               );
             })()}
+
+            {/* Hidden label element used as DOM source for printLabel — only rendered in printMode */}
+            {printMode && (
+              <div
+                ref={hiddenLabelRef}
+                style={{ position: "absolute", left: "-9999px", top: 0, pointerEvents: "none" }}
+                aria-hidden
+              >
+                <Label60x80
+                  data={{
+                    labelSize: "60x80",
+                    title: picklistDetail.cardName ?? "",
+                    mainCode: picklistDetail.salesOrderDocNum ?? String(picklistDetail.id),
+                    location: picklistDetail.warehouseCode ?? "Toshkent",
+                    qrValue: String(picklistDetail.id),
+                    copies: labelCopies,
+                  }}
+                />
+              </div>
+            )}
           </div>
         ) : null}
+      </Modal>
+
+      {/* Transfer requirement detail popup — opens when user clicks a #id badge in the Ko'chirish hujjati column */}
+      <Modal
+        title={
+          selectedTransferReqId != null
+            ? `Ko'chirish hujjati — #${selectedTransferReqId}`
+            : ""
+        }
+        open={selectedTransferReqId != null}
+        onCancel={() => setSelectedTransferReqId(null)}
+        footer={
+          <AntButton onClick={() => setSelectedTransferReqId(null)}>
+            {t("common_close")}
+          </AntButton>
+        }
+        width={520}
+      >
+        {transferDetailLoading ? (
+          <div className="flex items-center justify-center py-10">
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : transferLines.length > 0 ? (
+          <div className="space-y-3 py-2">
+            {transferLines.map((line) => (
+              <div key={line.id} className="border rounded-lg p-3 space-y-3">
+                {/* Product */}
+                <div className="space-y-0.5">
+                  <p className="font-medium leading-snug text-sm">{line.productName}</p>
+                  <p className="text-xs text-muted-foreground font-mono">{line.itemCode}</p>
+                </div>
+
+                {/* Bin route */}
+                <div className="flex items-center gap-2 p-2 bg-muted/40 rounded-md">
+                  <div className="flex-1 text-center">
+                    <p className="text-xs text-muted-foreground mb-1">Qayerdan</p>
+                    <span className="font-mono text-xs font-semibold bg-white border rounded px-2 py-0.5 inline-block">
+                      {line.sourceBinLocation}
+                    </span>
+                  </div>
+                  <div className="text-muted-foreground">→</div>
+                  <div className="flex-1 text-center">
+                    <p className="text-xs text-muted-foreground mb-1">Qayerga</p>
+                    <span className="font-mono text-xs font-semibold bg-white border rounded px-2 py-0.5 inline-block">
+                      {line.targetBinLocation}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Quantity breakdown */}
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="p-2 bg-muted/30 rounded-md text-center">
+                    <p className="text-xs text-muted-foreground mb-0.5">Miqdor</p>
+                    <p className="text-lg font-bold">{line.quantity}</p>
+                    <p className="text-xs text-muted-foreground">dona</p>
+                  </div>
+                  <div className="p-2 bg-muted/30 rounded-md text-center">
+                    <p className="text-xs text-muted-foreground mb-0.5">Qutida</p>
+                    <p className="text-lg font-bold">{line.quantityPerBox}</p>
+                    <p className="text-xs text-muted-foreground">dona/quti</p>
+                  </div>
+                  <div className="p-2 bg-blue-50 border border-blue-200 rounded-md text-center">
+                    <p className="text-xs text-blue-600 mb-0.5">Qutilari</p>
+                    <p className="text-lg font-bold text-blue-700">
+                      {line.quantityPerBox > 0
+                        ? (line.quantity / line.quantityPerBox).toFixed(2).replace(/\.?0+$/, "")
+                        : "—"}
+                    </p>
+                    <p className="text-xs text-blue-600">quti</p>
+                  </div>
+                </div>
+
+                {/* Status + batch */}
+                <div className="flex items-center justify-between">
+                  <span className={cn(
+                    "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border",
+                    line.isTransferred
+                      ? "bg-green-100 text-green-800 border-green-300"
+                      : "bg-amber-100 text-amber-800 border-amber-300"
+                  )}>
+                    <span className={cn("w-1.5 h-1.5 rounded-full", line.isTransferred ? "bg-green-500" : "bg-amber-500")} />
+                    {line.isTransferred ? "Ko'chirilgan" : "Ko'chirilmagan"}
+                  </span>
+                  {line.batchNumber && (
+                    <span className="text-xs text-muted-foreground font-mono">
+                      {line.batchNumber}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-center text-muted-foreground py-8 text-sm">Ma'lumot topilmadi</p>
+        )}
       </Modal>
     </div>
   );

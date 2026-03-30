@@ -46,6 +46,7 @@ export default function HistoryPage() {
             parentKey="nav.operational"
             mode="collect"
             hideHeader
+            printMode
           />
         </TabsContent>
       </Tabs>

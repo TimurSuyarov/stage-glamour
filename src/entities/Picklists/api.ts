@@ -14,6 +14,8 @@ export interface PicklistLine {
   allocatedQty: number;
   pickedQty: number;
   requiredTransferQty: number;
+  /** ID of the inventory transfer document that moved this item into the zone. Null if no transfer was required. */
+  transferRequirementId: number | null;
   expirationDate: string | null;
   batchNumber?: string | null;
   status: number;

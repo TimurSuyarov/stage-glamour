@@ -125,6 +125,31 @@ export const useFinalizeMutation = () => {
   });
 };
 
+/**
+ * Fetches required-transfer lines by a list of ordersCheckingRequestIds
+ * (the `transferRequirementId` field on each picklist line).
+ *
+ * POST /required-transfers/by-ids
+ * Body: { ids: number[] }
+ * Response: RequiredTransferLine[]  — all lines whose ordersCheckingRequestId is in the list
+ */
+const fetchRequiredTransfersByIds = async (ids: number[]): Promise<RequiredTransferLine[]> => {
+  const { data } = await request.post<RequiredTransferLine[]>(
+    `/required-transfers/by-ids`,
+    { ids }
+  );
+  return Array.isArray(data) ? data : [];
+};
+
+export const useRequiredTransfersByIds = (ids: number[]) => {
+  return useQuery({
+    queryKey: ["required-transfers-by-ids", ids],
+    queryFn: () => fetchRequiredTransfersByIds(ids),
+    enabled: ids.length > 0,
+    refetchOnWindowFocus: false,
+  });
+};
+
 const postDetach = async (requestId: number): Promise<unknown> => {
   const { data } = await request.post(`/required-transfers/${requestId}/detach`);
   return data;
