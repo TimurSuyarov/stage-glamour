@@ -414,5 +414,6 @@
   "bonuses.typeInventoryTransferRequestPicking": "Inventarizatsiya ko'chirish",
   "bonuses.showing": "{{start}}–{{end}}",
   "bonuses.detail": "Bonus yozuvi",
-  "admission.binExpiryMismatch": "{{itemCode}} mahsulot muddati {{binCode}} yacheykadagi tovar muddati bilan mos kelmadi"
+  "admission.binExpiryMismatch": "{{itemCode}} mahsulot muddati {{binCode}} yacheykadagi tovar muddati bilan mos kelmadi",
+  "admission.binAlreadyAllocated": "{{binCode}} yacheyka allaqachon {{allocatedItemCode}} mahsuloti uchun band qilingan"
 }
