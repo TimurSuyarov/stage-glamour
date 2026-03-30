@@ -33,6 +33,8 @@ export interface PurchaseDeliveryItem {
   docDate: string;
   docDueDate: string | null;
   taxDate: string | null;
+  employeeId?: number;
+  employeeFullName?: string | null;
   documentLines: PurchaseDeliveryDocumentLine[];
 }
 
