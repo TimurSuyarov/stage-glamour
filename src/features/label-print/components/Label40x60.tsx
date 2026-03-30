@@ -1,5 +1,5 @@
 import { LABEL_SPECS, type LabelData } from "../types/label";
-import { LabelQRCode } from "./LabelQRCode";
+import { LabelBarcode } from "./LabelBarcode";
 
 interface Label40x60Props {
   data: LabelData;
@@ -8,10 +8,10 @@ interface Label40x60Props {
 /**
  * 40×60 mm thermal label template (58×40 mm printable area on standard rolls).
  *
- * Layout based on physical samples:
+ * Layout:
  *   top:    title / company name (1–2 lines)
- *   center: main code / identifier
- *   bottom: location text (left) + QR code (right)
+ *   center: main code / identifier (dominant element)
+ *   bottom: location text (left) + barcode (right)
  */
 export function Label40x60({ data }: Label40x60Props) {
   const spec = LABEL_SPECS["40x60"];
@@ -67,6 +67,34 @@ export function Label40x60({ data }: Label40x60Props) {
         {data.mainCode || "\u00A0"}
       </div>
 
+      {/* Bottom row: location (left) + barcode (right) */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-end",
+          justifyContent: "space-between",
+          gap: "2mm",
+        }}
+      >
+        {/* Location text */}
+        <div
+          style={{
+            fontSize: "2.4mm",
+            fontWeight: 500,
+            color: "#333",
+            lineHeight: 1.2,
+            overflow: "hidden",
+            whiteSpace: "nowrap",
+            textOverflow: "ellipsis",
+            flex: 1,
+          }}
+        >
+          {data.location || "\u00A0"}
+        </div>
+
+        {/* Barcode */}
+        <LabelBarcode value={data.qrValue} widthMm={28} heightMm={9} />
+      </div>
     </div>
   );
 }

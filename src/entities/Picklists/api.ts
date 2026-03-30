@@ -24,10 +24,13 @@ export interface PicklistLine {
 
 export interface PicklistItem {
   id: number;
+  deliveryNumber: string | null;
   salesOrderDocEntry: number;
   salesOrderDocNum: string;
   cardName: string;
   warehouseCode: string;
+  toWarehouseCode: string | null;
+  toWarehouseName: string | null;
   status: number;
   inventoryTransferRequired: boolean;
   requiredTransferQty: number;

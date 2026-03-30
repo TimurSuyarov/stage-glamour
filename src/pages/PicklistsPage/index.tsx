@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, Loader2, ChevronLeft, ChevronRight, X, Printer } from "lucide-react";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Label60x80 } from "@/features/label-print/components/Label60x80";
 import { printLabel } from "@/features/label-print/utils/printLabel";
 import type { LabelData } from "@/features/label-print/types/label";
@@ -111,6 +112,8 @@ export default function PicklistsPage({
   const [labelCopies, setLabelCopies] = useState<number>(1);
   // ID of the transferRequirementId the user clicked — drives the transfer-detail popup
   const [selectedTransferReqId, setSelectedTransferReqId] = useState<number | null>(null);
+  // Pending scanner scan — line + raw barcode waiting for user confirmation
+  const [pendingScan, setPendingScan] = useState<{ line: PicklistLine; barcode: string } | null>(null);
   const barcodeInputRef = useRef<HTMLInputElement>(null);
   const hiddenLabelRef = useRef<HTMLDivElement>(null);
 
@@ -215,20 +218,26 @@ export default function PicklistsPage({
       return;
     }
 
+    // Show confirmation dialog instead of mutating immediately
+    setPendingScan({ line, barcode: value });
+  };
+
+  const handleConfirmScan = () => {
+    if (!pendingScan || !picklistDetail) return;
     validationScan.mutate(
+      { docEntry: picklistDetail.id, barcode: pendingScan.barcode },
       {
-        docEntry: picklistDetail.id,
-        barcode: value,
-      },
-      {
-        onSuccess: () => {
-          message.success(t("common.success"));
-        },
-        onError: () => {
-          message.error(t("error.somethingWentWrong"));
-        },
+        onSuccess: () => { message.success(t("common.success")); },
+        onError: () => { message.error(t("error.somethingWentWrong")); },
       }
     );
+    setPendingScan(null);
+  };
+
+  const handleCancelScan = () => {
+    setPendingScan(null);
+    // Re-focus scanner input so worker can scan the next item immediately
+    setTimeout(() => barcodeInputRef.current?.focus(), 100);
   };
 
   const handleModalContentClick = (e: React.MouseEvent) => {
@@ -242,10 +251,43 @@ export default function PicklistsPage({
   };
 
   const columns: ColumnsType<PicklistItem> = [
-    { title: t("picklist_id"), dataIndex: "id", key: "id", width: 80 },
+    {
+      title: t("picklist_id"),
+      dataIndex: "id",
+      key: "id",
+      width: 100,
+      render: (id: number, record: PicklistItem) => (
+        <div className="space-y-0.5">
+          <p className="font-medium leading-none">{id}</p>
+          {record.deliveryNumber && (
+            <p className="text-xs text-muted-foreground font-mono leading-none">
+              #{record.deliveryNumber}
+            </p>
+          )}
+        </div>
+      ),
+    },
     { title: t("picklist_sales_order_doc_num"), dataIndex: "salesOrderDocNum", key: "salesOrderDocNum", width: 140 },
     { title: t("picklist_card_name"), dataIndex: "cardName", key: "cardName", width: 200 },
     { title: t("picklist_warehouse_code"), dataIndex: "warehouseCode", key: "warehouseCode", width: 120 },
+    {
+      title: t("picklist_to_warehouse"),
+      key: "toWarehouse",
+      width: 160,
+      render: (_: unknown, record: PicklistItem) =>
+        record.toWarehouseName || record.toWarehouseCode ? (
+          <div className="space-y-0.5">
+            <p className="leading-none">{record.toWarehouseName ?? "—"}</p>
+            {record.toWarehouseCode && (
+              <p className="text-xs text-muted-foreground font-mono leading-none">
+                #{record.toWarehouseCode}
+              </p>
+            )}
+          </div>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
+    },
     {
       title: t("picklist_status"),
       dataIndex: "status",
@@ -382,7 +424,7 @@ export default function PicklistsPage({
   ];
 
   const validationColumn: ColumnsType<PicklistLine> = [
-    ...baseLineColumns,
+    ...baseLineColumns.filter((col) => !("key" in col && (col.key === "binCode" || col.key === "transferRequirementId"))),
     {
       title: t("validation.validate"),
       key: "validate",
@@ -865,6 +907,21 @@ export default function PicklistsPage({
           <p className="text-center text-muted-foreground py-8 text-sm">Ma'lumot topilmadi</p>
         )}
       </Modal>
+      {/* Scanner barcode confirmation — fires when scanner sends Enter after a match */}
+      <ConfirmDialog
+        open={pendingScan !== null}
+        onOpenChange={(open) => { if (!open) handleCancelScan(); }}
+        variant="success"
+        title={t("validation.confirmTitle")}
+        description={t("validation.confirmDescription", {
+          productName: pendingScan?.line.productName ?? "",
+          qty: pendingScan?.line.totalQty ?? pendingScan?.line.requestedQty ?? 0,
+        })}
+        confirmLabel={t("validation.validate")}
+        loading={validationScan.isLoading}
+        onConfirm={handleConfirmScan}
+        onCancel={handleCancelScan}
+      />
     </div>
   );
 }
