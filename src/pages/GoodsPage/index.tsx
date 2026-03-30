@@ -53,7 +53,7 @@ export default function GoodsPage() {
   const { data, isLoading } = useItems(filters);
   const goods = data?.items ?? [];
   const total = data?.total;
-  const hasNextPage = total != null ? (pageIndex + 1) * PAGE_SIZE < total : goods.length >= PAGE_SIZE;
+  const hasNextPage = goods.length >= PAGE_SIZE;
   const hasPrevPage = pageIndex > 0;
   const totalPages = total != null ? Math.ceil(total / PAGE_SIZE) : null;
 
@@ -240,7 +240,7 @@ export default function GoodsPage() {
       />
 
       {/* Server-side pagination */}
-      {(hasPrevPage || hasNextPage) && (
+      {goods.length > 0 && (
         <div className="flex items-center justify-between px-4 py-2 border rounded-md bg-card">
           <p className="text-sm text-muted-foreground">
             {total != null
