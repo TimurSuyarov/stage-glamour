@@ -39,6 +39,7 @@ import {
 import MoveToRegionHistoryPage from "./pages/MoveToRegionHistoryPage";
 import BonusesPage from "./pages/BonusesPage";
 import LabelPrintPage from "./pages/LabelPrintPage";
+import LabelPrintPopup from "./pages/LabelPrintPopup";
 import NotFound from "./pages/NotFound";
 
 import PublicRoute from "./components/layout/PublicRoute";
@@ -60,6 +61,9 @@ const App = () => (
               <Sonner />
               <BrowserRouter>
                 <Routes>
+                  {/* Label print popup — standalone, no AppShell */}
+                  <Route path="/p/label" element={<LabelPrintPopup />} />
+
                   {/* Public */}
                   <Route
                     path="/login"

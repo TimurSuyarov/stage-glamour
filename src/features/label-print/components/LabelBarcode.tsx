@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import JsBarcode from "jsbarcode";
+import QRCode from "qrcode";
 
 interface LabelBarcodeProps {
   value: string;
@@ -10,16 +10,11 @@ interface LabelBarcodeProps {
 }
 
 /**
- * Renders a CODE128 barcode as a self-contained PNG <img> element.
+ * Renders a QR code as a self-contained PNG <img> element.
  *
- * Strategy: JsBarcode renders into an off-screen <canvas> (never in the DOM),
- * then we call toDataURL("image/png") to get a base64 string.
- * The resulting <img> is fully self-contained — it survives outerHTML
- * serialisation and iframe injection without any rendering issues.
- *
- * The canvas pixel dimensions are set at ~304 DPI (12 px/mm) so the PNG
- * is sharp enough for thermal label output. CSS width/height then scales
- * it to the exact mm size in both screen preview and print layout.
+ * Strategy: qrcode renders into an off-screen <canvas>, then we call
+ * toDataURL("image/png") to get a base64 string.
+ * The resulting <img> is fully self-contained — survives popup window context.
  */
 export function LabelBarcode({ value, widthMm, heightMm }: LabelBarcodeProps) {
   const [dataUrl, setDataUrl] = useState<string>("");
@@ -30,28 +25,16 @@ export function LabelBarcode({ value, widthMm, heightMm }: LabelBarcodeProps) {
       return;
     }
 
-    try {
-      // Render at 12px/mm (~304 DPI) for crisp thermal output
-      const heightPx = Math.round(heightMm * 12);
+    const sizePx = Math.round(Math.max(widthMm, heightMm) * 12); // 12px/mm ≈ 304 DPI
 
-      const canvas = document.createElement("canvas");
-
-      JsBarcode(canvas, value, {
-        format: "CODE128",
-        height: heightPx,
-        // bar width: 2px gives good density at 304 DPI
-        width: 2,
-        margin: 0,
-        displayValue: false, // no human-readable text below bar — keep layout clean
-        background: "#ffffff",
-        lineColor: "#000000",
-      });
-
-      setDataUrl(canvas.toDataURL("image/png"));
-    } catch {
-      // Invalid barcode value — show placeholder
-      setDataUrl("");
-    }
+    QRCode.toDataURL(value, {
+      errorCorrectionLevel: "M",
+      margin: 0,
+      width: sizePx,
+      color: { dark: "#000000", light: "#ffffff" },
+    })
+      .then(setDataUrl)
+      .catch(() => setDataUrl(""));
   }, [value, widthMm, heightMm]);
 
   if (!value || !dataUrl) {
@@ -69,7 +52,7 @@ export function LabelBarcode({ value, widthMm, heightMm }: LabelBarcodeProps) {
           flexShrink: 0,
         }}
       >
-        BAR
+        QR
       </div>
     );
   }
