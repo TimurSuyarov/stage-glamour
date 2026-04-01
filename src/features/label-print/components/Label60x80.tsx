@@ -99,7 +99,7 @@ export function Label60x80({ data }: Label60x80Props) {
         </div>
 
         {/* Barcode */}
-        <LabelBarcode value={data.qrValue} widthMm={40} heightMm={13} />
+        <LabelBarcode value={data.qrValue} widthMm={22} heightMm={22} />
       </div>
     </div>
   );

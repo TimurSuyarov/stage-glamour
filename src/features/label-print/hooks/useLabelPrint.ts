@@ -18,8 +18,8 @@ export function useLabelPrint() {
     });
 
     const { pw, ph } = data.labelSize === "40x60"
-      ? { pw: 480, ph: 640 }
-      : { pw: 560, ph: 720 };
+      ? { pw: 800, ph: 860 }
+      : { pw: 920, ph: 1000 };
 
     const left = Math.round((window.screen.availWidth  - pw) / 2);
     const top  = Math.round((window.screen.availHeight - ph) / 2);

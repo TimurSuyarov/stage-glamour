@@ -421,5 +421,24 @@
   "bonuses.showing": "{{start}}–{{end}}",
   "bonuses.detail": "Bonus yozuvi",
   "admission.binExpiryMismatch": "{{itemCode}} mahsulot muddati {{binCode}} yacheykadagi tovar muddati bilan mos kelmadi",
-  "admission.binAlreadyAllocated": "{{binCode}} yacheyka allaqachon {{allocatedItemCode}} mahsuloti uchun band qilingan"
+  "admission.binAlreadyAllocated": "{{binCode}} yacheyka allaqachon {{allocatedItemCode}} mahsuloti uchun band qilingan",
+
+  "labelPrint.title": "Yorliq chop etish",
+  "labelPrint.description": "XPrinter XP-365B termal printer uchun yorliq tayyorlash va chop etish",
+  "labelPrint.formCard": "Yorliq ma'lumotlari",
+  "labelPrint.previewCard": "Ko'rib chiqish",
+  "labelPrint.size": "Yorliq o'lchami",
+  "labelPrint.labelTitle": "Sarlavha",
+  "labelPrint.labelTitlePlaceholder": "Masalan: \"THREE LINE\" MCHJ",
+  "labelPrint.mainCode": "Asosiy kod",
+  "labelPrint.mainCodePlaceholder": "Masalan: 119220",
+  "labelPrint.location": "Joylashuv",
+  "labelPrint.locationPlaceholder": "Masalan: Toshkent",
+  "labelPrint.qrValue": "QR qiymati",
+  "labelPrint.qrValuePlaceholder": "QR kodga yoziladigan matn yoki URL",
+  "labelPrint.copies": "Nusxalar soni",
+  "labelPrint.print": "Chop etish",
+  "labelPrint.printCopies": "Chop etish ({{count}} nusxa)",
+  "labelPrint.popupBlocked": "Popup bloklangan! Brauzerda popup ruxsat bering.",
+  "labelPrint.specHint": "Portrait · Scale 100% · Margins None"
 }

@@ -19,13 +19,13 @@ export interface LabelSpec {
 export const LABEL_SPECS: Record<LabelSize, LabelSpec> = {
   "40x60": {
     width: 58,
-    height: 40,
-    padding: { top: 2, right: 2, bottom: 2, left: 3 },
+    height: 42,
+    padding: { top: 5, right: 0, bottom: 5, left: 0 },
   },
   "60x80": {
     width: 80,
     height: 60,
-    padding: { top: 3, right: 3, bottom: 3, left: 3 },
+    padding: { top: 5, right: 0, bottom: 5, left: 0 },
   },
 };
 
@@ -33,7 +33,7 @@ export const DEFAULT_LABEL_DATA: LabelData = {
   labelSize: "40x60",
   title: "",
   mainCode: "",
-  location: "Toshkent",
-  qrValue: "",
+  location: "Тошкент",
+  qrValue: "https://t.me/Fikrlar_banafa_bot",
   copies: 1,
 };

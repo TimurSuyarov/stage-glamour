@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { LabelData, LabelSize } from "../types/label";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +9,7 @@ interface LabelFormProps {
 }
 
 export function LabelForm({ data, onChange }: LabelFormProps) {
+  const { t } = useTranslation();
   const update = <K extends keyof LabelData>(key: K, value: LabelData[K]) =>
     onChange({ ...data, [key]: value });
 
@@ -15,7 +17,7 @@ export function LabelForm({ data, onChange }: LabelFormProps) {
     <div className="space-y-4">
       {/* Label size */}
       <div className="space-y-1.5">
-        <Label>Yorliq o'lchami</Label>
+        <Label>{t("labelPrint.size")}</Label>
         <div className="flex gap-2">
           {(["40x60", "60x80"] as LabelSize[]).map((size) => (
             <button
@@ -36,10 +38,10 @@ export function LabelForm({ data, onChange }: LabelFormProps) {
 
       {/* Title */}
       <div className="space-y-1.5">
-        <Label htmlFor="label-title">Sarlavha</Label>
+        <Label htmlFor="label-title">{t("labelPrint.labelTitle")}</Label>
         <Input
           id="label-title"
-          placeholder='Masalan: "THREE LINE" MCHJ'
+          placeholder={t("labelPrint.labelTitlePlaceholder")}
           value={data.title}
           onChange={(e) => update("title", e.target.value)}
           maxLength={100}
@@ -48,10 +50,10 @@ export function LabelForm({ data, onChange }: LabelFormProps) {
 
       {/* Main code */}
       <div className="space-y-1.5">
-        <Label htmlFor="label-code">Asosiy kod</Label>
+        <Label htmlFor="label-code">{t("labelPrint.mainCode")}</Label>
         <Input
           id="label-code"
-          placeholder="Masalan: 119220"
+          placeholder={t("labelPrint.mainCodePlaceholder")}
           value={data.mainCode}
           onChange={(e) => update("mainCode", e.target.value)}
           maxLength={50}
@@ -60,10 +62,10 @@ export function LabelForm({ data, onChange }: LabelFormProps) {
 
       {/* Location */}
       <div className="space-y-1.5">
-        <Label htmlFor="label-location">Joylashuv</Label>
+        <Label htmlFor="label-location">{t("labelPrint.location")}</Label>
         <Input
           id="label-location"
-          placeholder="Masalan: Toshkent"
+          placeholder={t("labelPrint.locationPlaceholder")}
           value={data.location}
           onChange={(e) => update("location", e.target.value)}
           maxLength={60}
@@ -72,10 +74,10 @@ export function LabelForm({ data, onChange }: LabelFormProps) {
 
       {/* QR value */}
       <div className="space-y-1.5">
-        <Label htmlFor="label-qr">QR qiymati</Label>
+        <Label htmlFor="label-qr">{t("labelPrint.qrValue")}</Label>
         <Input
           id="label-qr"
-          placeholder="QR kodga yoziladigan matn yoki URL"
+          placeholder={t("labelPrint.qrValuePlaceholder")}
           value={data.qrValue}
           onChange={(e) => update("qrValue", e.target.value)}
           maxLength={300}
@@ -84,7 +86,7 @@ export function LabelForm({ data, onChange }: LabelFormProps) {
 
       {/* Copies */}
       <div className="space-y-1.5">
-        <Label htmlFor="label-copies">Nusxalar soni</Label>
+        <Label htmlFor="label-copies">{t("labelPrint.copies")}</Label>
         <Input
           id="label-copies"
           type="number"

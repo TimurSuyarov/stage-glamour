@@ -37,7 +37,7 @@ export function Label40x60({ data }: Label40x60Props) {
       {/* Title */}
       <div
         style={{
-          fontSize: "2.8mm",
+          fontSize: "5.5mm",
           fontWeight: 700,
           lineHeight: 1.2,
           overflow: "hidden",
@@ -79,8 +79,8 @@ export function Label40x60({ data }: Label40x60Props) {
         {/* Location text */}
         <div
           style={{
-            fontSize: "2.4mm",
-            fontWeight: 500,
+            fontSize: "5mm",
+            fontWeight: 600,
             color: "#333",
             lineHeight: 1.2,
             overflow: "hidden",
@@ -93,7 +93,7 @@ export function Label40x60({ data }: Label40x60Props) {
         </div>
 
         {/* Barcode */}
-        <LabelBarcode value={data.qrValue} widthMm={28} heightMm={9} />
+        <LabelBarcode value={data.qrValue} widthMm={16} heightMm={16} />
       </div>
     </div>
   );

@@ -421,5 +421,24 @@
   "bonuses.showing": "{{start}}–{{end}}",
   "bonuses.detail": "Запись бонуса",
   "admission.binExpiryMismatch": "Срок годности товара {{itemCode}} не совпадает со сроком товаров в ячейке {{binCode}}",
-  "admission.binAlreadyAllocated": "Ячейка {{binCode}} уже выделена для товара {{allocatedItemCode}}"
+  "admission.binAlreadyAllocated": "Ячейка {{binCode}} уже выделена для товара {{allocatedItemCode}}",
+
+  "labelPrint.title": "Печать этикетки",
+  "labelPrint.description": "Подготовка и печать этикеток для термопринтера XPrinter XP-365B",
+  "labelPrint.formCard": "Данные этикетки",
+  "labelPrint.previewCard": "Предпросмотр",
+  "labelPrint.size": "Размер этикетки",
+  "labelPrint.labelTitle": "Заголовок",
+  "labelPrint.labelTitlePlaceholder": "Например: ООО \"THREE LINE\"",
+  "labelPrint.mainCode": "Основной код",
+  "labelPrint.mainCodePlaceholder": "Например: 119220",
+  "labelPrint.location": "Местоположение",
+  "labelPrint.locationPlaceholder": "Например: Ташкент",
+  "labelPrint.qrValue": "Значение QR",
+  "labelPrint.qrValuePlaceholder": "Текст или URL для QR-кода",
+  "labelPrint.copies": "Количество копий",
+  "labelPrint.print": "Печатать",
+  "labelPrint.printCopies": "Печатать ({{count}} копии)",
+  "labelPrint.popupBlocked": "Всплывающее окно заблокировано! Разрешите всплывающие окна в браузере.",
+  "labelPrint.specHint": "Портрет · Масштаб 100% · Поля: нет"
 }

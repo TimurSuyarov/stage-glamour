@@ -28,9 +28,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, Loader2, ChevronLeft, ChevronRight, X, Printer } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { Label60x80 } from "@/features/label-print/components/Label60x80";
-import { printLabel } from "@/features/label-print/utils/printLabel";
-import type { LabelData } from "@/features/label-print/types/label";
+import { useLabelPrint } from "@/features/label-print/hooks/useLabelPrint";
+import { DEFAULT_LABEL_DATA } from "@/features/label-print/types/label";
 import { message } from "antd";
 import { cn } from "@/lib/utils";
 
@@ -105,6 +104,7 @@ export default function PicklistsPage({
   printMode = false,
 }: PicklistsPageProps) {
   const { t } = useTranslation();
+  const { print: printLabelPopup } = useLabelPrint();
   const [pageIndex, setPageIndex] = useState(0);
   const [selectedDocEntry, setSelectedDocEntry] = useState<number | null>(null);
   const [deliveryPackageCount, setDeliveryPackageCount] = useState<number>(0);
@@ -115,7 +115,7 @@ export default function PicklistsPage({
   // Pending scanner scan — line + raw barcode waiting for user confirmation
   const [pendingScan, setPendingScan] = useState<{ line: PicklistLine; barcode: string } | null>(null);
   const barcodeInputRef = useRef<HTMLInputElement>(null);
-  const hiddenLabelRef = useRef<HTMLDivElement>(null);
+
 
   const assignPicklist = useAssignPicklist();
   const assignPicklistEmployee = useAssignPicklistEmployee();
@@ -181,18 +181,15 @@ export default function PicklistsPage({
   };
 
   const handlePrintLabel = () => {
-    if (!picklistDetail || !hiddenLabelRef.current) return;
-    const labelEl = hiddenLabelRef.current.querySelector(".label-template") as HTMLElement | null;
-    if (!labelEl) return;
-    const data: LabelData = {
-      labelSize: "60x80",
-      title: picklistDetail.cardName ?? "",
-      mainCode: picklistDetail.salesOrderDocNum ?? String(picklistDetail.id),
-      location: picklistDetail.warehouseCode ?? "Toshkent",
-      qrValue: String(picklistDetail.id),
+    const item = picklists.find((p) => p.id === selectedDocEntry) ?? picklistDetail;
+    if (!item) return;
+    printLabelPopup({
+      ...DEFAULT_LABEL_DATA,
+      labelSize: "40x60",
+      title: item.cardName ?? "",
+      mainCode: item.deliveryNumber ?? String(item.salesOrderDocNum ?? item.id),
       copies: labelCopies,
-    };
-    printLabel(labelEl, data);
+    });
   };
 
   const handleBarcodeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -594,6 +591,14 @@ export default function PicklistsPage({
                         {
                           onSuccess: () => {
                             message.success(t("common.success"));
+                            const item = picklists.find((p) => p.id === selectedDocEntry) ?? picklistDetail;
+                            printLabelPopup({
+                              ...DEFAULT_LABEL_DATA,
+                              labelSize: "40x60",
+                              title: item.cardName ?? "",
+                              mainCode: item.deliveryNumber ?? String(item.salesOrderDocNum ?? item.id),
+                              copies: labelCopies,
+                            });
                             handleCloseModal();
                           },
                           onError: () => {
@@ -790,25 +795,6 @@ export default function PicklistsPage({
               );
             })()}
 
-            {/* Hidden label element used as DOM source for printLabel — only rendered in printMode */}
-            {printMode && (
-              <div
-                ref={hiddenLabelRef}
-                style={{ position: "absolute", left: "-9999px", top: 0, pointerEvents: "none" }}
-                aria-hidden
-              >
-                <Label60x80
-                  data={{
-                    labelSize: "60x80",
-                    title: picklistDetail.cardName ?? "",
-                    mainCode: picklistDetail.salesOrderDocNum ?? String(picklistDetail.id),
-                    location: picklistDetail.warehouseCode ?? "Toshkent",
-                    qrValue: String(picklistDetail.id),
-                    copies: labelCopies,
-                  }}
-                />
-              </div>
-            )}
           </div>
         ) : null}
       </Modal>

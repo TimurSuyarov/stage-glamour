@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { LabelData } from "../types/label";
 import { LABEL_SPECS } from "../types/label";
 import { Label40x60 } from "./Label40x60";
@@ -13,6 +14,7 @@ interface LabelPreviewProps {
 }
 
 export function LabelPreview({ data }: LabelPreviewProps) {
+  const { t } = useTranslation();
   const { print } = useLabelPrint();
   const spec = LABEL_SPECS[data.labelSize];
   const LabelComponent = data.labelSize === "40x60" ? Label40x60 : Label60x80;
@@ -55,11 +57,13 @@ export function LabelPreview({ data }: LabelPreviewProps) {
 
       <Button onClick={() => print(data)} className="gap-2" size="lg">
         <Printer className="h-4 w-4" />
-        Chop etish{data.copies > 1 ? ` (${data.copies} nusxa)` : ""}
+        {data.copies > 1
+          ? t("labelPrint.printCopies", { count: data.copies })
+          : t("labelPrint.print")}
       </Button>
 
       <p className="text-xs text-muted-foreground text-center max-w-xs">
-        {spec.width}×{spec.height} mm · Portrait · Scale 100% · Margins None
+        {spec.width}×{spec.height} mm · {t("labelPrint.specHint")}
       </p>
     </div>
   );
