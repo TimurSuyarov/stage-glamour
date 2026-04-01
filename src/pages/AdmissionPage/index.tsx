@@ -474,6 +474,7 @@ const AdmissionPage = () => {
     const docEntry = Number(selectedAdmission.id);
     const now = new Date().toISOString();
     const body: FromInvoiceRequestBody = {
+      employeeId: assignedEmployeeId,
       cardCode: selectedAdmission.supplierId,
       container: selectedAdmission.container ?? null,
           documentLines: items.map((item) => {
