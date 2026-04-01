@@ -516,10 +516,32 @@ const AdmissionPage = () => {
       clearDraft(selectedAdmission.documentNumber); // remove draft only on success
       handleCloseModal();
       message.success(t("admission.completeAdmissionSuccess"));
-    } catch (err) {
-      message.error(
-        err instanceof Error ? err.message : t("common.error")
-      );
+    } catch (err: any) {
+      let errorMessage = t("common.error");
+
+      // Backend response: { errors: { Code: "BinLocation.ExpiryDateMismatch:itemCode:binCode", Type: ... } }
+      const errorCode: string =
+        err?.response?.data?.errors?.Code ||
+        err?.response?.data?.errors?.code ||
+        "";
+
+      if (errorCode.includes("BinLocation.ExpiryDateMismatch:")) {
+        const parts = errorCode.split(":");
+        const itemCode = parts[1];
+        const binCode = parts[2];
+        errorMessage = t("admission.binExpiryMismatch", { itemCode, binCode });
+      } else if (errorCode.includes("BinLocation.BinAlreadyAllocated:")) {
+        const parts = errorCode.split(":");
+        const allocatedItemCode = parts[1];
+        const binCode = parts[2];
+        errorMessage = t("admission.binAlreadyAllocated", { allocatedItemCode, binCode });
+      } else if (errorCode) {
+        errorMessage = errorCode;
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+
+      message.error(errorMessage);
     }
   };
 

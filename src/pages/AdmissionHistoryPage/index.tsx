@@ -97,6 +97,13 @@ export default function AdmissionHistoryPage() {
       width: 90,
     },
     {
+      title: t("purchaseDelivery.employeeFullName"),
+      dataIndex: "employeeFullName",
+      key: "employeeFullName",
+      width: 160,
+      render: (val: string | null) => val ?? "—",
+    },
+    {
       title: t("creditMemos.cardCode"),
       dataIndex: "cardCode",
       key: "cardCode",
@@ -106,6 +113,7 @@ export default function AdmissionHistoryPage() {
       title: t("creditMemos.cardName"),
       dataIndex: "cardName",
       key: "cardName",
+      width: 220,
       ellipsis: true,
     },
     {
