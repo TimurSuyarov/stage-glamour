@@ -152,6 +152,7 @@ export interface FromInvoiceDocumentLine {
 }
 
 export interface FromInvoiceRequestBody {
+  employeeId: number | null;
   cardCode: string;
   container: string | null;
   documentLines: FromInvoiceDocumentLine[];
