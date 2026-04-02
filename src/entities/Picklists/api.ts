@@ -40,6 +40,7 @@ export interface PicklistItem {
   assignedUserId: number | null;
   assigneeName: string | null;
   completedAt: string | null;
+  checkingRequestId: number;
 }
 
 export interface PicklistDetail extends PicklistItem {

@@ -381,18 +381,27 @@ export default function PicklistsPage({
       dataIndex: "transferRequirementId",
       key: "transferRequirementId",
       width: 130,
-      render: (val: number | null) =>
-        val != null ? (
-          <button
-            type="button"
-            className="font-mono text-xs font-medium text-blue-700 underline underline-offset-2 hover:text-blue-900 cursor-pointer"
-            onClick={() => setSelectedTransferReqId(val)}
-          >
-            #{val}
-          </button>
-        ) : (
-          <span className="text-muted-foreground">—</span>
-        ),
+      render: (_: number | null, record: PicklistLine) => {
+        const docNum =
+          picklists.find((p) => p.id === selectedDocEntry)?.checkingRequestId ??
+          picklistDetail?.checkingRequestId;
+        if (record.transferRequirementId != null) {
+          return (
+            <button
+              type="button"
+              className="font-mono text-xs font-medium text-blue-700 underline underline-offset-2 hover:text-blue-900 cursor-pointer"
+              onClick={() => setSelectedTransferReqId(record.transferRequirementId!)}
+            >
+              #{docNum}
+            </button>
+          );
+        }
+        return (
+          <span className="font-mono text-xs text-foreground">
+            #{docNum}
+          </span>
+        );
+      },
     },
     {
       title: t("picklist_line_requested_qty"),
