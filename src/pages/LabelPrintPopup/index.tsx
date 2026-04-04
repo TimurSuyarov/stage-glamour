@@ -6,17 +6,24 @@ import { Label40x60 } from "@/features/label-print/components/Label40x60";
 import { Label60x80 } from "@/features/label-print/components/Label60x80";
 
 /**
- * Portrait popup — opened by useLabelPrint().
+ * Print popup — opened by useLabelPrint().
  *
- * @page portrait:  40mm × 60mm  (for "40x60")
- *                  60mm × 80mm  (for "60x80")
+ * Physical paper (portrait):  40×60 mm  |  60×80 mm
  *
- * Label components are landscape — CSS scale fits them into portrait width.
- *   scale = portraitW / labelW  →  40/58 ≈ 0.69  (40x60)
- *                                   60/80 = 0.75  (60x80)
+ * The label template is landscape (wider than tall).
+ * It is placed with position:absolute so its original layout dimensions
+ * never affect page-flow height — preventing the phantom blank second page
+ * that occurs when a scaled element's original bounding box overflows.
  *
- * Route: /p/label  — outside AppShell, no auth
+ * Route: /p/label — outside AppShell, no auth
  */
+
+// Landscape orientation: width > height (matches the label template orientation)
+const PAPER: Record<LabelSize, { w: number; h: number }> = {
+  "40x60": { w: 60, h: 40 },
+  "60x80": { w: 80, h: 60 },
+};
+
 export default function LabelPrintPopup() {
   const [params] = useSearchParams();
 
@@ -27,14 +34,13 @@ export default function LabelPrintPopup() {
   const qrValue  = params.get("qrValue")  ?? "";
   const copies   = Math.max(1, Math.min(100, Number(params.get("copies")) || 1));
 
-  const spec = LABEL_SPECS[size];
+  const spec  = LABEL_SPECS[size];
+  const paper = PAPER[size];
 
-  // Portrait page: landscape height → portrait width, landscape width → portrait height
-  const pageW = spec.height;   // 50mm or 60mm  (portrait width = landscape height)
-  const pageH = spec.width;   // 58mm or 80mm  (portrait height = landscape width)
-
-  // Scale landscape label to fill portrait width
-  const scale = pageW / spec.width;           // 40/58 ≈ 0.69 | 60/80 = 0.75
+  // Scale label to fill the paper height exactly, then centre horizontally
+  const scale   = paper.h / spec.height;                     // 40/38 ≈ 1.053
+  const scaledW = spec.width * scale;
+  const offsetX = Math.max(0, (paper.w - scaledW) / 2);     // centre gap
 
   const labelData = { labelSize: size, title, mainCode, location, qrValue, copies: 1 };
   const LabelComponent = size === "40x60" ? Label40x60 : Label60x80;
@@ -51,7 +57,7 @@ export default function LabelPrintPopup() {
     <>
       <style>{`
         @page {
-          size: ${pageW}mm ${pageH}mm;
+          size: ${paper.w}mm ${paper.h}mm;
           margin: 0;
         }
 
@@ -65,45 +71,42 @@ export default function LabelPrintPopup() {
           margin: 0;
           padding: 0;
           background: #fff;
-          width: ${pageW}mm;
           -webkit-text-size-adjust: 100%;
         }
 
+        /* Each copy = one physical label */
         .page-wrap {
-          width: ${pageW}mm;
-          height: ${pageH}mm;
+          position: relative;
+          width: ${paper.w}mm;
+          height: ${paper.h}mm;
           overflow: hidden;
-          page-break-after: always;
           break-after: page;
         }
 
         .page-wrap:last-child {
-          page-break-after: auto;
-          break-after: auto;
+          break-after: auto !important;
         }
 
-        .label-template {
-          transform-origin: top left !important;
-          transform: scale(${scale.toFixed(6)}) !important;
+        /* Label sits inside page-wrap via absolute positioning —
+           its original layout box does NOT affect flow height. */
+        .label-anchor {
+          position: absolute;
+          top: 0;
+          left: ${offsetX.toFixed(4)}mm;
+          transform-origin: top left;
+          transform: scale(${scale.toFixed(6)});
         }
 
         @media print {
-          html, body {
-            margin: 0 !important;
-            padding: 0 !important;
-            width: ${pageW}mm !important;
-          }
-
           .page-wrap {
-            width: ${pageW}mm !important;
-            height: ${pageH}mm !important;
+            width: ${paper.w}mm !important;
+            height: ${paper.h}mm !important;
             margin: 0 !important;
             overflow: hidden !important;
           }
 
-          .label-template {
-            transform-origin: top left !important;
-            transform: scale(${scale.toFixed(6)}) !important;
+          .page-wrap:last-child {
+            break-after: auto !important;
           }
         }
       `}</style>
@@ -111,7 +114,9 @@ export default function LabelPrintPopup() {
       <div id="print-root">
         {Array.from({ length: copies }).map((_, i) => (
           <div key={i} className="page-wrap">
-            <LabelComponent data={labelData} />
+            <div className="label-anchor">
+              <LabelComponent data={labelData} />
+            </div>
           </div>
         ))}
       </div>

@@ -18,14 +18,14 @@ export interface LabelSpec {
 
 export const LABEL_SPECS: Record<LabelSize, LabelSpec> = {
   "40x60": {
-    width: 58,
-    height: 42,
-    padding: { top: 5, right: 0, bottom: 5, left: 0 },
+    width: 52,
+    height: 38,
+    padding: { top: 2, right: 2, bottom: 2, left: 2 },
   },
   "60x80": {
-    width: 80,
-    height: 60,
-    padding: { top: 5, right: 0, bottom: 5, left: 0 },
+    width: 75,
+    height: 55,
+    padding: { top: 2, right: 2, bottom: 2, left: 2 },
   },
 };
 

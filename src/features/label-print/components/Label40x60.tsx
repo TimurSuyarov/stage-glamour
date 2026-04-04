@@ -37,9 +37,9 @@ export function Label40x60({ data }: Label40x60Props) {
       {/* Title */}
       <div
         style={{
-          fontSize: "5.5mm",
+          fontSize: "5mm",
           fontWeight: 700,
-          lineHeight: 1.2,
+          lineHeight: 1.6,
           overflow: "hidden",
           display: "-webkit-box",
           WebkitLineClamp: 2,
