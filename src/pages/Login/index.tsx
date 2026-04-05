@@ -71,7 +71,7 @@ const AppMockup = ({ lang }: { lang: "uz" | "ru" }) => {
       </div>
 
       {/* App UI */}
-      <div className="flex mb-72" style={{ height: 500 }}>
+      <div className="flex" style={{ height: 500 }}>
         {/* Sidebar — dark */}
         <div className="w-44 bg-[#0f172a] border-r border-white/10 flex flex-col flex-shrink-0">
           <div className="flex items-center gap-2 px-3 py-3 border-b border-white/10">
@@ -89,14 +89,12 @@ const AppMockup = ({ lang }: { lang: "uz" | "ru" }) => {
             {navItems.map((item, i) => (
               <div
                 key={i}
-                className={`flex items-center gap-2 px-3 py-2.5 ${
-                  i === 1 ? "bg-primary/20 text-primary" : "text-white/40"
-                }`}
+                className={`flex items-center gap-2 px-3 py-2.5 ${i === 1 ? "bg-primary/20 text-primary" : "text-white/40"
+                  }`}
               >
                 <div
-                  className={`w-2 h-2 rounded-sm flex-shrink-0 ${
-                    i === 1 ? "bg-primary" : "bg-white/20"
-                  }`}
+                  className={`w-2 h-2 rounded-sm flex-shrink-0 ${i === 1 ? "bg-primary" : "bg-white/20"
+                    }`}
                 />
                 <span className="truncate leading-none">{item}</span>
               </div>
@@ -179,11 +177,10 @@ const LoginPage = () => {
             <button
               key={lang}
               onClick={() => changeLanguage(lang)}
-              className={`px-4 py-1.5 text-sm font-semibold rounded-md border transition-colors ${
-                currentLanguage === lang
+              className={`px-4 py-1.5 text-sm font-semibold rounded-md border transition-colors ${currentLanguage === lang
                   ? "bg-primary text-white border-primary"
                   : "bg-transparent text-gray-500 border-gray-200 hover:bg-gray-50"
-              }`}
+                }`}
             >
               {lang.toUpperCase()}
             </button>
@@ -255,24 +252,20 @@ const LoginPage = () => {
             </Form>
           </div>
         </div>
-
-        <p className="text-center text-xs text-gray-400">
-          v2.1.0 · © 2025 Glamour Cosmetics
-        </p>
       </div>
 
       {/* Right – Dark showcase panel */}
       <div className="hidden md:flex md:w-1/2 bg-[#0f172a] flex-col justify-center overflow-hidden">
-        {/* Text section — padded */}
-        <div className="pl-12 pr-6 mb-10">
+        {/* Text section */}
+        <div className="pl-12 pr-6 mb-8 flex-shrink-0">
           <h2 className="text-white text-3xl font-bold mb-2">
             {t("loginWelcomeTitle")}
           </h2>
           <p className="text-slate-400 text-sm">{t("loginWelcomeDesc")}</p>
         </div>
 
-        {/* Mockups — right-aligned, overflow right edge */}
-        <div className="relative pl-12 pr-0 overflow-hidden" style={{ height: 340 }}>
+        {/* Mockups */}
+        <div className="relative pl-12 pr-0 flex-shrink-0 overflow-hidden" style={{ height: 460 }}>
           {/* Back mockup */}
           <div
             className="absolute top-0"
@@ -287,7 +280,7 @@ const LoginPage = () => {
             <AppMockup lang={currentLanguage === "ru" ? "uz" : "ru"} />
           </div>
 
-          {/* Front mockup — sticks to right */}
+          {/* Front mockup */}
           <div
             className="absolute top-8"
             style={{ left: 48, right: -32, zIndex: 1 }}
@@ -297,7 +290,7 @@ const LoginPage = () => {
 
           {/* Fade bottom */}
           <div
-            className="absolute inset-x-0 bottom-0 h-40 pointer-events-none"
+            className="absolute inset-x-0 bottom-0 h-48 pointer-events-none"
             style={{ background: "linear-gradient(to bottom, transparent, #0f172a)", zIndex: 2 }}
           />
         </div>
