@@ -210,6 +210,13 @@ export default function InventoryCountingsPage() {
       width: 120,
     },
     {
+      title: t("common.smartupCode"),
+      dataIndex: "smartupCode",
+      key: "smartupCode",
+      width: 120,
+      render: (v: string | null) => v ?? "—",
+    },
+    {
       title: t("inventoryCountings.itemDescription"),
       dataIndex: "itemDescription",
       key: "itemDescription",

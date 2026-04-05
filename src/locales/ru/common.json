@@ -399,6 +399,7 @@
   "welcome.tagline": "Используйте боковую панель для перехода к нужному модулю.",
   "common.guest": "Гость",
   "common.itemCode": "Код товара",
+  "common.smartupCode": "Smartup код",
   "common.itemName": "Название товара",
   "common.itemsGroupCode": "Код группы",
   "moveToRegion.submit": "Отправить",

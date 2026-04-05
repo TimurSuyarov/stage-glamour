@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "react-query";
 export interface InventoryCountingLine {
   lineNum: number;
   itemCode: string;
+  smartupCode?: string | null;
   itemDescription: string;
   warehouseCode: string;
   binLocation: string;

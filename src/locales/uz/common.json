@@ -399,6 +399,7 @@
   "welcome.tagline": "Kerakli modulga o'tish uchun yon paneldan foydalaning.",
   "common.guest": "Mehmon",
   "common.itemCode": "Mahsulot kodi",
+  "common.smartupCode": "Smartup kodi",
   "common.itemName": "Mahsulot nomi",
   "common.itemsGroupCode": "Guruh kodi",
   "moveToRegion.submit": "Yuborish",

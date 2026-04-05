@@ -117,6 +117,7 @@ export const useBinLocationItemCount = (filters?: BinLocationItemCountFilters) =
 // ─── Item statistics (cells page: /bin-locations/item-statistics) ───────────
 export interface BinLocationItemStatisticsEntry {
   itemCode: string;
+  smartupCode?: string | null;
   itemName: string;
   barCode: string | null;
   batchNumber: string;

@@ -4,6 +4,7 @@ import { useQuery } from "react-query";
 export interface StockTransferLine {
   lineNum: number;
   itemCode: string;
+  smartupCode?: string | null;
   itemDescription: string;
   quantity: number;
   quantityPerPackage: number | null;

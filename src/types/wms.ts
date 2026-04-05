@@ -24,6 +24,7 @@ export interface AdmissionItem {
   id: string;
   sku?: string;
   itemCode?: string;
+  smartupCode?: string | null;
   name: string;
   quantity: number;
   remainingOpenQuantity?: number;
@@ -158,6 +159,7 @@ export interface Employee {
 export interface Good {
   id: string;
   sku: string;
+  smartupCode?: string | null;
   barcode: string;
   name: string;
   category: string;

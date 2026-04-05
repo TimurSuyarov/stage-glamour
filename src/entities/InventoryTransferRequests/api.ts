@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "react-query";
 export interface InventoryTransferRequestLine {
   lineNum: number;
   itemCode: string;
+  smartupCode?: string | null;
   itemDescription: string;
   quantity: number;
   quantityPerPackage: number | null;

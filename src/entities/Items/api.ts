@@ -18,6 +18,7 @@ export interface ItemBatchDto {
 /** Backend item (API response shape – camelCase) */
 export interface ItemDto {
   itemCode: string;
+  smartupCode?: string | null;
   itemName: string;
   foreignName: string | null;
   itemsGroupCode: number;
@@ -65,6 +66,7 @@ function mapItemToGood(dto: ItemDto): Good {
   return {
     id: itemCode,
     sku: itemCode,
+    smartupCode: dto.smartupCode ?? null,
     barcode: dto.barCode ?? "",
     name: dto.itemName ?? "",
     category: dto.itemGroup ?? "",
