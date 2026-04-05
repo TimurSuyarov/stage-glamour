@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { PageHeader } from "@/components/ui/page-header";
 import { ModuleCard } from "@/components/ui/stat-card";
 import { useTranslation } from "react-i18next";
@@ -61,15 +61,34 @@ export default function InventoryPage() {
   const rangeStart = pageIndex * PAGE_SIZE + 1;
   const rangeEnd = pageIndex * PAGE_SIZE + items.length;
 
-  const handleApplyFilters = () => {
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setPageIndex(0);
+      setAppliedFilters((prev) => ({
+        ...prev,
+        ItemCode: filterItemCode.trim() || undefined,
+        ItemDesc: filterItemDesc.trim() || undefined,
+        Warrehouse: filterWarehouse.trim() || undefined,
+        BinCode: filterBinCode.trim() || undefined,
+        BatchNumber: filterBatchNumber.trim() || undefined,
+      }));
+    }, 400);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [filterItemCode, filterItemDesc, filterWarehouse, filterBinCode, filterBatchNumber]);
+
+  const handleZoneChange = (val: string | undefined) => {
+    setFilterZone(val);
     setPageIndex(0);
-    setAppliedFilters({
-      ItemCode: filterItemCode.trim() || undefined,
-      ItemDesc: filterItemDesc.trim() || undefined,
-      Warrehouse: filterWarehouse.trim() || undefined,
-      Zone: filterZone,
-      BinCode: filterBinCode.trim() || undefined,
-      BatchNumber: filterBatchNumber.trim() || undefined,
+    setAppliedFilters((prev) => {
+      const next = { ...prev };
+      if (val) next.Zone = val;
+      else delete next.Zone;
+      return next;
     });
   };
 
@@ -245,71 +264,69 @@ export default function InventoryPage() {
       <ModuleCard>
 
         {/* Filters */}
-        <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
-          <div className="space-y-2">
+        <div className="mb-6 flex flex-wrap items-end gap-3">
+          <div className="space-y-1.5">
             <Label className="text-xs">{t("inventory.itemCode")}</Label>
             <Input
               placeholder={t("common.search")}
               value={filterItemCode}
               onChange={(e) => setFilterItemCode(e.target.value)}
-              className="h-9"
+              className="h-9 w-44"
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label className="text-xs">{t("inventory.itemDesc")}</Label>
             <Input
               placeholder={t("common.search")}
               value={filterItemDesc}
               onChange={(e) => setFilterItemDesc(e.target.value)}
-              className="h-9"
+              className="h-9 w-56"
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label className="text-xs">{t("inventory.warehouseCode")}</Label>
             <Input
               placeholder="—"
               value={filterWarehouse}
               onChange={(e) => setFilterWarehouse(e.target.value)}
-              className="h-9"
+              className="h-9 w-40"
             />
           </div>
-          <div className="space-y-2">
+          <div className="flex flex-col gap-1.5">
             <Label className="text-xs">{t("inventory.zone")}</Label>
             <Select
               allowClear
               placeholder={t("inventory.zone")}
               value={filterZone}
-              onChange={(val) => setFilterZone(val)}
+              onChange={handleZoneChange}
               options={ZONE_OPTIONS}
-              className="w-full [&_.ant-select-selector]:!h-9"
+              style={{ width: 112 }}
+              className="[&_.ant-select-selector]:!h-9"
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label className="text-xs">{t("inventory.binCode")}</Label>
             <Input
               placeholder="—"
               value={filterBinCode}
               onChange={(e) => setFilterBinCode(e.target.value)}
-              className="h-9"
+              className="h-9 w-44"
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label className="text-xs">{t("inventory.batchNumber")}</Label>
             <Input
               placeholder="—"
               value={filterBatchNumber}
               onChange={(e) => setFilterBatchNumber(e.target.value)}
-              className="h-9"
+              className="h-9 w-44"
             />
           </div>
-          <Button onClick={handleApplyFilters} className="h-9">
-            {t("common_apply")}
-          </Button>
           <Tooltip title={t("common_clear_filters")}>
             <button
               type="button"
               onClick={handleClearFilters}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-input bg-accent text-accent-foreground"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-input bg-accent text-accent-foreground ml-auto"
               aria-label={t("common_clear_filters")}
             >
               <ClearOutlined className="h-4 w-4" />

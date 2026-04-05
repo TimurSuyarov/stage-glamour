@@ -24,6 +24,7 @@ export interface InventoryTransferRequestLine {
 export interface InventoryTransferRequestItem {
   docEntry: number;
   docNum: number;
+  deliveryNumber: string | null;
   assignedEmployeeId: number | null;
   docDate: string;
   docDueDate: string;

@@ -196,9 +196,16 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
   const columns: ColumnsType<SalesOrder> = [
     {
       title: t("sales_orders_doc_num"),
-      dataIndex: "docNum",
       key: "docNum",
-      width: 120,
+      width: 140,
+      render: (_: unknown, record: SalesOrder) => (
+        <div>
+          <p>{record.docNum}</p>
+          {record.deliveryNumber && (
+            <p className="text-xs text-muted-foreground font-mono mt-0.5">#{record.deliveryNumber}</p>
+          )}
+        </div>
+      ),
     },
     {
       title: t("sales_orders_card_name"),

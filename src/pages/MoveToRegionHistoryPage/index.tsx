@@ -11,7 +11,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Table, Modal, DatePicker } from "antd";
+import { Table, DatePicker } from "antd";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { ColumnsType } from "antd/es/table";
 import { Eye, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import dayjs from "dayjs";
@@ -86,9 +92,16 @@ export default function MoveToRegionHistoryPage() {
     },
     {
       title: t("creditMemos.docNum"),
-      dataIndex: "docNum",
       key: "docNum",
-      width: 110,
+      width: 140,
+      render: (_: unknown, record: StockTransferItem) => (
+        <div>
+          <p>{record.docNum}</p>
+          {record.deliveryNumber && (
+            <p className="text-xs text-muted-foreground font-mono mt-0.5">#{record.deliveryNumber}</p>
+          )}
+        </div>
+      ),
     },
     {
       title: t("creditMemos.documentStatus"),
@@ -167,22 +180,47 @@ export default function MoveToRegionHistoryPage() {
   ];
 
   const lineColumns: ColumnsType<StockTransferLine> = [
-    { title: "#", key: "index", width: 60, align: "center", render: (_: unknown, __: StockTransferLine, idx: number) => idx + 1 },
     { title: t("purchaseDelivery.lineNum"), dataIndex: "lineNum", key: "lineNum", width: 60, align: "center" },
-    { title: t("inventoryCountings.itemCode"), dataIndex: "itemCode", key: "itemCode", width: 110 },
-    { title: t("inventoryCountings.itemDescription"), dataIndex: "itemDescription", key: "itemDescription", ellipsis: true },
+    {
+      title: t("inventoryCountings.itemDescription"),
+      key: "item",
+      ellipsis: true,
+      render: (_: unknown, r: StockTransferLine) => (
+        <div>
+          <p className="text-sm">{r.itemDescription}</p>
+          <p className="text-xs text-muted-foreground font-mono mt-0.5">#{r.itemCode}</p>
+        </div>
+      ),
+    },
     { title: t("common.quantity"), dataIndex: "quantity", key: "quantity", width: 90, align: "right" },
     { title: t("creditMemos.quantityPerPackage"), dataIndex: "quantityPerPackage", key: "quantityPerPackage", width: 110, align: "right", render: (v: number | null) => v ?? "—" },
-    { title: t("moveToRegion.fromWarehouse"), dataIndex: "fromWarehouseCode", key: "fromWarehouseCode", width: 120 },
-    { title: t("moveToRegion.fromWarehouseName"), dataIndex: "fromWarehouseName", key: "fromWarehouseName", width: 140, render: (v: string | null) => v ?? "—" },
-    { title: t("moveToRegion.toWarehouse"), dataIndex: "warehouseCode", key: "warehouseCode", width: 110 },
-    { title: t("moveToRegion.toWarehouseName"), dataIndex: "warehouseName", key: "warehouseName", width: 140, render: (v: string | null) => v ?? "—" },
+    {
+      title: t("moveToRegion.fromWarehouseName"),
+      key: "fromWarehouse",
+      width: 160,
+      render: (_: unknown, r: StockTransferLine) => (
+        <div>
+          <p className="text-sm">{r.fromWarehouseName ?? "—"}</p>
+          <p className="text-xs text-muted-foreground font-mono mt-0.5">#{r.fromWarehouseCode}</p>
+        </div>
+      ),
+    },
+    {
+      title: t("moveToRegion.toWarehouseName"),
+      key: "toWarehouse",
+      width: 160,
+      render: (_: unknown, r: StockTransferLine) => (
+        <div>
+          <p className="text-sm">{r.warehouseName ?? "—"}</p>
+          <p className="text-xs text-muted-foreground font-mono mt-0.5">#{r.warehouseCode}</p>
+        </div>
+      ),
+    },
     { title: t("purchaseDelivery.barCode"), dataIndex: "barCode", key: "barCode", width: 120, render: (v: string | null) => v ?? "—" },
     { title: t("purchaseDelivery.batchNumber"), dataIndex: "batchNumber", key: "batchNumber", width: 130, render: (v: string | null) => v ?? "—" },
     { title: t("purchaseDelivery.batchExpiryDate"), dataIndex: "batchExpiryDate", key: "batchExpiryDate", width: 120, render: (v: string | null) => (v ? new Date(v).toLocaleDateString() : "—") },
     { title: t("purchaseDelivery.batchManufactureDate"), dataIndex: "batchManufactureDate", key: "batchManufactureDate", width: 120, render: (v: string | null) => (v ? new Date(v).toLocaleDateString() : "—") },
     { title: t("purchaseDelivery.binCode"), dataIndex: "binCode", key: "binCode", width: 120, render: (v: string | null) => v ?? "—" },
-    { title: t("purchaseDelivery.binAbsEntry"), dataIndex: "binAbsEntry", key: "binAbsEntry", width: 100, align: "right", render: (v: number | null) => v ?? "—" },
   ];
 
   return (
@@ -314,25 +352,29 @@ export default function MoveToRegionHistoryPage() {
         )}
       </ModuleCard>
 
-      <Modal
-        title={selectedDoc ? `${selectedDoc.fromWarehouseName ?? selectedDoc.fromWarehouse} → ${selectedDoc.toWarehouseName ?? selectedDoc.toWarehouse} — №${selectedDoc.docNum}` : t("nav.moveToRegionHistory")}
-        open={selectedDoc != null}
-        onCancel={() => setSelectedDoc(null)}
-        footer={null}
-        width={1200}
-        destroyOnClose
-      >
-        {selectedDoc && (
-          <Table
-            size="small"
-            pagination={false}
-            rowKey={(_, i) => String(i)}
-            scroll={{ x: "max-content" }}
-            columns={lineColumns}
-            dataSource={selectedDoc.stockTransferLines}
-          />
-        )}
-      </Modal>
+      <Dialog open={selectedDoc != null} onOpenChange={(open) => !open && setSelectedDoc(null)}>
+        <DialogContent className="w-[1400px] max-w-[95vw] max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedDoc
+                ? `${selectedDoc.fromWarehouseName ?? selectedDoc.fromWarehouse} → ${selectedDoc.toWarehouseName ?? selectedDoc.toWarehouse} — №${selectedDoc.docNum}`
+                : t("nav.moveToRegionHistory")}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedDoc && (
+            <div className="flex-1 min-h-0 overflow-auto">
+              <Table
+                size="small"
+                pagination={false}
+                rowKey={(_, i) => String(i)}
+                scroll={{ x: "max-content" }}
+                columns={lineColumns}
+                dataSource={selectedDoc.stockTransferLines}
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

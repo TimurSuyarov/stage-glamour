@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable, Column } from '@/components/ui/data-table';
 import { useTranslation } from 'react-i18next';
@@ -16,6 +16,8 @@ import {
   ChevronRight,
   Loader2,
 } from 'lucide-react';
+import { Tooltip } from 'antd';
+import { ClearOutlined } from '@ant-design/icons';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -57,14 +59,22 @@ export default function GoodsPage() {
   const hasPrevPage = pageIndex > 0;
   const totalPages = total != null ? Math.ceil(total / PAGE_SIZE) : null;
 
-  const handleApplyFilters = () => {
-    setPageIndex(0);
-    setAppliedFilters({
-      ItemCode: filterItemCode.trim() || undefined,
-      ItemName: filterItemName.trim() || undefined,
-      ItemsGroupCode: filterItemsGroupCode.trim() ? Number(filterItemsGroupCode) || filterItemsGroupCode : undefined,
-    });
-  };
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setPageIndex(0);
+      setAppliedFilters({
+        ItemCode: filterItemCode.trim() || undefined,
+        ItemName: filterItemName.trim() || undefined,
+        ItemsGroupCode: filterItemsGroupCode.trim() ? Number(filterItemsGroupCode) || filterItemsGroupCode : undefined,
+      });
+    }, 400);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [filterItemCode, filterItemName, filterItemsGroupCode]);
 
   const handleClearFilters = () => {
     setFilterItemCode('');
@@ -186,14 +196,14 @@ export default function GoodsPage() {
   ];
 
   const tableHeader = (
-    <div className="flex flex-wrap items-end gap-4 w-full">
+    <div className="flex flex-wrap items-end gap-3 w-full">
       <div className="flex flex-col gap-1.5">
         <Label className="text-xs">{t('common.itemCode')}</Label>
         <Input
           placeholder={t('common.search')}
           value={filterItemCode}
           onChange={(e) => setFilterItemCode(e.target.value)}
-          className="h-9 w-40"
+          className="h-9 w-44"
         />
       </div>
       <div className="flex flex-col gap-1.5">
@@ -202,7 +212,7 @@ export default function GoodsPage() {
           placeholder={t('common.search')}
           value={filterItemName}
           onChange={(e) => setFilterItemName(e.target.value)}
-          className="h-9 w-48"
+          className="h-9 w-56"
         />
       </div>
       <div className="flex flex-col gap-1.5">
@@ -211,15 +221,19 @@ export default function GoodsPage() {
           placeholder="—"
           value={filterItemsGroupCode}
           onChange={(e) => setFilterItemsGroupCode(e.target.value)}
-          className="h-9 w-32"
+          className="h-9 w-36"
         />
       </div>
-      <Button variant="outline" size="sm" className="h-9" onClick={handleApplyFilters}>
-        {t('common.apply')}
-      </Button>
-      <Button variant="ghost" size="sm" className="h-9" onClick={handleClearFilters}>
-        {t('common.clearFilters')}
-      </Button>
+      <Tooltip title={t('common.clearFilters')}>
+        <button
+          type="button"
+          onClick={handleClearFilters}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-input bg-accent text-accent-foreground ml-auto"
+          aria-label={t('common.clearFilters')}
+        >
+          <ClearOutlined className="h-4 w-4" />
+        </button>
+      </Tooltip>
     </div>
   );
 

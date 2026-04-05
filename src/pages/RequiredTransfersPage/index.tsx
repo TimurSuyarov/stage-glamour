@@ -363,7 +363,7 @@ export default function RequiredTransfersPage() {
           </DialogHeader>
 
           {selectedRequest && (
-            <div className="space-y-4" onClick={handleModalContentClick} role="presentation">
+            <div className="flex flex-col flex-1 min-h-0 space-y-4 overflow-hidden" onClick={handleModalContentClick} role="presentation">
               <input
                 ref={barcodeInputRef}
                 type="text"
@@ -373,7 +373,7 @@ export default function RequiredTransfersPage() {
                 onKeyDown={handleBarcodeKeyDown}
               />
               {/* Assign section */}
-              <div className="flex flex-wrap items-center gap-3 p-3 rounded-lg border bg-muted/30">
+              <div className="flex flex-wrap items-center gap-3 p-3 rounded-lg border bg-muted/30 shrink-0">
                 <span className="text-sm font-medium">{t("requiredTransfers.assignedUser")}:</span>
                 {selectedRequest.assignedUser ? (
                   <div className="flex items-center gap-2">
@@ -542,7 +542,7 @@ export default function RequiredTransfersPage() {
                 </Table>
               </div>
 
-              <div className="flex justify-end gap-2 pt-4">
+              <div className="flex justify-end gap-2 pt-4 shrink-0">
                 <Button variant="outline" size="sm" onClick={handleCloseModal}>
                   {t("common.close")}
                 </Button>

@@ -22,6 +22,7 @@ export interface StockTransferLine {
 export interface StockTransferItem {
   docEntry: number;
   docNum: number;
+  deliveryNumber: string | null;
   docDate: string;
   docDueDate: string | null;
   documentStatus: string;

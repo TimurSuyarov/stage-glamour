@@ -11,7 +11,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Table, Modal, DatePicker } from "antd";
+import { Table, DatePicker } from "antd";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { ColumnsType } from "antd/es/table";
 import { Eye, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import dayjs from "dayjs";
@@ -151,24 +157,51 @@ export default function AdmissionHistoryPage() {
   ];
 
   const lineColumns: ColumnsType<PurchaseDeliveryDocumentLine> = [
-    { title: "#", key: "index", width: 60, align: "center", render: (_: unknown, __: PurchaseDeliveryDocumentLine, idx: number) => idx + 1 },
     { title: t("purchaseDelivery.lineNum"), dataIndex: "lineNum", key: "lineNum", width: 60, align: "center" },
-    { title: t("inventoryCountings.itemCode"), dataIndex: "itemCode", key: "itemCode", width: 110 },
-    { title: t("inventoryCountings.itemDescription"), dataIndex: "itemDescription", key: "itemDescription", ellipsis: true },
+    {
+      title: t("inventoryCountings.itemDescription"),
+      key: "item",
+      ellipsis: true,
+      render: (_: unknown, r: PurchaseDeliveryDocumentLine) => (
+        <div>
+          <p className="text-sm">{r.itemDescription}</p>
+          <p className="text-xs text-muted-foreground font-mono mt-0.5">#{r.itemCode}</p>
+        </div>
+      ),
+    },
     { title: t("purchaseDelivery.itemGroup"), dataIndex: "itemGroup", key: "itemGroup", width: 140 },
     { title: t("common.quantity"), dataIndex: "quantity", key: "quantity", width: 90, align: "right" },
-    { title: t("purchaseDelivery.warehouseCode"), dataIndex: "warehouseCode", key: "warehouseCode", width: 100 },
-    { title: t("purchaseDelivery.warehouseName"), dataIndex: "warehouseName", key: "warehouseName", width: 140 },
     { title: t("creditMemos.quantityPerPackage"), dataIndex: "quantityPerPackage", key: "quantityPerPackage", width: 110, align: "right", render: (v: number | null) => v ?? "—" },
-    { title: t("purchaseDelivery.currency"), dataIndex: "currency", key: "currency", width: 80 },
-    { title: t("purchaseDelivery.price"), dataIndex: "price", key: "price", width: 90, align: "right" },
-    { title: t("purchaseDelivery.lineTotal"), dataIndex: "lineTotal", key: "lineTotal", width: 100, align: "right" },
+    { title: t("purchaseDelivery.batchQuantity"), dataIndex: "batchQuantity", key: "batchQuantity", width: 110, align: "right" },
+    {
+      title: t("purchaseDelivery.warehouseName"),
+      key: "warehouse",
+      width: 160,
+      render: (_: unknown, r: PurchaseDeliveryDocumentLine) => (
+        <div>
+          <p className="text-sm">{r.warehouseName}</p>
+          <p className="text-xs text-muted-foreground font-mono mt-0.5">#{r.warehouseCode}</p>
+        </div>
+      ),
+    },
+    {
+      title: t("purchaseDelivery.price"),
+      key: "price",
+      width: 110,
+      align: "right",
+      render: (_: unknown, r: PurchaseDeliveryDocumentLine) => `${r.price} ${r.currency}`,
+    },
+    {
+      title: t("purchaseDelivery.lineTotal"),
+      key: "lineTotal",
+      width: 120,
+      align: "right",
+      render: (_: unknown, r: PurchaseDeliveryDocumentLine) => `${r.lineTotal} ${r.currency}`,
+    },
     { title: t("purchaseDelivery.barCode"), dataIndex: "barCode", key: "barCode", width: 120, render: (v: string | null) => v ?? "—" },
     { title: t("purchaseDelivery.batchNumber"), dataIndex: "batchNumber", key: "batchNumber", width: 130, render: (v: string | null) => v ?? "—" },
-    { title: t("purchaseDelivery.batchQuantity"), dataIndex: "batchQuantity", key: "batchQuantity", width: 110, align: "right" },
     { title: t("purchaseDelivery.batchExpiryDate"), dataIndex: "batchExpiryDate", key: "batchExpiryDate", width: 120, render: (v: string | null) => (v ? new Date(v).toLocaleDateString() : "—") },
     { title: t("purchaseDelivery.batchManufactureDate"), dataIndex: "batchManufactureDate", key: "batchManufactureDate", width: 120, render: (v: string | null) => (v ? new Date(v).toLocaleDateString() : "—") },
-    { title: t("purchaseDelivery.binAbsEntry"), dataIndex: "binAbsEntry", key: "binAbsEntry", width: 100, align: "right" },
     { title: t("purchaseDelivery.binCode"), dataIndex: "binCode", key: "binCode", width: 120, render: (v: string | null) => v ?? "—" },
   ];
 
@@ -303,25 +336,27 @@ export default function AdmissionHistoryPage() {
         )}
       </ModuleCard>
 
-      <Modal
-        title={selectedDoc ? `${selectedDoc.cardName} — №${selectedDoc.docNum}` : t("nav.admissionHistory")}
-        open={selectedDoc != null}
-        onCancel={() => setSelectedDoc(null)}
-        footer={null}
-        width={1200}
-        destroyOnClose
-      >
-        {selectedDoc && (
-          <Table
-            size="small"
-            pagination={false}
-            rowKey={(_, i) => String(i)}
-            scroll={{ x: "max-content" }}
-            columns={lineColumns}
-            dataSource={selectedDoc.documentLines}
-          />
-        )}
-      </Modal>
+      <Dialog open={selectedDoc != null} onOpenChange={(open) => !open && setSelectedDoc(null)}>
+        <DialogContent className="w-[1400px] max-w-[95vw] max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedDoc ? `${selectedDoc.cardName} — №${selectedDoc.docNum}` : t("nav.admissionHistory")}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedDoc && (
+            <div className="flex-1 min-h-0 overflow-auto">
+              <Table
+                size="small"
+                pagination={false}
+                rowKey={(_, i) => String(i)}
+                scroll={{ x: "max-content" }}
+                columns={lineColumns}
+                dataSource={selectedDoc.documentLines}
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

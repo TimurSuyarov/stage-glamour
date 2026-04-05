@@ -27,6 +27,7 @@ export interface SalesOrderDocumentLine {
 export interface SalesOrder {
   docEntry: number;
   docNum: number;
+  deliveryNumber: string | null;
   cardName: string;
   cardCode: string;
   docTotal: number;
