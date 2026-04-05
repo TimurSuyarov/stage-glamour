@@ -6,6 +6,7 @@ import { ESalesOrderStatus } from "@/enums/salesOrder";
 export interface SalesOrderDocumentLine {
   lineNum: number;
   itemCode: string;
+  smartupCode?: string | null;
   itemDescription: string;
   quantity: number;
   baseLine: number | null;

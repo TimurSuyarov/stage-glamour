@@ -63,6 +63,7 @@ export const useBinLocationsInfinite = (search?: string) =>
 // Item count by bin (inventory page)
 export interface BinLocationItemCount {
   itemCode: string;
+  smartupCode?: string | null;
   itemDesc: string;
   binCode: string;
   binAbsEntry: number;

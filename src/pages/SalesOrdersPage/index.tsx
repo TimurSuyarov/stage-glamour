@@ -272,6 +272,9 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
           {record.itemCode && (
             <p className="font-mono text-xs text-gray-400 mt-0.5">{record.itemCode}</p>
           )}
+          {record.smartupCode && (
+            <p className="font-mono text-xs text-gray-400 mt-0.5">{record.smartupCode}</p>
+          )}
         </div>
       ),
     },
