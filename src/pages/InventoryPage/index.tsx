@@ -119,6 +119,13 @@ export default function InventoryPage() {
       width: 120,
     },
     {
+      title: t("common.smartupCode"),
+      dataIndex: "smartupCode",
+      key: "smartupCode",
+      width: 120,
+      render: (v: string | null) => v ?? "—",
+    },
+    {
       title: t("inventory.itemDesc"),
       dataIndex: "itemDesc",
       key: "itemDesc",

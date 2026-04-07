@@ -879,6 +879,11 @@ const AdmissionPage = () => {
                                 {item.itemCode}
                               </p>
                             )}
+                            {item.smartupCode && (
+                              <p className="font-mono text-[11px] text-muted-foreground mt-0.5">
+                                {item.smartupCode}
+                              </p>
+                            )}
                           </td>
                           <td className="px-3 py-3 text-center font-medium border-r border-border">
                             {item.quantity}

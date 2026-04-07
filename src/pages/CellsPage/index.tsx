@@ -78,6 +78,7 @@ const CellsPage = () => {
 
   const binItemColumns: ColumnsType<BinLocationItemStatisticsEntry> = [
     { title: t("inventoryCountings.itemCode"), dataIndex: "itemCode", key: "itemCode", width: 120 },
+    { title: t("common.smartupCode"), dataIndex: "smartupCode", key: "smartupCode", width: 120, render: (v: string | null) => v ?? "—" },
     { title: t("inventoryCountings.itemDescription"), dataIndex: "itemName", key: "itemName", ellipsis: true },
     { title: t("returns.batchNumber"), dataIndex: "batchNumber", key: "batchNumber", width: 140 },
     {

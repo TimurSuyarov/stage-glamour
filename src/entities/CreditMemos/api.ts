@@ -18,6 +18,7 @@ export interface BinAllocation {
 export interface CreditMemoLine {
   lineNum: number;
   itemCode: string;
+  smartupCode?: string | null;
   itemDescription: string;
   quantity: number;
   quantityPerPackage: number | null;

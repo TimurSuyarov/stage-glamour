@@ -189,6 +189,9 @@ export default function MoveToRegionHistoryPage() {
         <div>
           <p className="text-sm">{r.itemDescription}</p>
           <p className="text-xs text-muted-foreground font-mono mt-0.5">#{r.itemCode}</p>
+          {r.smartupCode && (
+            <p className="text-xs text-muted-foreground font-mono mt-0.5">{r.smartupCode}</p>
+          )}
         </div>
       ),
     },

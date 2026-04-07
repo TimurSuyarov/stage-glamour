@@ -17,6 +17,7 @@ import { Eye, Loader2, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import dayjs, { type Dayjs } from "dayjs";
 import { validateOrderLine, type EwsIssue } from "@/lib/ews";
 import { EwsWarning } from "@/components/ui/ews-warning";
@@ -43,11 +44,10 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
   const [filterEndDate, setFilterEndDate] = useState("");
   const [appliedFilters, setAppliedFilters] = useState<SalesOrdersFilters>({});
   const [pageIndex, setPageIndex] = useState(0);
-
-  const pageSize = 20;
+  const [pageSize, setPageSize] = useState(20);
 
   const filters: SalesOrdersFilters = useMemo(() => {
-    const f: SalesOrdersFilters = { skip: pageIndex * pageSize };
+    const f: SalesOrdersFilters = { skip: pageIndex * pageSize, pageSize };
     if (appliedFilters.DocNum != null) f.DocNum = appliedFilters.DocNum;
     if (appliedFilters.CardName) f.CardName = appliedFilters.CardName;
     if (appliedFilters.StartDate) f.StartDate = appliedFilters.StartDate;
@@ -108,6 +108,11 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
     setFilterStartDate("");
     setFilterEndDate("");
     setAppliedFilters({});
+    setPageIndex(0);
+  };
+
+  const handlePageSizeChange = (val: string) => {
+    setPageSize(Number(val));
     setPageIndex(0);
   };
 
@@ -272,6 +277,9 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
           {record.itemCode && (
             <p className="font-mono text-xs text-gray-400 mt-0.5">{record.itemCode}</p>
           )}
+          {record.smartupCode && (
+            <p className="font-mono text-xs text-gray-400 mt-0.5">{record.smartupCode}</p>
+          )}
         </div>
       ),
     },
@@ -405,11 +413,25 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
             {/* Custom Pagination */}
             {(salesOrders.length > 0 || pageIndex > 0) && (
               <div className="flex items-center justify-between border-t border-border px-4 py-3 mt-0">
-                <div className="text-sm text-muted-foreground">
-                  {t("sales_orders_showing_range", {
-                    start: rangeStart,
-                    end: rangeEnd,
-                  })}
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-muted-foreground">
+                    {t("sales_orders_showing_range", {
+                      start: rangeStart,
+                      end: rangeEnd,
+                    })}
+                  </span>
+                  <Select value={String(pageSize)} onValueChange={handlePageSizeChange}>
+                    <SelectTrigger className="h-8 w-[80px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[20, 40, 60, 80, 100].map((size) => (
+                        <SelectItem key={size} value={String(size)}>
+                          {size}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button

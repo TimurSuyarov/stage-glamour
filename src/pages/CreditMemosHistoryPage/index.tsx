@@ -311,8 +311,14 @@ export default function CreditMemosHistoryPage() {
                     lines.map((line: CreditMemoLine, idx: number) => (
                       <TableRow key={idx}>
                         <TableCell className="font-mono text-sm">{idx + 1}</TableCell>
-                        <TableCell className="max-w-[240px] truncate" title={line.itemDescription}>
-                          {line.itemDescription}
+                        <TableCell className="max-w-[240px]" title={line.itemDescription}>
+                          <p className="truncate">{line.itemDescription}</p>
+                          {line.itemCode && (
+                            <p className="font-mono text-xs text-muted-foreground mt-0.5">#{line.itemCode}</p>
+                          )}
+                          {line.smartupCode && (
+                            <p className="font-mono text-xs text-muted-foreground mt-0.5">{line.smartupCode}</p>
+                          )}
                         </TableCell>
                         <TableCell className="text-center">{line.quantity}</TableCell>
                         <TableCell>

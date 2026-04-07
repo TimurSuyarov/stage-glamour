@@ -15,6 +15,7 @@ export interface PurchaseInvoiceDocumentLine {
   warehouseCode: string | null;
   measureUnit: string | null;
   quantityPerPackage?: number | null;
+  smartupCode?: string | null;
 }
 
 export interface PurchaseInvoiceItem {
@@ -65,6 +66,7 @@ function mapDocumentLineToAdmissionItem(
   return {
     id: `${docEntry}-${line.lineNum}`,
     itemCode: line.itemCode ?? "",
+    smartupCode: line.smartupCode ?? null,
     name: line.itemDescription ?? "",
     quantity: line.quantity,
     remainingOpenQuantity: remaining,

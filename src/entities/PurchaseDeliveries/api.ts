@@ -4,6 +4,7 @@ import { useQuery } from "react-query";
 export interface PurchaseDeliveryDocumentLine {
   lineNum: number;
   itemCode: string;
+  smartupCode?: string | null;
   itemDescription: string;
   itemGroup: string | null;
   quantity: number;

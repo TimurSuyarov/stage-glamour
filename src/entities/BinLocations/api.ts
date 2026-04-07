@@ -63,6 +63,7 @@ export const useBinLocationsInfinite = (search?: string) =>
 // Item count by bin (inventory page)
 export interface BinLocationItemCount {
   itemCode: string;
+  smartupCode?: string | null;
   itemDesc: string;
   binCode: string;
   binAbsEntry: number;
@@ -117,6 +118,7 @@ export const useBinLocationItemCount = (filters?: BinLocationItemCountFilters) =
 // ─── Item statistics (cells page: /bin-locations/item-statistics) ───────────
 export interface BinLocationItemStatisticsEntry {
   itemCode: string;
+  smartupCode?: string | null;
   itemName: string;
   barCode: string | null;
   batchNumber: string;

@@ -98,6 +98,18 @@ export default function GoodsPage() {
       ),
     },
     {
+      key: 'smartupCode',
+      header: t('common.smartupCode'),
+      cell: (good) => (
+        <span className={cn(
+          "font-mono text-sm",
+          !good.isActive && "text-muted-foreground"
+        )}>
+          {good.smartupCode ?? "—"}
+        </span>
+      ),
+    },
+    {
       key: 'barcode',
       header: 'Barcode',
       cell: (good) => (
@@ -313,6 +325,10 @@ export default function GoodsPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">SKU</p>
                   <p className="font-mono">{selectedGood.sku}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">{t('common.smartupCode')}</p>
+                  <p className="font-mono">{selectedGood.smartupCode ?? "—"}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Barcode</p>
