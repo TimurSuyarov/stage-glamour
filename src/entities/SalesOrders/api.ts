@@ -53,8 +53,10 @@ export interface SalesOrdersFilters {
   CardName?: string;
   StartDate?: string;
   EndDate?: string;
-  /** Page index: 0 = first 20 items, 1 = items 21–40, etc. */
+  /** Page index: 0 = first N items, 1 = items N+1–2N, etc. */
   skip?: number;
+  /** Number of items per page (default 20) */
+  pageSize?: number;
 }
 
 const fetchSalesOrders = async (
@@ -69,6 +71,7 @@ const fetchSalesOrders = async (
   if (filters?.StartDate) params.set("StartDate", filters.StartDate);
   if (filters?.EndDate) params.set("EndDate", filters.EndDate);
   if (filters?.skip != null) params.set("skip", String(filters.skip));
+  if (filters?.pageSize != null) params.set("pageSize", String(filters.pageSize));
   
   const { data } = await request.get<SalesOrdersResponse>(
     `/sales-orders?${params.toString()}`
