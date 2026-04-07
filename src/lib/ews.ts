@@ -22,8 +22,8 @@ export function validateOrderLine(line: SalesOrderDocumentLine): string[] {
   if (!line.itemDescription?.trim())
     errors.push("Mahsulot nomi ko'rsatilmagan. Iltimos, mahsulot ma'lumotlarini tekshiring.");
 
-  if (!line.barCode?.trim())
-    errors.push("Mahsulotning shtrix-kodi mavjud emas. Iltimos, mahsulot ma'lumotlarini tekshiring.");
+  // if (!line.barCode?.trim())
+  //   errors.push("Mahsulotning shtrix-kodi mavjud emas. Iltimos, mahsulot ma'lumotlarini tekshiring.");
 
   if (!line.warehouseCode?.trim())
     errors.push("Mahsulot omborga biriktirilmagan. Iltimos, mahsulot ma'lumotlarini tekshiring.");
@@ -58,8 +58,8 @@ export function validateTransferLine(line: InventoryTransferRequestLine): string
   if (!line.itemDescription?.trim())
     errors.push("Mahsulot nomi ko'rsatilmagan. Iltimos, mahsulot ma'lumotlarini tekshiring.");
 
-  if (!line.barCode?.trim())
-    errors.push("Mahsulotning shtrix-kodi mavjud emas. Iltimos, mahsulot ma'lumotlarini tekshiring.");
+  // if (!line.barCode?.trim())
+  //   errors.push("Mahsulotning shtrix-kodi mavjud emas. Iltimos, mahsulot ma'lumotlarini tekshiring.");
 
   const warehouseCode = line.fromWarehouseCode ?? line.warehouseCode;
   if (!warehouseCode?.trim())
@@ -101,9 +101,9 @@ export function validateReturnLine(line: CreditMemoLine): string[] {
   if ((line.quantity ?? 0) < 0)
     errors.push("Mahsulot miqdori noto'g'ri kiritilgan. Miqdor manfiy bo'lishi mumkin emas.");
 
-  const barCode = line.U_BarCode ?? line.barCode;
-  if (!barCode?.trim())
-    errors.push("Mahsulotning shtrix-kodi mavjud emas. Iltimos, mahsulot ma'lumotlarini tekshiring.");
+  // const barCode = line.U_BarCode ?? line.barCode;
+  // if (!barCode?.trim())
+  //   errors.push("Mahsulotning shtrix-kodi mavjud emas. Iltimos, mahsulot ma'lumotlarini tekshiring.");
 
   if (!line.warehouseCode?.trim())
     errors.push("Mahsulot omborga biriktirilmagan. Iltimos, mahsulot ma'lumotlarini tekshiring.");
