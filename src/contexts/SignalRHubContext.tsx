@@ -2,7 +2,7 @@ import { createContext, useContext, useRef, useEffect, useCallback, type ReactNo
 import type { HubConnection } from "@microsoft/signalr";
 import { createSalesOrdersHubConnection, type ProcessingCompletedPayload } from "@/lib/salesOrdersHub";
 import { useSignalRWaitingControl, type SignalRWaitingKey } from "./SignalRWaitingContext";
-Howimport { useAuth } from "./AuthContext";
+import { useAuth } from "./AuthContext";
 
 type OperationHandlers = {
   onCompleted: (payload: ProcessingCompletedPayload) => void;
