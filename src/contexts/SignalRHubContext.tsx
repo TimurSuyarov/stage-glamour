@@ -2,6 +2,7 @@ import { createContext, useContext, useRef, useEffect, useCallback, type ReactNo
 import type { HubConnection } from "@microsoft/signalr";
 import { createSalesOrdersHubConnection, type ProcessingCompletedPayload } from "@/lib/salesOrdersHub";
 import { useSignalRWaitingControl, type SignalRWaitingKey } from "./SignalRWaitingContext";
+Howimport { useAuth } from "./AuthContext";
 
 type OperationHandlers = {
   onCompleted: (payload: ProcessingCompletedPayload) => void;
@@ -17,8 +18,10 @@ export function SignalRHubProvider({ children }: { children: ReactNode }) {
   const connectionRef = useRef<HubConnection | null>(null);
   const handlersRef = useRef<Map<SignalRWaitingKey, OperationHandlers>>(new Map());
   const { setWaiting } = useSignalRWaitingControl();
+  const { user } = useAuth();
 
   useEffect(() => {
+    if (!user) return;
     const token = sessionStorage.getItem("token");
     if (!token) return;
 
@@ -41,7 +44,7 @@ export function SignalRHubProvider({ children }: { children: ReactNode }) {
     return () => {
       connection.stop().catch(() => {});
     };
-  }, [setWaiting]);
+  }, [user, setWaiting]);
 
   const startListening = useCallback((key: SignalRWaitingKey, handlers: OperationHandlers) => {
     handlersRef.current.set(key, handlers);

@@ -32,6 +32,7 @@ import { useLabelPrint } from "@/features/label-print/hooks/useLabelPrint";
 import { DEFAULT_LABEL_DATA } from "@/features/label-print/types/label";
 import { message } from "antd";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 const WAREHOUSE_CHECKING_TYPE_KEYS: Record<number, string> = {
   [EWarehouseCheckingType.WarehouseToClient]: "requiredTransfers.typeWarehouseToClient",
@@ -104,6 +105,7 @@ export default function PicklistsPage({
   printMode = false,
 }: PicklistsPageProps) {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const { print: printLabelPopup } = useLabelPrint();
   const [pageIndex, setPageIndex] = useState(0);
   const [selectedDocEntry, setSelectedDocEntry] = useState<number | null>(null);
@@ -168,6 +170,44 @@ export default function PicklistsPage({
       clearTimeout(t2);
     };
   }, [isValidationMode, selectedDocEntry]);
+
+  // Global scanner listener: when the detail modal is closed, a scan of
+  // "pick-<id>" opens the detail modal for the matching row in the table.
+  useEffect(() => {
+    if (selectedDocEntry != null) return;
+
+    let buffer = "";
+    let lastKeyTime = 0;
+
+    const handleScannerKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest("input, textarea, [contenteditable]")) return;
+
+      const now = Date.now();
+      if (now - lastKeyTime > 100) buffer = "";
+      lastKeyTime = now;
+
+      if (e.key === "Enter") {
+        const value = buffer.trim();
+        buffer = "";
+        const match = /^pick-(\d+)$/i.exec(value);
+        if (!match) return;
+        e.preventDefault();
+        const id = Number(match[1]);
+        if (picklists.some((p) => p.id === id)) {
+          setSelectedDocEntry(id);
+        } else {
+          message.warning(t("picklist.scanNotFound"));
+        }
+        return;
+      }
+
+      if (e.key.length === 1) buffer += e.key;
+    };
+
+    document.addEventListener("keydown", handleScannerKey);
+    return () => document.removeEventListener("keydown", handleScannerKey);
+  }, [selectedDocEntry, picklists, t]);
 
   const handleViewDetail = (docEntry: number) => {
     setSelectedDocEntry(docEntry);
@@ -235,6 +275,34 @@ export default function PicklistsPage({
     setPendingScan(null);
     // Re-focus scanner input so worker can scan the next item immediately
     setTimeout(() => barcodeInputRef.current?.focus(), 100);
+  };
+
+  const isAssigning = isValidationMode
+    ? assignValidationValidator.isLoading
+    : assignPicklistEmployee.isLoading;
+
+  const handleAssign = (employeeId: number) => {
+    if (!picklistDetail) return;
+    const callbacks = {
+      onSuccess: () => {
+        message.success(t("common.success"));
+        setSelectedEmployeeId(null);
+      },
+      onError: () => {
+        message.error(t("error.somethingWentWrong"));
+      },
+    };
+    if (isValidationMode) {
+      assignValidationValidator.mutate(
+        { picklistId: picklistDetail.id, validatorId: employeeId },
+        callbacks
+      );
+    } else {
+      assignPicklistEmployee.mutate(
+        { picklistId: picklistDetail.id, employeeId },
+        callbacks
+      );
+    }
   };
 
   const handleModalContentClick = (e: React.MouseEvent) => {
@@ -704,6 +772,20 @@ export default function PicklistsPage({
                           )}
                         </Button>
                       </div>
+                    ) : (isCollectMode || isValidationMode) && user && user.role !== "admin" ? (
+                      <div className="mt-1">
+                        <Button
+                          size="sm"
+                          onClick={() => handleAssign(Number(user.employeeId))}
+                          disabled={isAssigning}
+                        >
+                          {isAssigning ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            t("picklist.assignToMe")
+                          )}
+                        </Button>
+                      </div>
                     ) : isCollectMode || isValidationMode ? (
                       <div className="flex flex-wrap items-center gap-2 mt-1">
                         <Select
@@ -729,44 +811,11 @@ export default function PicklistsPage({
                               message.warning(t("inventoryCountings.selectUserFirst"));
                               return;
                             }
-                            if (isValidationMode) {
-                              assignValidationValidator.mutate(
-                                { picklistId: picklistDetail.id, validatorId: selectedEmployeeId },
-                                {
-                                  onSuccess: () => {
-                                    message.success(t("common.success"));
-                                    setSelectedEmployeeId(null);
-                                  },
-                                  onError: () => {
-                                    message.error(t("error.somethingWentWrong"));
-                                  },
-                                }
-                              );
-                            } else {
-                              assignPicklistEmployee.mutate(
-                                { picklistId: picklistDetail.id, employeeId: selectedEmployeeId },
-                                {
-                                  onSuccess: () => {
-                                    message.success(t("common.success"));
-                                    setSelectedEmployeeId(null);
-                                  },
-                                  onError: () => {
-                                    message.error(t("error.somethingWentWrong"));
-                                  },
-                                }
-                              );
-                            }
+                            handleAssign(selectedEmployeeId);
                           }}
-                          disabled={
-                            selectedEmployeeId == null ||
-                            (isValidationMode
-                              ? assignValidationValidator.isLoading
-                              : assignPicklistEmployee.isLoading)
-                          }
+                          disabled={selectedEmployeeId == null || isAssigning}
                         >
-                          {(isValidationMode
-                            ? assignValidationValidator.isLoading
-                            : assignPicklistEmployee.isLoading) ? (
+                          {isAssigning ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
                           ) : (
                             t("inventoryCountings.assign")

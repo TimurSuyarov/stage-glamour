@@ -144,6 +144,8 @@
   "inventoryCountings.selectUser": "Выберите сотрудника",
   "inventoryCountings.selectUserFirst": "Сначала выберите сотрудника",
   "inventoryCountings.assign": "Назначить",
+  "picklist.assignToMe": "Назначить мне",
+  "picklist.scanNotFound": "Элемент с этим ID не найден в таблице",
   "inventoryCountings.showSystemQty": "Показывать системное кол-во",
   "inventoryCountings.finalize": "Завершить",
   "inventory.itemCode": "Код товара",

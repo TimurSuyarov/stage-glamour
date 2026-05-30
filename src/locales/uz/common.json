@@ -144,6 +144,8 @@
   "inventoryCountings.selectUser": "Xodimni tanlang",
   "inventoryCountings.selectUserFirst": "Avval xodimni tanlang",
   "inventoryCountings.assign": "Tayinlash",
+  "picklist.assignToMe": "Menga Assign qilish",
+  "picklist.scanNotFound": "Bu ID bilan element jadvalda topilmadi",
   "inventoryCountings.showSystemQty": "Tizim miqdori ko'rsatish",
   "inventoryCountings.finalize": "Yakunlash",
   "inventory.itemCode": "Mahsulot kodi",
