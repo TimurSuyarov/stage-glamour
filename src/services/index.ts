@@ -1,5 +1,6 @@
 import axios, { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import type { i18n } from 'i18next';
+import { toast } from 'sonner';
 import {
   getStoredRefreshToken,
   getStoredEmployee,
@@ -84,6 +85,27 @@ request.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config as RequestConfig;
     const status = error.response?.status;
+
+    // Surface a business error code returned on a 500 as a toast — but only when
+    // it carries a human-readable message, i.e. the string contains a space
+    // anywhere (e.g. "10001287 - Себестоимость товара не найдена ..."), and not
+    // a bare numeric code.
+    if (status === 500) {
+      let data = error.response?.data;
+      // Some servers send the body with a non-JSON content-type, so axios leaves
+      // it as a raw string — parse it before reading errors.code.
+      if (typeof data === 'string') {
+        try {
+          data = JSON.parse(data);
+        } catch {
+          data = undefined;
+        }
+      }
+      const code = data?.errors?.code;
+      if (typeof code === 'string' && code.includes(' ')) {
+        toast.error(code.trim());
+      }
+    }
 
     if (status === 401 && !originalRequest._retry) {
       // Never retry auth endpoints — prevents infinite loops
