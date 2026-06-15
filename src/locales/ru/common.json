@@ -108,6 +108,8 @@
   "returns.submit": "Вернуть",
   "returns.selectedBarcode": "Выбранный штрих-код: {{barcode}}",
   "returns.noBarcodeSelected": "Штрих-код не выбран",
+  "returns.tabSalesOrder": "Заказ на продажу",
+  "returns.tabRegionToRegion": "Из региона в регион",
   "return.title": "Возвраты",
   "return.originalOrder": "Исходный заказ",
   "return.condition": "Состояние",
