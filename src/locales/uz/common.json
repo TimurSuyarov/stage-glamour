@@ -109,7 +109,7 @@
   "returns.selectedBarcode": "Tanlangan shtrix-kod: {{barcode}}",
   "returns.noBarcodeSelected": "Shtrix-kod tanlanmagan",
   "returns.tabSalesOrder": "Sotuv buyurtmasi",
-  "returns.tabRegionToRegion": "Regiondan regionga",
+  "returns.tabRegionToRegion": "Viloyatdan viloyatga",
   "return.title": "Qaytarishlar",
   "return.originalOrder": "Asl buyurtma",
   "return.condition": "Holat",
