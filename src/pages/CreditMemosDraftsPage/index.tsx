@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { PageHeader } from "@/components/ui/page-header";
 import { ModuleCard } from "@/components/ui/stat-card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useTranslation } from "react-i18next";
 import {
   useCreditMemosDrafts,
@@ -10,6 +11,11 @@ import {
   type CreditMemoItem,
   type ReturnLinePayload,
 } from "@/entities/CreditMemos/api";
+import {
+  useInventoryTransferRequests,
+  useRegionReturnMutation,
+  type InventoryTransferRequestItem,
+} from "@/entities/InventoryTransferRequests/api";
 import { EReturnReasonType } from "@/enums/returnReason";
 import { useSignalRWaiting } from "@/contexts/SignalRWaitingContext";
 import { useSignalRHub } from "@/contexts/SignalRHubContext";
@@ -44,6 +50,9 @@ import { useQueryClient } from "react-query";
 import dayjs from "dayjs";
 
 const PAGE_SIZE = 20;
+
+// Region-to-region returns: inventory transfer requests destined for this warehouse
+const REGION_TO_WAREHOUSE = "tosh_s";
 
 const REASON_BUTTONS = [
   {
@@ -119,6 +128,81 @@ export default function CreditMemosDraftsPage() {
   const { data: detail, isLoading: detailLoading } = useCreditMemoDraftDetail(selectedDocEntry);
   const hasNextPage = items.length >= PAGE_SIZE;
   const hasPrevPage = pageIndex > 0;
+
+  // Region-to-region tab: inventory transfer requests filtered by destination warehouse
+  const [regionPageIndex, setRegionPageIndex] = useState(0);
+  const { data: regionItems = [], isLoading: regionLoading } =
+    useInventoryTransferRequests({
+      ToWarehouseCode: REGION_TO_WAREHOUSE,
+      PageSize: PAGE_SIZE,
+      Skip: regionPageIndex * PAGE_SIZE,
+    });
+  const regionHasNextPage = regionItems.length >= PAGE_SIZE;
+  const regionHasPrevPage = regionPageIndex > 0;
+  const regionRangeStart = regionPageIndex * PAGE_SIZE + 1;
+  const regionRangeEnd = regionPageIndex * PAGE_SIZE + regionItems.length;
+
+  // Region-to-region return modal state
+  const [selectedRegionRequest, setSelectedRegionRequest] =
+    useState<InventoryTransferRequestItem | null>(null);
+  const [regionLineReasons, setRegionLineReasons] = useState<
+    Record<number, number>
+  >({});
+  const regionReturnMutation = useRegionReturnMutation();
+
+  const regionLines = selectedRegionRequest?.stockTransferLines ?? [];
+  const allRegionLinesHaveReason =
+    regionLines.length > 0 &&
+    regionLines.every((line) => regionLineReasons[line.lineNum] != null);
+
+  const handleOpenRegionModal = (record: InventoryTransferRequestItem) => {
+    setSelectedRegionRequest(record);
+    setRegionLineReasons({});
+  };
+
+  const handleCloseRegionModal = () => {
+    setSelectedRegionRequest(null);
+    setRegionLineReasons({});
+  };
+
+  const setRegionReason = (lineNum: number, reason: number) => {
+    setRegionLineReasons((prev) => ({ ...prev, [lineNum]: reason }));
+  };
+
+  const handleRegionReturn = async () => {
+    if (!selectedRegionRequest || !allRegionLinesHaveReason) return;
+
+    const docEntry = selectedRegionRequest.docEntry;
+    const payload = regionLines.map((line) => ({
+      lineNum: line.lineNum,
+      reasonId: regionLineReasons[line.lineNum],
+    }));
+
+    setReturnLoading(true);
+    try {
+      await regionReturnMutation.mutateAsync({ docEntry, lines: payload });
+    } catch {
+      message.error(t("error.somethingWentWrong"));
+      setReturnLoading(false);
+      return;
+    }
+
+    handleCloseRegionModal();
+
+    startListening("returnDrafts", {
+      onCompleted: (result) => {
+        if (!result?.isSuccess) {
+          toast.error(result?.message ?? t("error.somethingWentWrong"));
+          return;
+        }
+        setRequiredTransfersNotification(true);
+        queryClient.invalidateQueries({
+          queryKey: ["inventory-transfer-requests"],
+        });
+        toast.success(result.message);
+      },
+    });
+  };
 
   const handleClearFilters = () => {
     setFilterDocNum("");
@@ -351,6 +435,85 @@ export default function CreditMemosDraftsPage() {
     },
   ];
 
+  const regionColumns: ColumnsType<InventoryTransferRequestItem> = [
+    {
+      title: "DocEntry",
+      dataIndex: "docEntry",
+      key: "docEntry",
+      width: 100,
+      render: (val: number) => <span className="font-mono text-sm">{val}</span>,
+    },
+    {
+      title: t("creditMemos.docNum"),
+      dataIndex: "docNum",
+      key: "docNum",
+      width: 120,
+      render: (val: number) => <span className="font-mono text-sm">{val}</span>,
+    },
+    {
+      title: t("common.date"),
+      dataIndex: "docDate",
+      key: "docDate",
+      width: 130,
+      render: (val: string) => new Date(val).toLocaleDateString(),
+    },
+    {
+      title: t("moveToRegion.fromWarehouse"),
+      dataIndex: "fromWarehouse",
+      key: "fromWarehouse",
+      width: 160,
+      render: (val: string, record) => (
+        <div>
+          <span className="font-mono text-sm">{val}</span>
+          {record.fromWarehouseName && (
+            <div className="text-xs text-muted-foreground">
+              {record.fromWarehouseName}
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      title: t("moveToRegion.toWarehouse"),
+      dataIndex: "toWarehouse",
+      key: "toWarehouse",
+      width: 160,
+      render: (val: string, record) => (
+        <div>
+          <span className="font-mono text-sm">{val}</span>
+          {record.toWarehouseName && (
+            <div className="text-xs text-muted-foreground">
+              {record.toWarehouseName}
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      title: t("creditMemos.documentStatus"),
+      dataIndex: "documentStatus",
+      key: "documentStatus",
+      width: 140,
+    },
+    {
+      title: t("common.actions"),
+      key: "actions",
+      width: 100,
+      align: "center" as const,
+      render: (_: unknown, record: InventoryTransferRequestItem) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-1.5"
+          onClick={() => handleOpenRegionModal(record)}
+        >
+          <Eye className="w-4 h-4" />
+          {t("common.see")}
+        </Button>
+      ),
+    },
+  ];
+
   const rangeStart = pageIndex * PAGE_SIZE + 1;
   const rangeEnd = pageIndex * PAGE_SIZE + items.length;
 
@@ -374,7 +537,18 @@ export default function CreditMemosDraftsPage() {
         ]}
       />
 
-      <ModuleCard>
+      <Tabs defaultValue="salesOrder">
+        <TabsList>
+          <TabsTrigger value="salesOrder">
+            {t("returns.tabSalesOrder")}
+          </TabsTrigger>
+          <TabsTrigger value="regionToRegion">
+            {t("returns.tabRegionToRegion")}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="salesOrder">
+          <ModuleCard>
         {/* Filters */}
         <div className="mb-8 flex items-end justify-between gap-4">
           <div className="flex items-end gap-3 overflow-x-auto pb-2">
@@ -501,7 +675,67 @@ export default function CreditMemosDraftsPage() {
             )}
           </>
         )}
-      </ModuleCard>
+          </ModuleCard>
+        </TabsContent>
+
+        <TabsContent value="regionToRegion">
+          <ModuleCard>
+            {regionLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                <span className="ml-2 text-muted-foreground">
+                  {t("common_loading")}
+                </span>
+              </div>
+            ) : (
+              <>
+                <AntTable
+                  columns={regionColumns}
+                  dataSource={regionItems}
+                  rowKey="docEntry"
+                  pagination={false}
+                  scroll={{ x: "max-content" }}
+                />
+
+                {(regionItems.length > 0 || regionPageIndex > 0) && (
+                  <div className="flex items-center justify-between border-t border-border px-4 py-3 mt-0">
+                    <div className="text-sm text-muted-foreground">
+                      {regionRangeStart}–{regionRangeEnd}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-8"
+                        onClick={() =>
+                          setRegionPageIndex((p) => Math.max(p - 1, 0))
+                        }
+                        disabled={!regionHasPrevPage || regionLoading}
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </Button>
+                      <span className="px-3 text-sm font-medium">
+                        {regionRangeStart} – {regionRangeEnd}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-8"
+                        onClick={() => setRegionPageIndex((p) => p + 1)}
+                        disabled={!regionHasNextPage || regionLoading}
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </ModuleCard>
+        </TabsContent>
+      </Tabs>
 
       {/* Detail + Return modal */}
       <Dialog open={selectedDocEntry != null} onOpenChange={() => {}}>
@@ -656,6 +890,141 @@ export default function CreditMemosDraftsPage() {
             <Button
               onClick={handleReturn}
               disabled={!allLinesHaveReason || returnLoading}
+            >
+              {returnLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : null}
+              {t("returns.submit")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Region-to-region return modal */}
+      <Dialog open={selectedRegionRequest != null} onOpenChange={() => {}}>
+        <DialogContent className="max-w-[1200px] max-h-[90vh] flex flex-col [&>button:last-of-type]:hidden">
+          <DialogHeader className="relative pr-10">
+            <DialogTitle className="flex flex-wrap items-center gap-3">
+              {selectedRegionRequest && (
+                <>
+                  <span className="font-mono text-muted-foreground">
+                    #{selectedRegionRequest.docEntry}
+                  </span>
+                  <span>
+                    {selectedRegionRequest.toWarehouseName ||
+                      selectedRegionRequest.toWarehouse}
+                  </span>
+                  <span className="text-muted-foreground font-normal text-sm">
+                    ({selectedRegionRequest.docNum},{" "}
+                    {new Date(
+                      selectedRegionRequest.docDate
+                    ).toLocaleDateString()}
+                    )
+                  </span>
+                </>
+              )}
+            </DialogTitle>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="absolute right-2 top-2 h-8 w-8"
+              onClick={handleCloseRegionModal}
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </DialogHeader>
+
+          {selectedRegionRequest ? (
+            <div className="flex flex-col gap-3 flex-1 min-h-0">
+              <div className="border rounded-lg overflow-auto flex-1 min-h-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="text-xs font-semibold uppercase w-12">#</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase">{t("creditMemos.itemDescription")}</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase w-16">{t("common.quantity")}</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase">{t("returns.batchNumber")}</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase">{t("admission.expiryDate")}</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase">{t("returns.condition")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {regionLines.map((line, idx) => {
+                      const selectedReason = regionLineReasons[line.lineNum];
+
+                      const rowHighlight =
+                        selectedReason === EReturnReasonType.Valid
+                          ? "bg-emerald-50 hover:bg-emerald-50"
+                          : selectedReason === EReturnReasonType.Damaged
+                          ? "bg-red-50 hover:bg-red-50"
+                          : selectedReason === EReturnReasonType.Expired
+                          ? "bg-amber-50 hover:bg-amber-50"
+                          : "";
+
+                      return (
+                        <TableRow
+                          key={line.lineNum}
+                          className={cn(
+                            "transition-colors bg-background hover:bg-background",
+                            rowHighlight
+                          )}
+                        >
+                          <TableCell className="font-mono text-sm">{idx + 1}</TableCell>
+                          <TableCell className="max-w-[240px]">
+                            <div className="font-medium truncate" title={line.itemDescription}>
+                              {line.itemDescription}
+                            </div>
+                            <div className="text-xs text-muted-foreground">{line.itemCode}</div>
+                          </TableCell>
+                          <TableCell className="font-semibold text-center">{line.quantity}</TableCell>
+                          <TableCell className="text-sm">
+                            {line.batchNumber ?? "—"}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {line.batchExpiryDate
+                              ? new Date(line.batchExpiryDate).toLocaleDateString()
+                              : "—"}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1.5">
+                              {REASON_BUTTONS.map(({ reason, labelKey, icon: Icon, activeClass }) => {
+                                const isActive = selectedReason === reason;
+                                return (
+                                  <button
+                                    key={reason}
+                                    type="button"
+                                    onClick={() => setRegionReason(line.lineNum, reason)}
+                                    className={cn(
+                                      "inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors",
+                                      isActive
+                                        ? activeClass
+                                        : "border-border bg-background text-muted-foreground hover:bg-muted"
+                                    )}
+                                  >
+                                    <Icon className="w-3.5 h-3.5" />
+                                    {t(labelKey)}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          ) : null}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCloseRegionModal}>
+              {t("common.close")}
+            </Button>
+            <Button
+              onClick={handleRegionReturn}
+              disabled={!allRegionLinesHaveReason || returnLoading}
             >
               {returnLoading ? (
                 <Loader2 className="w-4 h-4 animate-spin mr-2" />

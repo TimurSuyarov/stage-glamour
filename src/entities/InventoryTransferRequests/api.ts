@@ -123,3 +123,33 @@ export const usePostInventoryTransferRequests = () => {
   });
 };
 
+export interface RegionReturnLinePayload {
+  lineNum: number;
+  reasonId: number;
+}
+
+/** POST: submit a region-to-region return with a reason per line */
+const postRegionReturn = async (
+  docEntry: number,
+  lines: RegionReturnLinePayload[]
+): Promise<unknown> => {
+  const { data } = await request.post(`/returns/region/${docEntry}`, lines);
+  return data;
+};
+
+export const useRegionReturnMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      docEntry,
+      lines,
+    }: {
+      docEntry: number;
+      lines: RegionReturnLinePayload[];
+    }) => postRegionReturn(docEntry, lines),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["inventory-transfer-requests"] });
+    },
+  });
+};
+
