@@ -52,7 +52,7 @@ import dayjs from "dayjs";
 const PAGE_SIZE = 20;
 
 // Region-to-region returns: inventory transfer requests destined for this warehouse
-const REGION_TO_WAREHOUSE = "tosh_s";
+const REGION_TO_WAREHOUSE = "Bufer";
 
 const REASON_BUTTONS = [
   {
