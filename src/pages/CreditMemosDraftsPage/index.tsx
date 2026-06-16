@@ -54,6 +54,21 @@ const PAGE_SIZE = 20;
 // Region-to-region returns: inventory transfer requests destined for this warehouse
 const REGION_TO_WAREHOUSE = "Bufer";
 
+// Persisted active tab on the returns drafts page
+const ACTIVE_TAB_STORAGE_KEY = "returnsDraftsActiveTab";
+
+// Region transfer requests return docDate as "DD.MM.YYYY", which `new Date()` can't parse.
+const formatTransferDate = (val?: string | null): string => {
+  if (!val) return "—";
+  const match = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(val.trim());
+  if (match) {
+    const [, dd, mm, yyyy] = match;
+    return new Date(Number(yyyy), Number(mm) - 1, Number(dd)).toLocaleDateString();
+  }
+  const parsed = new Date(val);
+  return isNaN(parsed.getTime()) ? val : parsed.toLocaleDateString();
+};
+
 const REASON_BUTTONS = [
   {
     reason: EReturnReasonType.Valid,
@@ -79,6 +94,15 @@ export default function CreditMemosDraftsPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { setRequiredTransfersNotification } = useRequiredTransfersNotification();
+
+  const [activeTab, setActiveTab] = useState<string>(
+    () => localStorage.getItem(ACTIVE_TAB_STORAGE_KEY) || "salesOrder"
+  );
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    localStorage.setItem(ACTIVE_TAB_STORAGE_KEY, value);
+  };
 
   const [selectedDocEntry, setSelectedDocEntry] = useState<number | null>(null);
   const [pageIndex, setPageIndex] = useState(0);
@@ -455,7 +479,7 @@ export default function CreditMemosDraftsPage() {
       dataIndex: "docDate",
       key: "docDate",
       width: 130,
-      render: (val: string) => new Date(val).toLocaleDateString(),
+      render: (val: string) => formatTransferDate(val),
     },
     {
       title: t("moveToRegion.fromWarehouse"),
@@ -537,7 +561,7 @@ export default function CreditMemosDraftsPage() {
         ]}
       />
 
-      <Tabs defaultValue="salesOrder">
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList>
           <TabsTrigger value="salesOrder">
             {t("returns.tabSalesOrder")}
@@ -916,10 +940,7 @@ export default function CreditMemosDraftsPage() {
                   </span>
                   <span className="text-muted-foreground font-normal text-sm">
                     ({selectedRegionRequest.docNum},{" "}
-                    {new Date(
-                      selectedRegionRequest.docDate
-                    ).toLocaleDateString()}
-                    )
+                    {formatTransferDate(selectedRegionRequest.docDate)})
                   </span>
                 </>
               )}
