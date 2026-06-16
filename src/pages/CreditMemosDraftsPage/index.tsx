@@ -514,12 +514,6 @@ export default function CreditMemosDraftsPage() {
       ),
     },
     {
-      title: t("creditMemos.documentStatus"),
-      dataIndex: "documentStatus",
-      key: "documentStatus",
-      width: 140,
-    },
-    {
       title: t("common.actions"),
       key: "actions",
       width: 100,
