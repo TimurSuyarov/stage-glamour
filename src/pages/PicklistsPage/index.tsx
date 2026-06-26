@@ -954,6 +954,7 @@ export default function PicklistsPage({
         }
         confirmLabel={t("validation.validate")}
         loading={validationScan.isLoading}
+        confirmOnEnter
         onConfirm={handleConfirmScan}
         onCancel={handleCancelScan}
       />

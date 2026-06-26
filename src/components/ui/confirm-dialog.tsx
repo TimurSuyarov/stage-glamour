@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useTranslation } from 'react-i18next';
 import { AlertTriangle, CheckCircle, XCircle, Info } from 'lucide-react';
-import type { ReactNode } from 'react';
+import type { KeyboardEvent, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 type DialogVariant = 'default' | 'destructive' | 'success' | 'warning';
@@ -26,6 +26,8 @@ interface ConfirmDialogProps {
   onCancel?: () => void;
   variant?: DialogVariant;
   loading?: boolean;
+  /** When true, pressing Enter confirms (so a scanner/keyboard flow needs no mouse). */
+  confirmOnEnter?: boolean;
 }
 
 const variantConfig = {
@@ -62,6 +64,7 @@ export function ConfirmDialog({
   onCancel,
   variant = 'default',
   loading = false,
+  confirmOnEnter = false,
 }: ConfirmDialogProps) {
   const { t } = useTranslation();
   const config = variantConfig[variant];
@@ -77,9 +80,18 @@ export function ConfirmDialog({
     onOpenChange(false);
   };
 
+  // Opt-in: confirm on Enter. Capture phase + preventDefault so a focused
+  // Cancel button doesn't activate instead.
+  const handleKeyDownCapture = (e: KeyboardEvent) => {
+    if (confirmOnEnter && e.key === 'Enter' && !e.repeat && !loading) {
+      e.preventDefault();
+      handleConfirm();
+    }
+  };
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
+      <AlertDialogContent onKeyDownCapture={handleKeyDownCapture}>
         <AlertDialogHeader>
           <div className="flex items-start gap-4">
             <div className={cn('p-2 rounded-full', config.iconClass)}>
