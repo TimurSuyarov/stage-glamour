@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/ui/page-header";
 import { useTranslation } from "react-i18next";
 import {
@@ -14,6 +14,7 @@ import {
 } from "@/entities/RequiredTransfers/api";
 import { EWarehouseCheckingType } from "@/enums/warehouseChecking";
 import { useEmployees } from "@/entities/Employees/api";
+import { useScannerInput } from "@/hooks/useScannerInput";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -98,7 +99,11 @@ export default function RequiredTransfersPage() {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null);
   const [assignPopoverOpen, setAssignPopoverOpen] = useState(false);
   const [computedPercentages, setComputedPercentages] = useState<Record<number, number>>({});
-  const barcodeInputRef = useRef<HTMLInputElement>(null);
+  // Serial scanner (with keyboard-wedge fallback when not connected).
+  const { inputRef: barcodeInputRef, onKeyDown: handleBarcodeKeyDown } = useScannerInput({
+    enabled: modalRequestId != null,
+    onScan: (code) => handleScanCode(code),
+  });
 
   const filters: RequiredTransfersFilters = useMemo(
     () => ({ skip: pageIndex * PAGE_SIZE }),
@@ -127,7 +132,7 @@ export default function RequiredTransfersPage() {
       const timer = setTimeout(() => barcodeInputRef.current?.focus(), 150);
       return () => clearTimeout(timer);
     }
-  }, [modalRequestId]);
+  }, [modalRequestId, barcodeInputRef]);
 
   const selectedRequest = items.find((r) => r.id === modalRequestId);
 
@@ -209,12 +214,7 @@ export default function RequiredTransfersPage() {
     );
   };
 
-  const handleBarcodeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key !== "Enter") return;
-    e.preventDefault();
-    const value = e.currentTarget.value.trim();
-    e.currentTarget.value = "";
-    if (!value) return;
+  const handleScanCode = (value: string) => {
     const line = lines.find((l) => (l.barcode ?? "").trim() === value);
     if (!line) {
       message.warning(t("requiredTransfers.barcodeNotFound"));

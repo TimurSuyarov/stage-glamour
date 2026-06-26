@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable, Column } from '@/components/ui/data-table';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
+import { useScannerInput } from '@/hooks/useScannerInput';
 import { mockOrders } from '@/data/mockData';
 import { Order, ReturnCondition } from '@/types/wms';
 import { Button } from '@/components/ui/button';
@@ -50,8 +51,11 @@ export default function ReturnsPage() {
   const [returnDraft, setReturnDraft] = useState<ReturnDraft | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [barcodeFilter, setBarcodeFilter] = useState('');
-  const [scannerBuffer, setScannerBuffer] = useState('');
-  const barcodeInputRef = useRef<HTMLInputElement>(null);
+  // Serial scanner (with keyboard-wedge fallback when not connected).
+  const { inputRef: barcodeInputRef, onKeyDown: handleBarcodeKeyDown } = useScannerInput({
+    enabled: showCreateDialog && !!returnDraft,
+    onScan: (code) => setBarcodeFilter(code),
+  });
 
   const canManage = hasPermission('return', 'manage');
 
@@ -73,7 +77,6 @@ export default function ReturnsPage() {
         })),
       });
       setBarcodeFilter('');
-      setScannerBuffer('');
     }
   };
 
@@ -111,34 +114,10 @@ export default function ReturnsPage() {
       }, 150);
       return () => clearTimeout(timer);
     }
-  }, [showCreateDialog, returnDraft]);
-
-  const handleBarcodeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const value = scannerBuffer.trim();
-      setScannerBuffer('');
-      setBarcodeFilter(value);
-      return;
-    }
-    if (e.key.length === 1) {
-      setScannerBuffer(prev => {
-        const next = prev + e.key;
-        if (prev === '') {
-          // New scan started – clear visible filter immediately
-          setBarcodeFilter('');
-        }
-        return next;
-      });
-    }
-    if (e.key === 'Backspace') {
-      setScannerBuffer(prev => prev.slice(0, -1));
-    }
-  };
+  }, [showCreateDialog, returnDraft, barcodeInputRef]);
 
   const handleClearBarcode = () => {
     setBarcodeFilter('');
-    setScannerBuffer('');
     barcodeInputRef.current?.focus();
   };
 

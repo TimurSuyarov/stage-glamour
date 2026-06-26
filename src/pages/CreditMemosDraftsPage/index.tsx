@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { PageHeader } from "@/components/ui/page-header";
 import { ModuleCard } from "@/components/ui/stat-card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -20,6 +20,7 @@ import { EReturnReasonType } from "@/enums/returnReason";
 import { useSignalRWaiting } from "@/contexts/SignalRWaitingContext";
 import { useSignalRHub } from "@/contexts/SignalRHubContext";
 import { useRequiredTransfersNotification } from "@/contexts/RequiredTransfersNotificationContext";
+import { useScannerInput } from "@/hooks/useScannerInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -118,8 +119,11 @@ export default function CreditMemosDraftsPage() {
     Record<number, Record<number, number>>
   >({});
   const [barcodeFilter, setBarcodeFilter] = useState("");
-  const [scannerBuffer, setScannerBuffer] = useState("");
-  const barcodeInputRef = useRef<HTMLInputElement | null>(null);
+  // Serial scanner (with keyboard-wedge fallback when not connected).
+  const { inputRef: barcodeInputRef, onKeyDown: handleBarcodeKeyDown } = useScannerInput({
+    enabled: selectedDocEntry != null,
+    onScan: (code) => setBarcodeFilter(code),
+  });
   const [returnLoading, setReturnLoading] = useSignalRWaiting("returnDrafts");
   const { startListening } = useSignalRHub();
 
@@ -319,34 +323,10 @@ export default function CreditMemosDraftsPage() {
       clearTimeout(t1);
       clearTimeout(t2);
     };
-  }, [selectedDocEntry, detail]);
-
-  const handleBarcodeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      const value = scannerBuffer.trim();
-      setScannerBuffer("");
-      setBarcodeFilter(value);
-      return;
-    }
-    if (e.key.length === 1) {
-      setScannerBuffer((prev) => {
-        const next = prev + e.key;
-        if (prev === "") {
-          // New scan started – clear visible filter immediately
-          setBarcodeFilter("");
-        }
-        return next;
-      });
-    }
-    if (e.key === "Backspace") {
-      setScannerBuffer((prev) => prev.slice(0, -1));
-    }
-  };
+  }, [selectedDocEntry, detail, barcodeInputRef]);
 
   const handleClearBarcode = () => {
     setBarcodeFilter("");
-    setScannerBuffer("");
     barcodeInputRef.current?.focus();
   };
 

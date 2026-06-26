@@ -1,6 +1,7 @@
 import { User, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
+import { ScannerControls } from "@/components/scanner/ScannerControls";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import { clearStoredAuth } from "@/lib/authStorage";
@@ -30,6 +31,7 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
   return (
     <header className="h-14 bg-topbar border-b border-topbar-border flex items-center justify-end px-4 sticky top-0 z-40">
       <div className="flex items-center gap-3">
+        <ScannerControls />
         <LanguageSwitcher />
 
         <DropdownMenu>

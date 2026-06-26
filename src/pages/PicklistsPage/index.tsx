@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Table, Modal, Button as AntButton, Select } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { PageHeader } from "@/components/ui/page-header";
@@ -33,6 +33,7 @@ import { DEFAULT_LABEL_DATA } from "@/features/label-print/types/label";
 import { message } from "antd";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { useScannerInput } from "@/hooks/useScannerInput";
 
 const WAREHOUSE_CHECKING_TYPE_KEYS: Record<number, string> = {
   [EWarehouseCheckingType.WarehouseToClient]: "requiredTransfers.typeWarehouseToClient",
@@ -116,9 +117,6 @@ export default function PicklistsPage({
   const [selectedTransferReqId, setSelectedTransferReqId] = useState<number | null>(null);
   // Pending scanner scan — line + raw barcode waiting for user confirmation
   const [pendingScan, setPendingScan] = useState<{ line: PicklistLine; barcode: string } | null>(null);
-  const barcodeInputRef = useRef<HTMLInputElement>(null);
-
-
   const assignPicklist = useAssignPicklist();
   const assignPicklistEmployee = useAssignPicklistEmployee();
   const validationScan = useValidationScan();
@@ -155,6 +153,48 @@ export default function PicklistsPage({
   const rangeStart = pageIndex * PAGE_SIZE + 1;
   const rangeEnd = pageIndex * PAGE_SIZE + picklists.length;
 
+  // Global scanner: scanning "pick-<id>" while the list is shown opens that row.
+  const handlePickScan = (raw: string) => {
+    const match = /^pick-(\d+)$/i.exec(raw);
+    if (!match) return;
+    const id = Number(match[1]);
+    if (picklists.some((p) => p.id === id)) {
+      setSelectedDocEntry(id);
+    } else {
+      message.warning(t("picklist.scanNotFound"));
+    }
+  };
+  useScannerInput({
+    mode: "global",
+    enabled: selectedDocEntry == null,
+    onScan: handlePickScan,
+  });
+
+  // In-modal validation scan: match a line by barcode, then confirm.
+  const handleScanCode = (value: string) => {
+    if (!isValidationMode || !picklistDetail) return;
+    const line = currentLines.find((l) => (l.barcode ?? "").trim() === value);
+    if (!line) {
+      message.warning(t("validation.barcodeNotFound"));
+      return;
+    }
+    if (line.status === EPickListLineStatus.Validated) {
+      message.warning(t("validation.alreadyValidated"));
+      return;
+    }
+    if (validationScan.isLoading) return;
+    if (!picklistDetail.assigneeName) {
+      message.warning(t("validation.assignValidatorFirst"));
+      return;
+    }
+    setPendingScan({ line, barcode: value });
+  };
+  const { inputRef: barcodeInputRef, onKeyDown: handleBarcodeKeyDown } = useScannerInput({
+    mode: "input",
+    enabled: isValidationMode && selectedDocEntry != null && !!picklistDetail,
+    onScan: handleScanCode,
+  });
+
   useEffect(() => {
     // The hidden scanner input only mounts once picklistDetail has loaded, so
     // wait for it before trying to focus — otherwise the ref is still null and
@@ -173,45 +213,7 @@ export default function PicklistsPage({
       clearTimeout(t1);
       clearTimeout(t2);
     };
-  }, [isValidationMode, selectedDocEntry, picklistDetail]);
-
-  // Global scanner listener: when the detail modal is closed, a scan of
-  // "pick-<id>" opens the detail modal for the matching row in the table.
-  useEffect(() => {
-    if (selectedDocEntry != null) return;
-
-    let buffer = "";
-    let lastKeyTime = 0;
-
-    const handleScannerKey = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (target?.closest("input, textarea, [contenteditable]")) return;
-
-      const now = Date.now();
-      if (now - lastKeyTime > 100) buffer = "";
-      lastKeyTime = now;
-
-      if (e.key === "Enter") {
-        const value = buffer.trim();
-        buffer = "";
-        const match = /^pick-(\d+)$/i.exec(value);
-        if (!match) return;
-        e.preventDefault();
-        const id = Number(match[1]);
-        if (picklists.some((p) => p.id === id)) {
-          setSelectedDocEntry(id);
-        } else {
-          message.warning(t("picklist.scanNotFound"));
-        }
-        return;
-      }
-
-      if (e.key.length === 1) buffer += e.key;
-    };
-
-    document.addEventListener("keydown", handleScannerKey);
-    return () => document.removeEventListener("keydown", handleScannerKey);
-  }, [selectedDocEntry, picklists, t]);
+  }, [isValidationMode, selectedDocEntry, picklistDetail, barcodeInputRef]);
 
   const handleViewDetail = (docEntry: number) => {
     setSelectedDocEntry(docEntry);
@@ -234,38 +236,6 @@ export default function PicklistsPage({
       mainCode: item.deliveryNumber ?? String(item.salesOrderDocNum ?? item.id),
       copies: labelCopies,
     });
-  };
-
-  const handleBarcodeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key !== "Enter") return;
-    e.preventDefault();
-    const value = e.currentTarget.value.trim();
-    e.currentTarget.value = "";
-    if (!value || !isValidationMode || !picklistDetail) return;
-
-    const line = currentLines.find((l) => (l.barcode ?? "").trim() === value);
-
-    if (!line) {
-      message.warning(t("validation.barcodeNotFound"));
-      return;
-    }
-
-    if (line.status === EPickListLineStatus.Validated) {
-      message.warning(t("validation.alreadyValidated"));
-      return;
-    }
-
-    if (validationScan.isLoading) {
-      return;
-    }
-
-    if (!picklistDetail.assigneeName) {
-      message.warning(t("validation.assignValidatorFirst"));
-      return;
-    }
-
-    // Show confirmation dialog instead of mutating immediately
-    setPendingScan({ line, barcode: value });
   };
 
   const handleConfirmScan = () => {
