@@ -57,7 +57,6 @@ const App = () => (
           <RequiredTransfersNotificationProvider>
             <SignalRWaitingProvider>
               <SignalRHubProvider>
-              <ScannerProvider>
               <TooltipProvider>
               <Toaster />
               <Sonner />
@@ -76,9 +75,16 @@ const App = () => (
                     }
                   />
 
-                  {/* Protected area */}
+                  {/* Protected area — ScannerProvider lives here only, so the
+                      standalone /p/label print popup never touches the serial port. */}
                   <Route element={<ProtectedRoute />}>
-                    <Route element={<AppShell />}>
+                    <Route
+                      element={
+                        <ScannerProvider>
+                          <AppShell />
+                        </ScannerProvider>
+                      }
+                    >
                       <Route path="/" element={<WelcomePage />} />
                       <Route path="/admission" element={<AdmissionPage />} />
                       <Route path="/admission/history" element={<AdmissionHistoryPage />} />
@@ -110,7 +116,6 @@ const App = () => (
                 </Routes>
               </BrowserRouter>
               </TooltipProvider>
-              </ScannerProvider>
               </SignalRHubProvider>
             </SignalRWaitingProvider>
           </RequiredTransfersNotificationProvider>

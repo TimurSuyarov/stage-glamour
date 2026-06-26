@@ -120,14 +120,21 @@ export function ScannerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const openPort = useCallback(
-    async (port: SerialPort) => {
+    async (port: SerialPort, opts?: { silent?: boolean }) => {
       if (portRef.current) return; // already open — StrictMode / double-click guard
       setStatus("connecting");
       try {
         await port.open({ baudRate: baudRef.current });
       } catch (err) {
-        reportError(err);
-        setStatus("error");
+        if (opts?.silent) {
+          // Background auto-reconnect (e.g. the port is held by another tab or
+          // the print-popup window) — fail quietly instead of nagging the user.
+          console.error("[serial] silent open failed:", classifySerialError(err));
+          setStatus("disconnected");
+        } else {
+          reportError(err);
+          setStatus("error");
+        }
         return;
       }
       portRef.current = port;
@@ -202,10 +209,17 @@ export function ScannerProvider({ children }: { children: ReactNode }) {
     };
     navigator.serial.addEventListener("disconnect", handleDisconnect);
 
-    // Guard the silent reconnect against StrictMode's double-invoke.
+    // Silently auto-reopen a previously-granted port (once; guard StrictMode).
     if (!initializedRef.current) {
       initializedRef.current = true;
-      void reconnect();
+      void (async () => {
+        try {
+          const port = await getFirstGrantedPort();
+          if (port) await openPort(port, { silent: true });
+        } catch (err) {
+          console.error("[serial] silent reconnect failed:", err);
+        }
+      })();
     }
 
     return () => {
