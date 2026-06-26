@@ -100,7 +100,7 @@
   "validation.assignValidatorFirst": "Сначала назначьте проверяющего (\"Назначить мне\")",
   "picklist_to_warehouse": "Склад назначения",
   "validation.confirmTitle": "Подтверждение товара",
-  "validation.confirmDescription": "{{productName}} — {{qty}} шт. qabul qildingizmi?",
+  "validation.confirmDescription": "<b>{{productName}}</b> — <b>{{qty}} шт.</b> qabul qildingizmi?",
   "returns.reasonValid": "Годный",
   "returns.reasonDamaged": "Повреждён",
   "returns.reasonExpired": "Истёк срок",

@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useTranslation } from 'react-i18next';
 import { AlertTriangle, CheckCircle, XCircle, Info } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 type DialogVariant = 'default' | 'destructive' | 'success' | 'warning';
@@ -18,7 +19,7 @@ interface ConfirmDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
-  description: string;
+  description: ReactNode;
   confirmLabel?: string;
   cancelLabel?: string;
   onConfirm: () => void;
