@@ -156,12 +156,16 @@ export default function PicklistsPage({
   const rangeEnd = pageIndex * PAGE_SIZE + picklists.length;
 
   useEffect(() => {
-    if (!(isValidationMode && selectedDocEntry != null)) return;
+    // The hidden scanner input only mounts once picklistDetail has loaded, so
+    // wait for it before trying to focus — otherwise the ref is still null and
+    // scans go nowhere.
+    if (!(isValidationMode && selectedDocEntry != null && picklistDetail)) return;
 
     const focusHiddenInput = () => {
       barcodeInputRef.current?.focus();
     };
 
+    focusHiddenInput();
     const t1 = setTimeout(focusHiddenInput, 150);
     const t2 = setTimeout(focusHiddenInput, 400);
 
@@ -169,7 +173,7 @@ export default function PicklistsPage({
       clearTimeout(t1);
       clearTimeout(t2);
     };
-  }, [isValidationMode, selectedDocEntry]);
+  }, [isValidationMode, selectedDocEntry, picklistDetail]);
 
   // Global scanner listener: when the detail modal is closed, a scan of
   // "pick-<id>" opens the detail modal for the matching row in the table.
@@ -251,7 +255,12 @@ export default function PicklistsPage({
       return;
     }
 
-    if (!picklistDetail.assigneeName || validationScan.isLoading) {
+    if (validationScan.isLoading) {
+      return;
+    }
+
+    if (!picklistDetail.assigneeName) {
+      message.warning(t("validation.assignValidatorFirst"));
       return;
     }
 

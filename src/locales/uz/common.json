@@ -97,6 +97,7 @@
   "validation.finalize": "Tekshiruvni yakunlash",
   "validation.barcodeNotFound": "Ushbu picklistda bunday shtrix-kod topilmadi",
   "validation.alreadyValidated": "Ushbu pozitsiya allaqachon tasdiqlangan",
+  "validation.assignValidatorFirst": "Avval tekshiruvchini biriktiring (\"Menga biriktirish\")",
   "picklist_to_warehouse": "Qaysi omborga",
   "validation.confirmTitle": "Mahsulotni tasdiqlash",
   "validation.confirmDescription": "{{productName}} — {{qty}} ta miqdorda oldingizmi?",
