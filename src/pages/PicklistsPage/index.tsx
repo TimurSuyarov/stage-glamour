@@ -3,7 +3,7 @@ import { Table, Modal, Button as AntButton, Select } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { PageHeader } from "@/components/ui/page-header";
 import { ModuleCard } from "@/components/ui/stat-card";
-import { useTranslation } from "react-i18next";
+import { useTranslation, Trans } from "react-i18next";
 import {
   usePicklists,
   usePicklistByDocEntry,
@@ -173,7 +173,11 @@ export default function PicklistsPage({
   // In-modal validation scan: match a line by barcode, then confirm.
   const handleScanCode = (value: string) => {
     if (!isValidationMode || !picklistDetail) return;
-    const line = currentLines.find((l) => (l.barcode ?? "").trim() === value);
+    // A line's barcode field may hold several barcodes joined by "|"
+    // (e.g. "{Barcode1}|{Barcode2}"), or just one — match against any token.
+    const line = currentLines.find((l) =>
+      (l.barcode ?? "").split("|").some((b) => b.trim() === value)
+    );
     if (!line) {
       message.warning(t("validation.barcodeNotFound"));
       return;
@@ -187,7 +191,9 @@ export default function PicklistsPage({
       message.warning(t("validation.assignValidatorFirst"));
       return;
     }
-    setPendingScan({ line, barcode: value });
+    // Send the line's full barcode value to the API (may be "A|B|C"),
+    // not just the single scanned token.
+    setPendingScan({ line, barcode: (line.barcode ?? "").trim() });
   };
   const { inputRef: barcodeInputRef, onKeyDown: handleBarcodeKeyDown } = useScannerInput({
     mode: "input",
@@ -936,10 +942,16 @@ export default function PicklistsPage({
         onOpenChange={(open) => { if (!open) handleCancelScan(); }}
         variant="success"
         title={t("validation.confirmTitle")}
-        description={t("validation.confirmDescription", {
-          productName: pendingScan?.line.productName ?? "",
-          qty: pendingScan?.line.totalQty ?? pendingScan?.line.requestedQty ?? 0,
-        })}
+        description={
+          <Trans
+            i18nKey="validation.confirmDescription"
+            values={{
+              productName: pendingScan?.line.productName ?? "",
+              qty: pendingScan?.line.totalQty ?? pendingScan?.line.requestedQty ?? 0,
+            }}
+            components={{ b: <span className="font-semibold text-foreground" /> }}
+          />
+        }
         confirmLabel={t("validation.validate")}
         loading={validationScan.isLoading}
         onConfirm={handleConfirmScan}

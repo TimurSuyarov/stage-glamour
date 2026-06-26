@@ -131,7 +131,7 @@
   "scanner.err.UNKNOWN": "Noma'lum skaner xatosi.",
   "picklist_to_warehouse": "Qaysi omborga",
   "validation.confirmTitle": "Mahsulotni tasdiqlash",
-  "validation.confirmDescription": "{{productName}} — {{qty}} ta miqdorda oldingizmi?",
+  "validation.confirmDescription": "<b>{{productName}}</b> — <b>{{qty}} ta</b> miqdorda oldingizmi?",
   "returns.reasonValid": "Yaroqli",
   "returns.reasonDamaged": "Shikastlangan",
   "returns.reasonExpired": "Muddati o'tgan",
