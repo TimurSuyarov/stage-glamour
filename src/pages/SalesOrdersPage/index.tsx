@@ -359,20 +359,6 @@ const SalesOrdersPage = ({
         breadcrumbs={[{ label: t(parentKey) }, { label: t(titleKey) }]}
         actions={
           <>
-            {keepDefaultAction && (
-              <Button
-                onClick={handleOpenCreateModal}
-                disabled={moveNextLoading || selectedRowKeys.length === 0}
-                className="gap-2"
-              >
-                {moveNextLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Plus className="w-4 h-4" />
-                )}
-                {t("sales_orders_move_to_next_step")}
-              </Button>
-            )}
             {hasExtraAction && (
               <Button
                 onClick={handlePrimaryAction}
@@ -385,6 +371,20 @@ const SalesOrdersPage = ({
                   <Plus className="w-4 h-4" />
                 )}
                 {t(primaryAction?.labelKey ?? "sales_orders_move_to_next_step")}
+              </Button>
+            )}
+            {keepDefaultAction && (
+              <Button
+                onClick={handleOpenCreateModal}
+                disabled={moveNextLoading || selectedRowKeys.length === 0}
+                className="gap-2"
+              >
+                {moveNextLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Plus className="w-4 h-4" />
+                )}
+                {t("sales_orders_move_to_next_step")}
               </Button>
             )}
             {!keepDefaultAction && !hasExtraAction && (
