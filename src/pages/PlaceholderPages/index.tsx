@@ -77,6 +77,7 @@ export function RelocationPage() {
       status={ESalesOrderStatus.Pending}
       titleKey="nav.relocation"
       parentKey="nav.operational"
+      keepDefaultAction
       primaryAction={{
         labelKey: 'relocation.syncPendingOrders',
         onClick: handleSyncPendingOrders,

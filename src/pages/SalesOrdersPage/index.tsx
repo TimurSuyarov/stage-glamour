@@ -35,6 +35,7 @@ interface SalesOrdersPageProps {
   titleKey: string;
   parentKey: string;
   primaryAction?: SalesOrdersPageActionConfig;
+  keepDefaultAction?: boolean;
 }
 
 const SalesOrdersPage = ({
@@ -42,6 +43,7 @@ const SalesOrdersPage = ({
   titleKey,
   parentKey,
   primaryAction,
+  keepDefaultAction = false,
 }: SalesOrdersPageProps) => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -188,9 +190,11 @@ const SalesOrdersPage = ({
     return salesOrders.filter((order) => selectedRowKeys.includes(order.docEntry));
   }, [salesOrders, selectedRowKeys]);
 
+  const hasExtraAction = Boolean(primaryAction);
   const isPrimaryActionLoading = primaryAction?.loading ?? moveNextLoading;
   const requiresSelection = primaryAction?.requireSelection ?? true;
   const showSelection = primaryAction?.showSelection ?? true;
+  const shouldShowSelection = keepDefaultAction || showSelection;
 
   const handlePrimaryAction = async () => {
     if (primaryAction) {
@@ -354,18 +358,50 @@ const SalesOrdersPage = ({
         title={t(titleKey)}
         breadcrumbs={[{ label: t(parentKey) }, { label: t(titleKey) }]}
         actions={
-          <Button
-            onClick={handlePrimaryAction}
-            disabled={isPrimaryActionLoading || (requiresSelection && selectedRowKeys.length === 0)}
-            className="gap-2"
-          >
-            {isPrimaryActionLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Plus className="w-4 h-4" />
+          <>
+            {keepDefaultAction && (
+              <Button
+                onClick={handleOpenCreateModal}
+                disabled={moveNextLoading || selectedRowKeys.length === 0}
+                className="gap-2"
+              >
+                {moveNextLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Plus className="w-4 h-4" />
+                )}
+                {t("sales_orders_move_to_next_step")}
+              </Button>
             )}
-            {t(primaryAction?.labelKey ?? "sales_orders_move_to_next_step")}
-          </Button>
+            {hasExtraAction && (
+              <Button
+                onClick={handlePrimaryAction}
+                disabled={isPrimaryActionLoading || (requiresSelection && selectedRowKeys.length === 0)}
+                className="gap-2"
+              >
+                {isPrimaryActionLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Plus className="w-4 h-4" />
+                )}
+                {t(primaryAction?.labelKey ?? "sales_orders_move_to_next_step")}
+              </Button>
+            )}
+            {!keepDefaultAction && !hasExtraAction && (
+              <Button
+                onClick={handleOpenCreateModal}
+                disabled={moveNextLoading || selectedRowKeys.length === 0}
+                className="gap-2"
+              >
+                {moveNextLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Plus className="w-4 h-4" />
+                )}
+                {t("sales_orders_move_to_next_step")}
+              </Button>
+            )}
+          </>
         }
       />
 
@@ -438,7 +474,7 @@ const SalesOrdersPage = ({
         ) : (
           <>
             <Table
-              rowSelection={showSelection ? rowSelection : undefined}
+              rowSelection={shouldShowSelection ? rowSelection : undefined}
               columns={columns}
               dataSource={salesOrders}
               rowKey="docEntry"
@@ -501,7 +537,7 @@ const SalesOrdersPage = ({
           </>
         )}
 
-        {showSelection && selectedRowKeys.length > 0 && (
+        {shouldShowSelection && selectedRowKeys.length > 0 && (
           <div className="mt-4 p-4 bg-muted/30 rounded-lg">
             <p className="text-sm text-muted-foreground">
               {t("sales_orders_selected_count", { count: selectedRowKeys.length })}
