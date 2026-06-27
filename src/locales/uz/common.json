@@ -445,6 +445,8 @@
   "moveToRegion.comments": "Izoh",
   "moveToRegion.fromWarehouseName": "Ombordan (nomi)",
   "moveToRegion.toWarehouseName": "Omborga (nomi)",
+  "relocation.syncPendingOrders": "Sync pending order",
+  "relocation.syncPendingOrdersSuccess": "Pending orders will be processed soon. Please check again a little later.",
   "bonuses.employee": "Xodim",
   "bonuses.dateRange": "Sana oralig'i",
   "bonuses.type": "Turi",

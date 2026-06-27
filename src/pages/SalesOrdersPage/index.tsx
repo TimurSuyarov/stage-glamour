@@ -22,13 +22,27 @@ import dayjs, { type Dayjs } from "dayjs";
 import { validateOrderLine, type EwsIssue } from "@/lib/ews";
 import { EwsWarning } from "@/components/ui/ews-warning";
 
+interface SalesOrdersPageActionConfig {
+  labelKey: string;
+  onClick: (selectedOrders: SalesOrder[]) => Promise<void> | void;
+  loading?: boolean;
+  requireSelection?: boolean;
+  showSelection?: boolean;
+}
+
 interface SalesOrdersPageProps {
   status: ESalesOrderStatus;
   titleKey: string;
   parentKey: string;
+  primaryAction?: SalesOrdersPageActionConfig;
 }
 
-const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) => {
+const SalesOrdersPage = ({
+  status,
+  titleKey,
+  parentKey,
+  primaryAction,
+}: SalesOrdersPageProps) => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { setCollectNotification } = useCollectNotification();
@@ -174,6 +188,24 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
     return salesOrders.filter((order) => selectedRowKeys.includes(order.docEntry));
   }, [salesOrders, selectedRowKeys]);
 
+  const isPrimaryActionLoading = primaryAction?.loading ?? moveNextLoading;
+  const requiresSelection = primaryAction?.requireSelection ?? true;
+  const showSelection = primaryAction?.showSelection ?? true;
+
+  const handlePrimaryAction = async () => {
+    if (primaryAction) {
+      if (requiresSelection && selectedOrders.length === 0) {
+        message.warning(t("sales_orders_selected_orders_count", { count: 0 }));
+        return;
+      }
+
+      await primaryAction.onClick(selectedOrders);
+      return;
+    }
+
+    handleOpenCreateModal();
+  };
+
   // EWS: validate all lines of selected orders before API call
   const ewsIssues = useMemo<EwsIssue[]>(() => {
     const result: EwsIssue[] = [];
@@ -238,7 +270,7 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
       key: "actions",
       width: 120,
       align: "center" as const,
-      render: (_: any, record: SalesOrder) => (
+      render: (_: unknown, record: SalesOrder) => (
         <Button
           variant="ghost"
           size="sm"
@@ -309,7 +341,7 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
 
   return (
     <div className="relative min-h-full p-6 space-y-6">
-      {moveNextLoading && (
+      {moveNextLoading && !primaryAction && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-lg">
           <div className="flex flex-col items-center gap-3 rounded-lg border bg-card px-8 py-6 shadow-lg">
             <Loader2 className="w-10 h-10 animate-spin text-primary" />
@@ -323,12 +355,16 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
         breadcrumbs={[{ label: t(parentKey) }, { label: t(titleKey) }]}
         actions={
           <Button
-            onClick={handleOpenCreateModal}
-            disabled={selectedRowKeys.length === 0}
+            onClick={handlePrimaryAction}
+            disabled={isPrimaryActionLoading || (requiresSelection && selectedRowKeys.length === 0)}
             className="gap-2"
           >
-            <Plus className="w-4 h-4" />
-            {t("sales_orders_move_to_next_step")}
+            {isPrimaryActionLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Plus className="w-4 h-4" />
+            )}
+            {t(primaryAction?.labelKey ?? "sales_orders_move_to_next_step")}
           </Button>
         }
       />
@@ -402,7 +438,7 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
         ) : (
           <>
             <Table
-              rowSelection={rowSelection}
+              rowSelection={showSelection ? rowSelection : undefined}
               columns={columns}
               dataSource={salesOrders}
               rowKey="docEntry"
@@ -465,7 +501,7 @@ const SalesOrdersPage = ({ status, titleKey, parentKey }: SalesOrdersPageProps) 
           </>
         )}
 
-        {selectedRowKeys.length > 0 && (
+        {showSelection && selectedRowKeys.length > 0 && (
           <div className="mt-4 p-4 bg-muted/30 rounded-lg">
             <p className="text-sm text-muted-foreground">
               {t("sales_orders_selected_count", { count: selectedRowKeys.length })}

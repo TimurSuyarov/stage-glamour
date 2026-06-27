@@ -445,6 +445,8 @@
   "moveToRegion.comments": "Комментарий",
   "moveToRegion.fromWarehouseName": "Со склада (название)",
   "moveToRegion.toWarehouseName": "На склад (название)",
+  "relocation.syncPendingOrders": "Синхронизировать ожидающие заказы",
+  "relocation.syncPendingOrdersSuccess": "Ожидающие заказы скоро будут обработаны. Проверьте ещё раз немного позже.",
   "bonuses.employee": "Сотрудник",
   "bonuses.dateRange": "Период",
   "bonuses.type": "Тип",

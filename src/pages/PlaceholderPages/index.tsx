@@ -1,9 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { message } from 'antd';
 import { PageHeader } from '@/components/ui/page-header';
 import { ModuleCard } from '@/components/ui/stat-card';
 import { useTranslation } from 'react-i18next';
 import { Construction } from 'lucide-react';
 import SalesOrdersPage from '@/pages/SalesOrdersPage';
+import { postSyncWaitingOrders } from '@/entities/SalesOrders/api';
 import { ESalesOrderStatus } from '@/enums/salesOrder';
 import CellsPageComponent from '@/pages/CellsPage';
 import InventoryPageComponent from '@/pages/InventoryPage';
@@ -55,11 +57,33 @@ export function MoveToRegionPage() {
 }
 
 export function RelocationPage() {
+  const { t } = useTranslation();
+  const [isSyncingPendingOrders, setIsSyncingPendingOrders] = useState(false);
+
+  const handleSyncPendingOrders = async () => {
+    setIsSyncingPendingOrders(true);
+    try {
+      await postSyncWaitingOrders();
+      message.success(t('relocation.syncPendingOrdersSuccess'));
+    } catch {
+      message.error(t('error.somethingWentWrong'));
+    } finally {
+      setIsSyncingPendingOrders(false);
+    }
+  };
+
   return (
     <SalesOrdersPage
       status={ESalesOrderStatus.Pending}
       titleKey="nav.relocation"
       parentKey="nav.operational"
+      primaryAction={{
+        labelKey: 'relocation.syncPendingOrders',
+        onClick: handleSyncPendingOrders,
+        loading: isSyncingPendingOrders,
+        requireSelection: false,
+        showSelection: false,
+      }}
     />
   );
 }

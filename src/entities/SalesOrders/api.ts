@@ -2,6 +2,10 @@ import request from "@/services";
 import { useQuery } from "react-query";
 import { ESalesOrderStatus } from "@/enums/salesOrder";
 
+const SMARTUP_INTEGRATION_BASE_URL =
+  import.meta.env.VITE_SMARTUP_INTEGRATION_BASE_URL ??
+  "https://glamour-smartup.bis-apps.com/api";
+
 // API response types
 export interface SalesOrderDocumentLine {
   lineNum: number;
@@ -91,4 +95,9 @@ export const useSalesOrders = (status: ESalesOrderStatus, filters?: SalesOrdersF
 /** POST selected sales orders (by docEntry) to move to next step; backend processes and notifies via SignalR */
 export const postSalesOrdersMoveNext = async (docEntries: number[]): Promise<void> => {
   await request.post("/sales-orders", docEntries);
+};
+
+/** POST pending Smartup orders for relocation sync */
+export const postSyncWaitingOrders = async (): Promise<void> => {
+  await request.post(`${SMARTUP_INTEGRATION_BASE_URL}/orders/sync-waiting`);
 };
