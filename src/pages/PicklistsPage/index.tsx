@@ -166,6 +166,16 @@ export default function PicklistsPage({
     return { max, confirmed, left: max - confirmed };
   }, [currentLines]);
 
+  // Aggregated validation items can arrive without a pack size, so fall back to
+  // the quantityInPack of the picklist-detail line(s) with the same itemCode.
+  const resolvePackSize = (line: PicklistLine): number => {
+    if (line.quantityInPack && line.quantityInPack > 0) return line.quantityInPack;
+    const match = picklistDetail?.lines.find(
+      (l) => l.itemCode === line.itemCode && (l.quantityInPack ?? 0) > 0
+    );
+    return match?.quantityInPack ?? 0;
+  };
+
   const hasNextPage = picklists.length >= PAGE_SIZE;
   const hasPrevPage = pageIndex > 0;
   const rangeStart = pageIndex * PAGE_SIZE + 1;
@@ -905,7 +915,7 @@ export default function PicklistsPage({
                   (() => {
                     const qty =
                       pendingScan.line.totalQty ?? pendingScan.line.requestedQty ?? 0;
-                    const boxPer = pendingScan.line.quantityInPack ?? 0;
+                    const boxPer = resolvePackSize(pendingScan.line);
                     const looseQty = boxPer > 0 ? qty % boxPer : qty;
                     const boxCount = boxPer > 0 ? Math.floor(qty / boxPer) : 0;
                     return (
