@@ -1,9 +1,9 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { Table, Modal, Button as AntButton, Select } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { PageHeader } from "@/components/ui/page-header";
 import { ModuleCard } from "@/components/ui/stat-card";
-import { useTranslation, Trans } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import {
   usePicklists,
   usePicklistByDocEntry,
@@ -26,8 +26,7 @@ import { EWarehouseCheckingType } from "@/enums/warehouseChecking";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, Loader2, ChevronLeft, ChevronRight, X, Printer } from "lucide-react";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Eye, EyeOff, Loader2, ChevronLeft, ChevronRight, X, Printer } from "lucide-react";
 import { useLabelPrint } from "@/features/label-print/hooks/useLabelPrint";
 import { DEFAULT_LABEL_DATA } from "@/features/label-print/types/label";
 import { message } from "antd";
@@ -117,6 +116,12 @@ export default function PicklistsPage({
   const [selectedTransferReqId, setSelectedTransferReqId] = useState<number | null>(null);
   // Pending scanner scan — line + raw barcode waiting for user confirmation
   const [pendingScan, setPendingScan] = useState<{ line: PicklistLine; barcode: string } | null>(null);
+  // Whether already-validated lines stay visible in the table (default: hide them)
+  const [showValidated, setShowValidated] = useState<boolean>(false);
+  // Tracks the docEntry we've already set the initial showValidated for, so the
+  // "open with everything confirmed → show" default runs once per open, not on
+  // every line change.
+  const showValidatedInitDocEntry = useRef<number | null>(null);
   const assignPicklist = useAssignPicklist();
   const assignPicklistEmployee = useAssignPicklistEmployee();
   const validationScan = useValidationScan();
@@ -234,6 +239,21 @@ export default function PicklistsPage({
     };
   }, [isValidationMode, selectedDocEntry, picklistDetail, barcodeInputRef]);
 
+  // When a validation modal opens on a picklist whose lines are already all
+  // confirmed, default the table to SHOW validated lines (otherwise it would
+  // look empty). Runs once per open — after that the user's toggle wins.
+  useEffect(() => {
+    if (selectedDocEntry == null) {
+      showValidatedInitDocEntry.current = null;
+      return;
+    }
+    if (!isValidationMode) return;
+    if (currentLines.length === 0) return; // wait for lines to load
+    if (showValidatedInitDocEntry.current === selectedDocEntry) return;
+    showValidatedInitDocEntry.current = selectedDocEntry;
+    setShowValidated(allLinesValidated);
+  }, [selectedDocEntry, isValidationMode, currentLines, allLinesValidated]);
+
   const handleViewDetail = (docEntry: number) => {
     setSelectedDocEntry(docEntry);
   };
@@ -243,6 +263,8 @@ export default function PicklistsPage({
     setDeliveryPackageCount(0);
     setSelectedEmployeeId(null);
     setLabelCopies(1);
+    setShowValidated(false);
+    setPendingScan(null);
   };
 
   const handlePrintLabel = () => {
@@ -267,6 +289,8 @@ export default function PicklistsPage({
       }
     );
     setPendingScan(null);
+    // Re-focus scanner input so worker can scan the next item immediately
+    setTimeout(() => barcodeInputRef.current?.focus(), 100);
   };
 
   const handleCancelScan = () => {
@@ -853,8 +877,108 @@ export default function PicklistsPage({
                 <p className="font-medium">{picklistDetail.warehouseCode}</p>
               </div>
             </div>
+            {isValidationMode && (
+              <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+                {pendingScan ? (
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="text-2xl font-bold leading-tight break-words">
+                      {pendingScan.line.productName}
+                    </p>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 shrink-0 text-muted-foreground"
+                      onClick={handleCancelScan}
+                      title={t("common.cancel")}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="text-lg font-medium text-muted-foreground">
+                    {t("validation.scanPrompt")}
+                  </p>
+                )}
+
+                {pendingScan &&
+                  (() => {
+                    const qty =
+                      pendingScan.line.totalQty ?? pendingScan.line.requestedQty ?? 0;
+                    const boxPer = pendingScan.line.quantityInPack ?? 0;
+                    const looseQty = boxPer > 0 ? qty % boxPer : qty;
+                    const boxCount = boxPer > 0 ? Math.floor(qty / boxPer) : 0;
+                    return (
+                      <div className="flex flex-wrap items-end gap-3">
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground mb-0">
+                            {t("validation.qty")}
+                          </Label>
+                          <Input
+                            type="number"
+                            value={qty}
+                            disabled
+                            className="w-28 h-9"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground mb-0">
+                            {t("validation.qtyLoose")}
+                          </Label>
+                          <Input
+                            type="number"
+                            value={looseQty}
+                            disabled
+                            className="w-28 h-9"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground mb-0">
+                            {t("validation.qtyBoxes")}
+                          </Label>
+                          <Input
+                            type="number"
+                            value={boxCount}
+                            disabled
+                            className="w-28 h-9"
+                          />
+                        </div>
+                        <AntButton
+                          type="primary"
+                          loading={validationScan.isLoading}
+                          onClick={handleConfirmScan}
+                        >
+                          {t("validation.validate")}
+                        </AntButton>
+                      </div>
+                    );
+                  })()}
+
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="gap-1"
+                  onClick={() => setShowValidated((s) => !s)}
+                >
+                  {showValidated ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                  {showValidated
+                    ? t("validation.hideValidated")
+                    : t("validation.showValidated")}
+                </Button>
+              </div>
+            )}
             {(() => {
-              const lines = currentLines;
+              const lines =
+                isValidationMode && !showValidated
+                  ? currentLines.filter(
+                      (line) => line.status !== EPickListLineStatus.Validated
+                    )
+                  : currentLines;
               const sortedLines = [...lines].sort((a, b) => {
                 const aValidated = a.status === EPickListLineStatus.Validated;
                 const bValidated = b.status === EPickListLineStatus.Validated;
@@ -971,28 +1095,6 @@ export default function PicklistsPage({
           <p className="text-center text-muted-foreground py-8 text-sm">Ma'lumot topilmadi</p>
         )}
       </Modal>
-      {/* Scanner barcode confirmation — fires when scanner sends Enter after a match */}
-      <ConfirmDialog
-        open={pendingScan !== null}
-        onOpenChange={(open) => { if (!open) handleCancelScan(); }}
-        variant="success"
-        title={t("validation.confirmTitle")}
-        description={
-          <Trans
-            i18nKey="validation.confirmDescription"
-            values={{
-              productName: pendingScan?.line.productName ?? "",
-              qty: pendingScan?.line.totalQty ?? pendingScan?.line.requestedQty ?? 0,
-            }}
-            components={{ b: <span className="font-semibold text-foreground" /> }}
-          />
-        }
-        confirmLabel={t("validation.validate")}
-        loading={validationScan.isLoading}
-        confirmOnEnter
-        onConfirm={handleConfirmScan}
-        onCancel={handleCancelScan}
-      />
     </div>
   );
 }
