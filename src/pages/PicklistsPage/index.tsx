@@ -148,6 +148,19 @@ export default function PicklistsPage({
     currentLines.length > 0 &&
     currentLines.every((line) => line.status === EPickListLineStatus.Validated);
 
+  // Validation progress by unit quantity: how much is needed in total, how much
+  // has been confirmed (whole validated lines), and how much is still left.
+  const validationTotals = useMemo(() => {
+    const lineQty = (line: PicklistLine) => line.totalQty ?? line.requestedQty ?? 0;
+    const max = currentLines.reduce((sum, line) => sum + lineQty(line), 0);
+    const confirmed = currentLines.reduce(
+      (sum, line) =>
+        line.status === EPickListLineStatus.Validated ? sum + lineQty(line) : sum,
+      0
+    );
+    return { max, confirmed, left: max - confirmed };
+  }, [currentLines]);
+
   const hasNextPage = picklists.length >= PAGE_SIZE;
   const hasPrevPage = pageIndex > 0;
   const rangeStart = pageIndex * PAGE_SIZE + 1;
@@ -612,7 +625,29 @@ export default function PicklistsPage({
         width={1200}
         footer={
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              {isValidationMode && picklistDetail && (
+                <div className="flex items-center gap-4 text-sm">
+                  <span className="text-muted-foreground">
+                    {t("validation.totalQty")}:{" "}
+                    <span className="font-semibold text-foreground">
+                      {validationTotals.max}
+                    </span>
+                  </span>
+                  <span className="text-muted-foreground">
+                    {t("validation.confirmedQty")}:{" "}
+                    <span className="font-semibold text-status-success">
+                      {validationTotals.confirmed}
+                    </span>
+                  </span>
+                  <span className="text-muted-foreground">
+                    {t("validation.leftQty")}:{" "}
+                    <span className="font-semibold text-foreground">
+                      {validationTotals.left}
+                    </span>
+                  </span>
+                </div>
+              )}
               {isValidationMode && picklistDetail && allLinesValidated && (
                 <>
                   <Label className="text-sm whitespace-nowrap mb-0">
