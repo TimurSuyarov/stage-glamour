@@ -1,5 +1,6 @@
 import request from "@/services";
-import { useQuery, useInfiniteQuery } from "react-query";
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "react-query";
+import { toArray } from "@/lib/utils";
 
 export const BIN_LOCATIONS_PAGE_SIZE = 20;
 
@@ -176,5 +177,105 @@ export const useBinLocationItemStatistics = (filters?: BinLocationItemStatistics
     queryFn: () => fetchBinLocationItemStatistics(filters),
     refetchOnWindowFocus: false,
     enabled: true,
+  });
+};
+
+// ─── UDF enums (create-bin dropdowns: /bin-locations/udf-enums) ──────────────
+// Returns a bare array (no { items } envelope). One entry per enum UDF; look
+// them up by `field` (order is not guaranteed). For dropdowns, submit `value`
+// and show `description` as the label.
+export interface BinLocationUdfEnumValue {
+  value: string;
+  description: string;
+}
+
+export interface BinLocationUdfEnum {
+  field: string;
+  name: string;
+  description: string;
+  values: BinLocationUdfEnumValue[];
+}
+
+const fetchBinLocationUdfEnums = async (): Promise<BinLocationUdfEnum[]> => {
+  // May be a bare array or an { items }-style envelope — normalize.
+  const { data } = await request.get<unknown>("/bin-locations/udf-enums");
+  return toArray<BinLocationUdfEnum>(data);
+};
+
+export const useBinLocationUdfEnums = () => {
+  return useQuery({
+    queryKey: ["bin-locations", "udf-enums"],
+    queryFn: fetchBinLocationUdfEnums,
+    refetchOnWindowFocus: false,
+    // Backend caches the UDF definition ~1h, so mirror that here.
+    staleTime: 3600_000,
+  });
+};
+
+// ─── Sub-level codes (create-bin combobox: /bin-locations/sublevel-codes) ────
+// Existing SAP WarehouseSublevelCodes the user can pick from (or type a new one).
+// ~1800 codes exist, so always drive this with `search`; page size is fixed at 50.
+export interface BinLocationSublevelCode {
+  warehouseSublevel: number;
+  code: string;
+  absEntry: number;
+}
+
+const fetchBinLocationSublevelCodes = async (
+  search?: string
+): Promise<BinLocationSublevelCode[]> => {
+  const params = new URLSearchParams();
+  if (search) params.set("search", search);
+  const query = params.toString() ? `?${params.toString()}` : "";
+  const { data } = await request.get<unknown>(`/bin-locations/sublevel-codes${query}`);
+  return toArray<BinLocationSublevelCode>(data);
+};
+
+export const useBinLocationSublevelCodes = (search?: string) => {
+  return useQuery({
+    queryKey: ["bin-locations", "sublevel-codes", search ?? ""],
+    queryFn: () => fetchBinLocationSublevelCodes(search),
+    // Don't load the full list; only search once the user has typed something.
+    enabled: (search ?? "").trim().length > 0,
+    keepPreviousData: true,
+    refetchOnWindowFocus: false,
+  });
+};
+
+// ─── Create bin location (POST /bin-locations) ───────────────────────────────
+export interface CreateBinLocationBody {
+  warehouse: string;
+  sublevel1: string;
+  zone: string;
+  /** U_MaxQuantity value ("1"/"2"/"3"); omit to leave empty. */
+  maxQuantity?: string;
+}
+
+export interface CreatedBinLocation {
+  id: number | null;
+  absEntry: number;
+  warehouse: string;
+  sublevel1: string;
+  binCode: string;
+  barCode: string | null;
+  minimumQty: number | null;
+  maximumQty: number | null;
+  U_Zona: string;
+}
+
+const postBinLocation = async (body: CreateBinLocationBody): Promise<CreatedBinLocation> => {
+  const { data } = await request.post<CreatedBinLocation>("/bin-locations", body, {
+    headers: { "Content-Type": "application/json" },
+  });
+  return data;
+};
+
+export const useCreateBinLocation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: CreateBinLocationBody) => postBinLocation(body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["bin-locations"] });
+    },
   });
 };
