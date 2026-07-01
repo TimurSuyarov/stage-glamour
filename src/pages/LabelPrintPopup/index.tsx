@@ -115,7 +115,7 @@ export default function LabelPrintPopup() {
         {Array.from({ length: copies }).map((_, i) => (
           <div key={i} className="page-wrap">
             <div className="label-anchor">
-              <LabelComponent data={labelData} />
+              <LabelComponent data={labelData} copyNumber={i + 1} copyTotal={copies} />
             </div>
           </div>
         ))}

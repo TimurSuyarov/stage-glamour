@@ -49,7 +49,7 @@ export function LabelPreview({ data }: LabelPreviewProps) {
             }}
           >
             <div className="shadow-md">
-              <LabelComponent data={data} />
+              <LabelComponent data={data} copyNumber={1} copyTotal={data.copies} />
             </div>
           </div>
         </div>

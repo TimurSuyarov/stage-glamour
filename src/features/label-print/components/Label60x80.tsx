@@ -1,8 +1,13 @@
 import { LABEL_SPECS, type LabelData } from "../types/label";
 import { LabelBarcode } from "./LabelBarcode";
+import { LabelCopyBadge } from "./LabelCopyBadge";
 
 interface Label60x80Props {
   data: LabelData;
+  /** 1-based copy index (1, 2, 3, …) — renders a corner badge when copyTotal > 1 */
+  copyNumber?: number;
+  /** Total copies in the print run */
+  copyTotal?: number;
 }
 
 /**
@@ -14,7 +19,7 @@ interface Label60x80Props {
  *   bottom-left:  location / city text
  *   bottom-right: barcode
  */
-export function Label60x80({ data }: Label60x80Props) {
+export function Label60x80({ data, copyNumber, copyTotal }: Label60x80Props) {
   const spec = LABEL_SPECS["60x80"];
 
   return (
@@ -35,6 +40,9 @@ export function Label60x80({ data }: Label60x80Props) {
         position: "relative",
       }}
     >
+      {/* Copy number badge (top-right) — only when printing multiple copies */}
+      <LabelCopyBadge copyNumber={copyNumber} copyTotal={copyTotal} fontMm={5} />
+
       {/* Title */}
       <div
         style={{
